@@ -77,11 +77,12 @@ async function confirmBooking(b) {
 }
 
 function goToPay(b) {
-  const name   = encodeURIComponent(b.consultant_name || '');
-  const time   = encodeURIComponent(b.start_time || '');
-  const amount = b.consultant?.price || 0;
+  const name         = encodeURIComponent(b.consultant_name || '');
+  const time         = encodeURIComponent(b.start_time || '');
+  const amount       = b.consultant?.price || 0;
+  const discountRate = b.consultant?.discountRate ?? 1.0;
   uni.navigateTo({
-    url: `/pages/payment/index?bookingId=${b.id}&consultantName=${name}&slotTime=${time}&amount=${amount}`
+    url: `/pages/payment/index?bookingId=${b.id}&consultantName=${name}&slotTime=${time}&amount=${amount}&discountRate=${discountRate}`
   });
 }
 

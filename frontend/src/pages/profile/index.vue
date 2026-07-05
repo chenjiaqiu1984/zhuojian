@@ -49,7 +49,7 @@ const menus = computed(() => {
     { label: '心理测评',   icon: '📝',  action: () => uni.navigateTo({ url: '/pages/assessment/my' }) },
     { label: '测评记录',   icon: '📋',  action: () => uni.navigateTo({ url: '/pages/assessment/results' }) },
     { label: '抽卡记录',   icon: '🃏',  action: () => uni.navigateTo({ url: '/pages/ohcard/record' }) },
-    { label: '我的券码',   icon: '🎟️',  action: () => uni.navigateTo({ url: '/pages/profile/vouchers' }) },
+    { label: '我的券码',   icon: '🎟️',  action: () => uni.navigateTo({ url: '/pages/profile/coupons' }) },
     { label: '设置',       icon: '⚙️',  action: () => uni.navigateTo({ url: '/pages/profile/settings' }) },
   ];
   if (store.user?.role === 'consultant') {

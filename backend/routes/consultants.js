@@ -27,7 +27,7 @@ router.get('/:id', async (req, res) => {
   const min48h = new Date(Date.now() + 48 * 3600000).toISOString();
   const c = await prisma.consultant.findUnique({
     where: { id: Number(req.params.id) },
-    include: { slots: { where: { startTime: { gt: min48h } }, orderBy: { startTime: 'asc' }, include: { booking: { select: { status: true } }, secondBooking: { select: { status: true } } } } }
+    include: { slots: { where: { startTime: { gt: min48h } }, orderBy: { startTime: 'asc' }, include: { booking: { select: { status: true } }, secondBookings: { select: { status: true } } } } }
   });
   if (!c) return res.status(404).json({ error: '未找到' });
   res.json(c);

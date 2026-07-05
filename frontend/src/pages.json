@@ -41,7 +41,11 @@
     { "path": "pages/homework/dream",   "style": { "navigationBarTitleText": "梦的工作记录" } },
     { "path": "pages/homework/iceberg", "style": { "navigationBarTitleText": "冰山模型" } },
     { "path": "pages/homework/rule",    "style": { "navigationBarTitleText": "规条转换" } },
-    { "path": "pages/homework/help",    "style": { "navigationBarTitleText": "申请解读" } }
+    { "path": "pages/homework/help",    "style": { "navigationBarTitleText": "申请解读" } },
+    { "path": "pages/profile/packages", "style": { "navigationBarTitleText": "我的套餐" } },
+    { "path": "pages/admin/packages",   "style": { "navigationBarTitleText": "套餐管理" } },
+    { "path": "pages/profile/coupons",  "style": { "navigationBarTitleText": "我的优惠券" } },
+    { "path": "pages/admin/coupons",    "style": { "navigationBarTitleText": "优惠券管理" } }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "white",

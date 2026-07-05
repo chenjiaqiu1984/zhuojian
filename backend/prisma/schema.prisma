@@ -27,6 +27,7 @@ model User {
   assessmentResults AssessmentResult[]
   orders       Order[]
   userPackages UserPackage[]
+  userCoupons  UserCoupon[]
 }
 
 model VerifyCode {
@@ -94,7 +95,7 @@ model TimeSlot {
   isBooked     Int        @default(0) @map("is_booked")
   consultant   Consultant @relation(fields: [consultantId], references: [id])
   booking      Booking?   @relation("FirstSlot")
-  secondBooking Booking?  @relation("SecondSlot")
+  secondBookings Booking[] @relation("SecondSlot")
 }
 
 model Booking {
@@ -102,7 +103,7 @@ model Booking {
   userId         Int        @map("user_id")
   consultantId   Int        @map("consultant_id")
   slotId         Int        @unique @map("slot_id")
-  secondSlotId   Int?       @unique @map("second_slot_id")
+  secondSlotId   Int?       @map("second_slot_id")
   status         String     @default("pending")
   notes          String?
   message        String?
@@ -569,10 +570,13 @@ model Order {
   originalAmount Int?     @map("original_amount")              // 折扣前原价（分），无折扣时为 null
   discountRate   Float    @default(1.0) @map("discount_rate")  // 下单时折扣快照
   userPackageId  Int?     @map("user_package_id")              // 套餐购买订单关联
+  userCouponId   Int?     @map("user_coupon_id")               // 使用的优惠券
+  couponDiscount Int      @default(0) @map("coupon_discount")  // 优惠券减免金额（分）
   createdAt   DateTime @default(now()) @map("created_at")
   user        User     @relation(fields: [userId], references: [id])
   booking     Booking? @relation(fields: [bookingId], references: [id])
   userPackage UserPackage? @relation(fields: [userPackageId], references: [id])
+  userCoupon  UserCoupon?  @relation(fields: [userCouponId], references: [id])
   @@map("orders")
 }
 
@@ -605,6 +609,43 @@ model UserPackage {
   package        ConsultPackage @relation(fields: [packageId], references: [id])
   orders         Order[]
   @@map("user_packages")
+}
+
+// ── 优惠券模板（admin 配置）────────────────────────────────────
+model Coupon {
+  id           Int         @id @default(autoincrement())
+  code         String      @unique                          // 券码/活动码，WELCOME_DISCOUNT 等
+  name         String                                       // 展示名称，如"注册8折券"
+  description  String?                                      // 使用说明
+  type         String                                       // 'discount'|'threshold'|'direct'|'activity'
+  value        Float                                        // 打折:0.8；满减/直减:减免金额(分)；活动:0
+  threshold    Int         @default(0)                      // 满减门槛(分)，0=无门槛
+  scope        String      @default("consultation")         // 'consultation'|'salon'|'all'
+  isPublic     Int         @default(0) @map("is_public")   // 1=活动券用户可见/自领
+  perUserLimit Int         @default(1) @map("per_user_limit") // 每人可持有次数
+  totalLimit   Int?        @map("total_limit")              // 发行总量(null=不限)
+  usedCount    Int         @default(0) @map("used_count")
+  expireAt     DateTime?   @map("expire_at")                // null=永久有效
+  isActive     Int         @default(1) @map("is_active")
+  createdBy    Int         @map("created_by")               // admin userId
+  createdAt    DateTime    @default(now()) @map("created_at")
+  userCoupons  UserCoupon[]
+  @@map("coupons")
+}
+
+// ── 用户持有的优惠券（每张用完即消）──────────────────────────
+model UserCoupon {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  couponId    Int       @map("coupon_id")
+  status      String    @default("available")   // 'available'|'used'|'expired'
+  usedAt      DateTime? @map("used_at")
+  usedOrderId Int?      @map("used_order_id")   // 用于哪个订单
+  createdAt   DateTime  @default(now()) @map("created_at")
+  user        User      @relation(fields: [userId], references: [id])
+  coupon      Coupon    @relation(fields: [couponId], references: [id])
+  orders      Order[]
+  @@map("user_coupons")
 }
 
 model MoodEntry {

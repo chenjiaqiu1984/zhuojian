@@ -34,9 +34,23 @@
       </view>
 
       <view class="order-divider" />
+      <!-- 金额分层展示 -->
       <view class="order-row amount-row">
         <text class="label">应付金额</text>
-        <text class="amount">¥{{ (amount / 100).toFixed(2) }}</text>
+        <view class="amount-group">
+          <text class="original-price" v-if="discountRate < 1.0">
+            ¥{{ (amount / 100).toFixed(2) }}
+          </text>
+          <text class="amount">¥{{ (finalAmount / 100).toFixed(2) }}</text>
+          <text class="discount-tag" v-if="discountRate < 1.0">
+            {{ Math.round(discountRate * 10) }}折
+          </text>
+        </view>
+      </view>
+      <!-- 优惠券减免明细 -->
+      <view class="order-row savings-row" v-if="selectedCouponDiscount > 0 && !usePackage">
+        <text class="label">优惠券减免</text>
+        <text class="savings">-¥{{ (selectedCouponDiscount / 100).toFixed(2) }}</text>
       </view>
     </view>
 
@@ -71,10 +85,83 @@
       </view>
     </view>
 
+    <!-- 优惠券选择（有可用券时显示） -->
+    <view class="pay-card" v-if="!usePackage && availableCoupons.length > 0">
+      <view class="pay-item coupon-header">
+        <text class="pay-icon">🎟️</text>
+        <text class="pay-name">优惠券</text>
+        <text class="coupon-count">{{ availableCoupons.length }} 张可用</text>
+      </view>
+      <view
+        v-for="uc in availableCoupons"
+        :key="uc.id"
+        class="pay-item"
+        :class="{ active: selectedCouponId === uc.id, disabled: !uc.applicable }"
+        @click="uc.applicable && selectCoupon(uc.id)"
+      >
+        <view class="coupon-info">
+          <text class="coupon-name">{{ uc.coupon.name }}</text>
+          <text class="coupon-desc" v-if="uc.coupon.description">{{ uc.coupon.description }}</text>
+          <text class="coupon-save green" v-if="uc.applicable && uc.discount > 0">
+            可省 ¥{{ (uc.discount / 100).toFixed(2) }}
+          </text>
+          <text class="coupon-save gray" v-else-if="!uc.applicable">
+            {{ uc.coupon.type === 'threshold'
+              ? `满¥${(uc.coupon.threshold/100).toFixed(0)}可用`
+              : '不适用当前订单' }}
+          </text>
+        </view>
+        <text class="pay-check" v-if="selectedCouponId === uc.id">✓</text>
+      </view>
+      <!-- 不用券 -->
+      <view
+        class="pay-item"
+        :class="{ active: selectedCouponId === null }"
+        @click="selectedCouponId = null"
+      >
+        <text class="pay-icon">🚫</text>
+        <text class="pay-name">不使用优惠券</text>
+        <text class="pay-check" v-if="selectedCouponId === null">✓</text>
+      </view>
+    </view>
+
+    <!-- 套餐选项（有可用套餐时显示） -->
+    <view class="pay-card" v-if="activePackages.length > 0">
+      <view class="pay-item package-header">
+        <text class="pay-icon">🎁</text>
+        <text class="pay-name">使用套餐次数</text>
+      </view>
+      <view
+        v-for="up in activePackages"
+        :key="up.id"
+        class="pay-item"
+        :class="{ active: usePackage && selectedPackageId === up.id }"
+        @click="selectPackage(up.id)"
+      >
+        <view class="pkg-info">
+          <text class="pkg-name">{{ up.package.name }}</text>
+          <text class="pkg-remain">剩余 {{ up.totalSessions - up.usedSessions }} 次</text>
+        </view>
+        <text class="pay-check" v-if="usePackage && selectedPackageId === up.id">✓</text>
+      </view>
+      <!-- 不使用套餐 -->
+      <view
+        class="pay-item"
+        :class="{ active: !usePackage }"
+        @click="usePackage = false; selectedPackageId = null"
+      >
+        <text class="pay-icon">💳</text>
+        <text class="pay-name">不使用套餐，单次支付</text>
+        <text class="pay-check" v-if="!usePackage">✓</text>
+      </view>
+    </view>
+
     <!-- 底部按钮 -->
     <view class="footer">
       <button class="pay-btn" :disabled="loading || countdown <= 0" @click="doPay">
-        {{ loading ? '处理中...' : `立即支付 ¥${(amount / 100).toFixed(2)}` }}
+        <template v-if="loading">处理中...</template>
+        <template v-else-if="usePackage">使用套餐预约（免支付）</template>
+        <template v-else>立即支付 ¥{{ (finalAmount / 100).toFixed(2) }}</template>
       </button>
       <text class="cancel-link" @click="cancel">取消预约</text>
     </view>
@@ -83,19 +170,25 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { paymentApi, bookingApi } from '../../api/index';
+import { paymentApi, bookingApi, packageApi, couponApi } from '../../api/index';
 
 // uni-app 路由页面通过 URL query 传参，不能用 defineProps 接收
 // 改为本地 ref，在 onMounted 里从 query 读取
 const bookingId      = ref(0);
 const consultantName = ref('');
 const slotTime       = ref('');
-const amount         = ref(0);
+const amount         = ref(0);          // 咨询师原价（分）
+const discountRate   = ref(1.0);        // 折扣率（从 URL 或默认1.0）
 
-const loading   = ref(false);
-const orderNo   = ref('');
-const payMethod = ref('wechat');   // 'wechat' | 'alipay'
-const countdown = ref(15 * 60);
+const loading           = ref(false);
+const orderNo           = ref('');
+const payMethod         = ref('wechat');
+const countdown         = ref(15 * 60);
+const myPackages        = ref([]);
+const usePackage        = ref(false);
+const selectedPackageId = ref(null);
+const availableCoupons  = ref([]);      // { id, coupon, discount, applicable }
+const selectedCouponId  = ref(null);    // 选中的 UserCoupon.id（null=不用券）
 let timer = null;
 
 // 判断当前运行环境
@@ -111,6 +204,32 @@ const timerText = computed(() => {
   const s = countdown.value % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 });
+
+// 折后实付金额（分，不含券）
+const discountedAmount = computed(() =>
+  Math.round(amount.value * discountRate.value)
+);
+
+// 当前选中券的减免金额
+const selectedCouponDiscount = computed(() => {
+  if (!selectedCouponId.value) return 0;
+  const uc = availableCoupons.value.find(c => c.id === selectedCouponId.value);
+  return uc?.discount ?? 0;
+});
+
+// 最终实付（折扣 + 券减，最低1分）
+const finalAmount = computed(() =>
+  Math.max(1, discountedAmount.value - selectedCouponDiscount.value)
+);
+
+// 有剩余次数且未过期的套餐
+const activePackages = computed(() =>
+  myPackages.value.filter(up =>
+    up.status === 'active' &&
+    up.usedSessions < up.totalSessions &&
+    (!up.expireAt || new Date(up.expireAt) > new Date())
+  )
+);
 
 // 将 "YYYY-MM-DD HH:mm" 解析为时间戳（兼容 iOS Safari）
 function parseSlotTime(str) {
@@ -138,7 +257,7 @@ const refundDeadline24h = computed(() => {
   return fmtDatetime(new Date(d.getTime() - 24 * 60 * 60 * 1000));
 });
 
-onMounted(() => {
+onMounted(async () => {
   // 从页面 query 读取参数（uni-app H5 / 小程序均兼容）
   const pages = getCurrentPages();
   const cur   = pages[pages.length - 1];
@@ -151,8 +270,26 @@ onMounted(() => {
     if (p.consultantName) consultantName.value = decodeURIComponent(p.consultantName);
     if (p.slotTime)       slotTime.value       = decodeURIComponent(p.slotTime);
     if (p.amount)         amount.value         = Number(p.amount);
+    if (p.discountRate)   discountRate.value   = Number(p.discountRate);
   }
   startCountdown();
+  // 并行加载套餐和优惠券（静默失败）
+  try {
+    const [pkgs, coupons] = await Promise.all([
+      packageApi.my(),
+      couponApi.available(Math.round(amount.value * discountRate.value)),
+    ]);
+    myPackages.value = pkgs;
+    availableCoupons.value = coupons;
+    // 优先套餐；若无套餐，自动选中第一张适用券
+    if (activePackages.value.length > 0) {
+      usePackage.value        = true;
+      selectedPackageId.value = activePackages.value[0].id;
+    } else {
+      const first = coupons.find(c => c.applicable);
+      if (first) selectedCouponId.value = first.id;
+    }
+  } catch {}
 });
 
 onUnmounted(() => clearInterval(timer));
@@ -164,12 +301,26 @@ function startCountdown() {
   }, 1000);
 }
 
+// ── 选择优惠券 ───────────────────────────────────────────────────
+function selectCoupon(id) {
+  selectedCouponId.value = selectedCouponId.value === id ? null : id;
+}
+
+// ── 选择套餐 ─────────────────────────────────────────────────────
+function selectPackage(id) {
+  usePackage.value        = true;
+  selectedPackageId.value = id;
+  selectedCouponId.value  = null; // 使用套餐时不用券
+}
+
 // ── 主支付入口 ────────────────────────────────────────────────────
 async function doPay() {
   if (loading.value) return;
   loading.value = true;
   try {
-    if (isH5) {
+    if (usePackage.value && selectedPackageId.value) {
+      await doUsePackage();
+    } else if (isH5) {
       payMethod.value === 'alipay' ? await doAlipayH5() : await doWechatH5();
     } else {
       await doWechatMiniApp();
@@ -179,9 +330,15 @@ async function doPay() {
   }
 }
 
+// ── 套餐次数预约（不需要支付）────────────────────────────────────
+async function doUsePackage() {
+  await packageApi.use(selectedPackageId.value, { bookingId: bookingId.value });
+  onPaySuccess();
+}
+
 // ── 小程序微信 JSAPI ──────────────────────────────────────────────
 async function doWechatMiniApp() {
-  const data = await paymentApi.createBookingOrder(bookingId.value);
+  const data = await paymentApi.createBookingOrder(bookingId.value, { userCouponId: selectedCouponId.value });
   orderNo.value = data.orderNo;
   const p = data.payParams;
   await new Promise((resolve, reject) => {
@@ -201,7 +358,7 @@ async function doWechatMiniApp() {
 
 // ── 微信 H5 支付（手机浏览器跳转微信 App）────────────────────────
 async function doWechatH5() {
-  const data = await paymentApi.createH5Order(bookingId.value);
+  const data = await paymentApi.createH5Order(bookingId.value, { userCouponId: selectedCouponId.value });
   orderNo.value = data.orderNo;
   // redirect_url：支付完成后微信跳回的页面
   const redirectUrl = encodeURIComponent(
@@ -214,9 +371,8 @@ async function doWechatH5() {
 
 // ── 支付宝 WAP 支付（跳转支付宝 App / 网页）──────────────────────
 async function doAlipayH5() {
-  const data = await paymentApi.createAlipayOrder(bookingId.value);
+  const data = await paymentApi.createAlipayOrder(bookingId.value, { userCouponId: selectedCouponId.value });
   orderNo.value = data.orderNo;
-  // payUrl 是支付宝返回的 GET 链接，直接跳转即可
   location.href = data.payUrl;
 }
 
@@ -255,8 +411,14 @@ async function cancel() {
   .label { font-size: 28rpx; color: #8A9E97; }
   .value { font-size: 28rpx; color: #1C2A27; }
   .order-divider { height: 1rpx; background: #EEF2F0; margin: 16rpx 0; }
-  .amount-row { margin-top: 8rpx; }
+  .amount-row { margin-top: 8rpx; align-items: flex-end; }
+  .amount-group { display: flex; align-items: baseline; gap: 10rpx; }
   .amount { font-size: 48rpx; font-weight: 700; color: #4A8A7A; }
+  .original-price { font-size: 26rpx; color: #B0B8B5; text-decoration: line-through; }
+  .discount-tag {
+    font-size: 20rpx; font-weight: 600; color: #fff;
+    background: #E05A4A; border-radius: 8rpx; padding: 2rpx 10rpx;
+  }
 
   .refund-policy {
     margin: 16rpx 0 4rpx;
@@ -309,10 +471,26 @@ async function cancel() {
     .pay-icon { font-size: 44rpx; }
     .pay-name { font-size: 30rpx; color: #1C2A27; flex: 1; }
     .pay-check { font-size: 32rpx; color: #4A8A7A; font-weight: 700; }
-    &.active { background: #F5FBF9; }
+    &.active   { background: #F5FBF9; }
+    &.disabled { opacity: .45; }
+    &.package-header, &.coupon-header { background: #F5FBF9; border-radius: 20rpx 20rpx 0 0; }
+    .coupon-count { font-size: 22rpx; color: #4A8A7A; margin-left: auto; }
+    .coupon-info  { flex: 1; display: flex; flex-direction: column; gap: 4rpx; }
+    .coupon-name  { font-size: 28rpx; color: #1C2A27; font-weight: 500; }
+    .coupon-desc  { font-size: 20rpx; color: #8A9E97; }
+    .coupon-save  { font-size: 22rpx; font-weight: 600;
+      &.green { color: #4A8A7A; }
+      &.gray  { color: #B0B8B5; }
+    }
+    .pkg-info   { flex: 1; display: flex; flex-direction: column; gap: 6rpx; }
+    .pkg-name   { font-size: 28rpx; color: #1C2A27; font-weight: 500; }
+    .pkg-remain { font-size: 22rpx; color: #4A8A7A; }
   }
+  & + .pay-card { margin-top: 16rpx; }
 }
 
+.order-card .savings-row { padding: 6rpx 0; }
+.order-card .savings { font-size: 26rpx; font-weight: 600; color: #E05A4A; }
 
 .footer {
   position: fixed; bottom: 0; left: 0; right: 0;

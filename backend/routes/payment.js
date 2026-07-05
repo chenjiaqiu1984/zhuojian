@@ -3,6 +3,7 @@ const prisma = require('../db/database');
 const { authMiddleware } = require('../middleware/auth');
 const { createJsapiOrder, createH5Order, parseNotify, refund } = require('../services/wechatpay');
 const { createAlipayOrder, verifyAlipayNotify } = require('../services/alipay');
+const { calcDiscount } = require('./coupons');
 
 const router = express.Router();
 
@@ -17,6 +18,34 @@ function genOrderNo(userId) {
 function notifyUrl() {
   const base = process.env.PAY_NOTIFY_BASE || `http://localhost:${process.env.PORT || 3000}`;
   return `${base}/api/payment/notify`;
+}
+
+// ── 验证并预消费优惠券 ────────────────────────────────────────────
+// 返回 { couponDiscount, userCouponId } 并将券状态改为 used
+// 若 userCouponId 未传 / 无效则返回 { couponDiscount: 0, userCouponId: null }
+async function consumeCoupon(userId, userCouponId, amount) {
+  if (!userCouponId) return { couponDiscount: 0, userCouponId: null };
+  const uc = await prisma.userCoupon.findUnique({
+    where: { id: Number(userCouponId) },
+    include: { coupon: true }
+  });
+  if (!uc || uc.userId !== userId || uc.status !== 'available') {
+    return { couponDiscount: 0, userCouponId: null };
+  }
+  if (uc.coupon.expireAt && uc.coupon.expireAt < new Date()) {
+    return { couponDiscount: 0, userCouponId: null };
+  }
+  const discount = calcDiscount(uc.coupon, amount);
+  // 立即标记为已使用（下单即消费，防止重复使用）
+  await prisma.userCoupon.update({
+    where: { id: uc.id },
+    data:  { status: 'used', usedAt: new Date() }
+  });
+  await prisma.coupon.update({
+    where: { id: uc.coupon.id },
+    data:  { usedCount: { increment: 1 } }
+  });
+  return { couponDiscount: discount, userCouponId: uc.id };
 }
 
 // ── 创建预约订单并发起支付 ────────────────────────────────────────
@@ -56,17 +85,24 @@ router.post('/booking/:bookingId', authMiddleware, async (req, res) => {
     const originalPrice = booking.consultant.price; // 单位：分
     if (!originalPrice || originalPrice <= 0) return res.status(400).json({ error: '咨询师未设置价格' });
 
-    // 应用折扣率（默认1.0=无折扣）
+    // 应用咨询师折扣率
     const rate   = booking.consultant.discountRate ?? 1.0;
-    const amount = Math.round(originalPrice * rate);
+    const priceAfterDiscount = Math.round(originalPrice * rate);
     const originalAmount = rate < 1.0 ? originalPrice : null;
+
+    // 应用优惠券
+    const { couponDiscount, userCouponId } = await consumeCoupon(
+      userId, req.body.userCouponId, priceAfterDiscount
+    );
+    const amount = Math.max(1, priceAfterDiscount - couponDiscount);
 
     const orderNo = genOrderNo(userId);
     const expireAt = new Date(Date.now() + 15 * 60 * 1000); // 15分钟
 
     // 先创建订单记录
     const order = await prisma.order.create({
-      data: { orderNo, userId, bookingId, amount, originalAmount, discountRate: rate, expireAt }
+      data: { orderNo, userId, bookingId, amount, originalAmount,
+              discountRate: rate, couponDiscount, userCouponId, expireAt }
     });
 
     // 调微信下单
@@ -160,6 +196,18 @@ router.post('/refund/:orderNo', authMiddleware, async (req, res) => {
       data: { status: 'refunded' }
     });
 
+    // 退款成功后恢复优惠券（让用户可再次使用）
+    if (order.userCouponId) {
+      await prisma.userCoupon.update({
+        where: { id: order.userCouponId },
+        data:  { status: 'available', usedAt: null, usedOrderId: null }
+      });
+      await prisma.coupon.update({
+        where: { id: (await prisma.userCoupon.findUnique({ where: { id: order.userCouponId }, select: { couponId: true } })).couponId },
+        data:  { usedCount: { decrement: 1 } }
+      });
+    }
+
     res.json({ ok: true, refundAmount });
   } catch (err) {
     console.error('[payment] refund error:', err.message);
@@ -194,13 +242,19 @@ router.post('/h5/:bookingId', authMiddleware, async (req, res) => {
     if (!originalPrice || originalPrice <= 0) return res.status(400).json({ error: '咨询师未设置价格' });
 
     const rate           = booking.consultant.discountRate ?? 1.0;
-    const amount         = Math.round(originalPrice * rate);
+    const priceAfterDiscount = Math.round(originalPrice * rate);
     const originalAmount = rate < 1.0 ? originalPrice : null;
+
+    const { couponDiscount, userCouponId } = await consumeCoupon(
+      userId, req.body.userCouponId, priceAfterDiscount
+    );
+    const amount = Math.max(1, priceAfterDiscount - couponDiscount);
 
     const orderNo = genOrderNo(userId);
     const expireAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    await prisma.order.create({ data: { orderNo, userId, bookingId, amount, originalAmount, discountRate: rate, expireAt } });
+    await prisma.order.create({ data: { orderNo, userId, bookingId, amount, originalAmount,
+      discountRate: rate, couponDiscount, userCouponId, expireAt } });
 
     const { mwebUrl } = await createH5Order({
       orderNo,
@@ -240,13 +294,19 @@ router.post('/alipay/:bookingId', authMiddleware, async (req, res) => {
     if (!originalPrice || originalPrice <= 0) return res.status(400).json({ error: '咨询师未设置价格' });
 
     const rate           = booking.consultant.discountRate ?? 1.0;
-    const amount         = Math.round(originalPrice * rate);
+    const priceAfterDiscount = Math.round(originalPrice * rate);
     const originalAmount = rate < 1.0 ? originalPrice : null;
+
+    const { couponDiscount, userCouponId } = await consumeCoupon(
+      userId, req.body.userCouponId, priceAfterDiscount
+    );
+    const amount = Math.max(1, priceAfterDiscount - couponDiscount);
 
     const orderNo  = genOrderNo(userId);
     const expireAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    await prisma.order.create({ data: { orderNo, userId, bookingId, amount, originalAmount, discountRate: rate, expireAt } });
+    await prisma.order.create({ data: { orderNo, userId, bookingId, amount, originalAmount,
+      discountRate: rate, couponDiscount, userCouponId, expireAt } });
 
     const base      = process.env.PAY_NOTIFY_BASE || `http://localhost:${process.env.PORT || 3000}`;
     const { payUrl } = await createAlipayOrder({

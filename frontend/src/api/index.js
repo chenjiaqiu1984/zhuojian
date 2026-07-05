@@ -81,11 +81,39 @@ export const bookingApi = {
 };
 
 export const paymentApi = {
-  createBookingOrder:    bookingId => post(`/payment/booking/${bookingId}`),
-  createH5Order:         bookingId => post(`/payment/h5/${bookingId}`),
-  createAlipayOrder:     bookingId => post(`/payment/alipay/${bookingId}`),
-  queryOrder:            orderNo   => get(`/payment/order/${orderNo}`),
-  refund:                (orderNo, d) => post(`/payment/refund/${orderNo}`, d),
+  createBookingOrder:    (bookingId, d) => post(`/payment/booking/${bookingId}`, d),
+  createH5Order:         (bookingId, d) => post(`/payment/h5/${bookingId}`, d),
+  createAlipayOrder:     (bookingId, d) => post(`/payment/alipay/${bookingId}`, d),
+  queryOrder:            orderNo        => get(`/payment/order/${orderNo}`),
+  refund:                (orderNo, d)   => post(`/payment/refund/${orderNo}`, d),
+};
+
+export const couponApi = {
+  my:        ()          => get('/coupons/my'),
+  available: amount      => get('/coupons/available', { amount }),
+  activity:  ()          => get('/coupons/activity'),
+  claim:     code        => post('/coupons/claim', { code }),
+  // admin
+  list:      ()          => get('/coupons'),
+  create:    d           => post('/coupons', d),
+  update:    (id, d)     => put(`/coupons/${id}`, d),
+  remove:    id          => del(`/coupons/${id}`),
+  send:      (id, d)     => post(`/coupons/${id}/send`, d),
+  users:     id          => get(`/coupons/${id}/users`),
+};
+
+export const packageApi = {
+  list:          ()              => get('/packages'),
+  my:            ()              => get('/packages/my'),
+  buy:           (id, d)         => post(`/packages/${id}/buy`, d),
+  use:           (userPkgId, d)  => post(`/packages/use/${userPkgId}`, d),
+  // admin
+  create:        d               => post('/packages', d),
+  update:        (id, d)         => put(`/packages/${id}`, d),
+  remove:        id              => del(`/packages/${id}`),
+  grant:         d               => post('/packages/grant', d),
+  // 咨询师折扣率（复用 consultantApi.update）
+  setDiscount:   (id, rate)      => put(`/consultants/${id}`, { discountRate: rate }),
 };
 
 export const assessmentApi = {

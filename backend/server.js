@@ -38,6 +38,7 @@ app.use('/api/crisis', require('./routes/crisis'));
 app.use('/api/terms', require('./routes/terms'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/packages', require('./routes/packages'));
+app.use('/api/coupons', require('./routes/coupons'));
 
 require('./socket/rooms')(io);
 

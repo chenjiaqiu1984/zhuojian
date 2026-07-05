@@ -5,6 +5,7 @@ const prisma = require('../db/database');
 const { JWT_SECRET } = require('../middleware/auth');
 const { sendSms } = require('../services/sms');
 const { sendEmail } = require('../services/email');
+const { grantWelcomeCoupon } = require('./coupons');
 
 const router = express.Router();
 
@@ -54,6 +55,7 @@ router.post('/register', async (req, res) => {
       ...(termsAccepted ? { termsAcceptedAt: new Date() } : {})
     };
     const user = await prisma.user.create({ data });
+    grantWelcomeCoupon(user.id); // 注册送8折券（静默，不影响注册响应）
     res.json({ id: user.id });
   } catch { res.status(409).json({ error: '用户名已存在' }); }
 });
@@ -72,6 +74,7 @@ router.post('/login-phone', async (req, res) => {
   let user = await prisma.user.findUnique({ where: { phone } });
   if (!user) {
     user = await prisma.user.create({ data: { phone, ...(termsAccepted ? { termsAcceptedAt: new Date() } : {}) } });
+    grantWelcomeCoupon(user.id); // 手机号新用户注册送券
   } else if (termsAccepted && !user.termsAcceptedAt) {
     user = await prisma.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date() } });
   }
@@ -92,6 +95,7 @@ router.post('/login-email', async (req, res) => {
   let user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     user = await prisma.user.create({ data: { email, ...(termsAccepted ? { termsAcceptedAt: new Date() } : {}) } });
+    grantWelcomeCoupon(user.id); // 邮箱新用户注册送券
   } else if (termsAccepted && !user.termsAcceptedAt) {
     user = await prisma.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date() } });
   }
@@ -107,7 +111,10 @@ router.post('/login-wechat', async (req, res) => {
     const data = await r.json();
     if (data.errcode) return res.status(400).json({ error: data.errmsg });
     let user = await prisma.user.findUnique({ where: { wechatOpenid: data.openid } });
-    if (!user) user = await prisma.user.create({ data: { wechatOpenid: data.openid } });
+    if (!user) {
+      user = await prisma.user.create({ data: { wechatOpenid: data.openid } });
+      grantWelcomeCoupon(user.id); // 微信新用户注册送券
+    }
     res.json({ token: makeToken(user), user: safeUser(user) });
   } catch { res.status(500).json({ error: '微信登录失败' }); }
 });
@@ -119,7 +126,10 @@ router.post('/login-qq', async (req, res) => {
     const r = await fetch(`https://graph.qq.com/oauth2.0/me?access_token=${access_token}&fmt=json`);
     const { openid } = await r.json();
     let user = await prisma.user.findUnique({ where: { qqOpenid: openid } });
-    if (!user) user = await prisma.user.create({ data: { qqOpenid: openid } });
+    if (!user) {
+      user = await prisma.user.create({ data: { qqOpenid: openid } });
+      grantWelcomeCoupon(user.id); // QQ 新用户注册送券
+    }
     res.json({ token: makeToken(user), user: safeUser(user) });
   } catch { res.status(500).json({ error: 'QQ登录失败' }); }
 });
