@@ -1,7 +1,8 @@
 const express = require('express');
 const prisma = require('../db/database');
 const { authMiddleware } = require('../middleware/auth');
-const { createJsapiOrder, parseNotify, refund } = require('../services/wechatpay');
+const { createJsapiOrder, createH5Order, parseNotify, refund } = require('../services/wechatpay');
+const { createAlipayOrder, verifyAlipayNotify } = require('../services/alipay');
 
 const router = express.Router();
 
@@ -52,15 +53,20 @@ router.post('/booking/:bookingId', authMiddleware, async (req, res) => {
       return res.json({ orderNo: existing.orderNo, payParams });
     }
 
-    const amount = booking.consultant.price; // 单位：分
-    if (!amount || amount <= 0) return res.status(400).json({ error: '咨询师未设置价格' });
+    const originalPrice = booking.consultant.price; // 单位：分
+    if (!originalPrice || originalPrice <= 0) return res.status(400).json({ error: '咨询师未设置价格' });
+
+    // 应用折扣率（默认1.0=无折扣）
+    const rate   = booking.consultant.discountRate ?? 1.0;
+    const amount = Math.round(originalPrice * rate);
+    const originalAmount = rate < 1.0 ? originalPrice : null;
 
     const orderNo = genOrderNo(userId);
     const expireAt = new Date(Date.now() + 15 * 60 * 1000); // 15分钟
 
     // 先创建订单记录
     const order = await prisma.order.create({
-      data: { orderNo, userId, bookingId, amount, expireAt }
+      data: { orderNo, userId, bookingId, amount, originalAmount, discountRate: rate, expireAt }
     });
 
     // 调微信下单
@@ -89,21 +95,21 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
     const result = await parseNotify(req.headers, body);
 
     if (result.trade_state === 'SUCCESS') {
-      const order = await prisma.order.findUnique({ where: { orderNo: result.out_trade_no } });
+      const order = await prisma.order.findUnique({
+        where: { orderNo: result.out_trade_no },
+        include: { booking: { include: { consultant: { select: { autoConfirm: true } } } } }
+      });
       if (order && order.status !== 'paid') {
         await prisma.order.update({
           where: { id: order.id },
-          data: {
-            status: 'paid',
-            transactionId: result.transaction_id,
-            paidAt: new Date(),
-          }
+          data: { status: 'paid', transactionId: result.transaction_id, paidAt: new Date() }
         });
-        // 支付成功后自动确认预约
         if (order.bookingId) {
+          // 支付成功后：autoConfirm=true 直接确认，否则进入待确认
+          const nextStatus = order.booking?.consultant?.autoConfirm ? 'confirmed' : 'pending';
           await prisma.booking.update({
             where: { id: order.bookingId },
-            data: { status: 'confirmed' }
+            data: { status: nextStatus }
           });
         }
       }
@@ -158,6 +164,134 @@ router.post('/refund/:orderNo', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('[payment] refund error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── 微信 H5 支付（手机浏览器）────────────────────────────────────
+// POST /api/payment/h5/:bookingId
+router.post('/h5/:bookingId', authMiddleware, async (req, res) => {
+  try {
+    const bookingId = Number(req.params.bookingId);
+    const userId    = req.user.id;
+    // 获取客户端 IP（微信 H5 必填）
+    const clientIp  = req.headers['x-forwarded-for']?.split(',')[0].trim()
+                   || req.socket.remoteAddress
+                   || '127.0.0.1';
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { consultant: true }
+    });
+    if (!booking)              return res.status(404).json({ error: '预约不存在' });
+    if (booking.userId !== userId) return res.status(403).json({ error: '权限不足' });
+
+    const existing = await prisma.order.findFirst({
+      where: { bookingId, status: { in: ['pending', 'paid'] } }
+    });
+    if (existing?.status === 'paid') return res.status(400).json({ error: '该预约已支付' });
+
+    const originalPrice = booking.consultant.price;
+    if (!originalPrice || originalPrice <= 0) return res.status(400).json({ error: '咨询师未设置价格' });
+
+    const rate           = booking.consultant.discountRate ?? 1.0;
+    const amount         = Math.round(originalPrice * rate);
+    const originalAmount = rate < 1.0 ? originalPrice : null;
+
+    const orderNo = genOrderNo(userId);
+    const expireAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await prisma.order.create({ data: { orderNo, userId, bookingId, amount, originalAmount, discountRate: rate, expireAt } });
+
+    const { mwebUrl } = await createH5Order({
+      orderNo,
+      amount,
+      desc:      `卓见心理咨询 - ${booking.consultant.name}`,
+      clientIp,
+      notifyUrl: notifyUrl(),
+    });
+
+    res.json({ orderNo, mwebUrl });
+  } catch (err) {
+    console.error('[payment] h5 order error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── 支付宝 WAP 支付 ────────────────────────────────────────────────
+// POST /api/payment/alipay/:bookingId
+router.post('/alipay/:bookingId', authMiddleware, async (req, res) => {
+  try {
+    const bookingId = Number(req.params.bookingId);
+    const userId    = req.user.id;
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { consultant: true }
+    });
+    if (!booking)              return res.status(404).json({ error: '预约不存在' });
+    if (booking.userId !== userId) return res.status(403).json({ error: '权限不足' });
+
+    const existing = await prisma.order.findFirst({
+      where: { bookingId, status: { in: ['pending', 'paid'] } }
+    });
+    if (existing?.status === 'paid') return res.status(400).json({ error: '该预约已支付' });
+
+    const originalPrice = booking.consultant.price;
+    if (!originalPrice || originalPrice <= 0) return res.status(400).json({ error: '咨询师未设置价格' });
+
+    const rate           = booking.consultant.discountRate ?? 1.0;
+    const amount         = Math.round(originalPrice * rate);
+    const originalAmount = rate < 1.0 ? originalPrice : null;
+
+    const orderNo  = genOrderNo(userId);
+    const expireAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await prisma.order.create({ data: { orderNo, userId, bookingId, amount, originalAmount, discountRate: rate, expireAt } });
+
+    const base      = process.env.PAY_NOTIFY_BASE || `http://localhost:${process.env.PORT || 3000}`;
+    const { payUrl } = await createAlipayOrder({
+      orderNo,
+      amount,
+      desc:       `卓见心理咨询 - ${booking.consultant.name}`,
+      notifyUrl:  `${base}/api/payment/alipay/notify`,
+      returnUrl:  `${base}/payment/result?orderNo=${orderNo}`,
+    });
+
+    res.json({ orderNo, payUrl });
+  } catch (err) {
+    console.error('[payment] alipay order error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── 支付宝异步回调 ────────────────────────────────────────────────
+// POST /api/payment/alipay/notify
+router.post('/alipay/notify', express.urlencoded({ extended: false }), async (req, res) => {
+  try {
+    const data = verifyAlipayNotify(req.body);
+    if (data.trade_status === 'TRADE_SUCCESS' || data.trade_status === 'TRADE_FINISHED') {
+      const order = await prisma.order.findUnique({
+        where: { orderNo: data.out_trade_no },
+        include: { booking: { include: { consultant: { select: { autoConfirm: true } } } } }
+      });
+      if (order && order.status !== 'paid') {
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'paid', transactionId: data.trade_no, paidAt: new Date() }
+        });
+        if (order.bookingId) {
+          const nextStatus = order.booking?.consultant?.autoConfirm ? 'confirmed' : 'pending';
+          await prisma.booking.update({
+            where: { id: order.bookingId },
+            data:  { status: nextStatus }
+          });
+        }
+      }
+    }
+    res.send('success'); // 支付宝要求返回纯文本 "success"
+  } catch (err) {
+    console.error('[payment] alipay notify error:', err.message);
+    res.send('fail');
   }
 });
 

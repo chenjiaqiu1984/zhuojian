@@ -81,9 +81,11 @@ export const bookingApi = {
 };
 
 export const paymentApi = {
-  createBookingOrder: bookingId => post(`/payment/booking/${bookingId}`),
-  queryOrder: orderNo => get(`/payment/order/${orderNo}`),
-  refund: (orderNo, d) => post(`/payment/refund/${orderNo}`, d),
+  createBookingOrder:    bookingId => post(`/payment/booking/${bookingId}`),
+  createH5Order:         bookingId => post(`/payment/h5/${bookingId}`),
+  createAlipayOrder:     bookingId => post(`/payment/alipay/${bookingId}`),
+  queryOrder:            orderNo   => get(`/payment/order/${orderNo}`),
+  refund:                (orderNo, d) => post(`/payment/refund/${orderNo}`, d),
 };
 
 export const assessmentApi = {

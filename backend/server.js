@@ -37,8 +37,13 @@ app.use('/api/homework', require('./routes/homework'));
 app.use('/api/crisis', require('./routes/crisis'));
 app.use('/api/terms', require('./routes/terms'));
 app.use('/api/payment', require('./routes/payment'));
+app.use('/api/packages', require('./routes/packages'));
 
 require('./socket/rooms')(io);
+
+// 启动订单超时取消定时任务
+const { startExpireJob } = require('./jobs/expireOrders');
+startExpireJob();
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

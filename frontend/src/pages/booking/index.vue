@@ -13,7 +13,11 @@
         </view>
         <text class="b-time">{{b.start_time}} - {{b.end_time}}</text>
         <text v-if="b.message" class="b-msg">{{b.message}}</text>
-        <view class="b-actions" v-if="b.status === 'pending'">
+        <view class="b-actions" v-if="b.status === 'pending_payment'">
+          <u-button size="mini" type="error" @click="goToPay(b)">去支付</u-button>
+          <u-button size="mini" type="error" plain @click="cancel(b)">取消预约</u-button>
+        </view>
+        <view class="b-actions" v-else-if="b.status === 'pending'">
           <u-button size="mini" type="primary" plain @click="confirmBooking(b)" v-if="isConsultant">确认预约</u-button>
           <u-button size="mini" type="warning" plain @click="reschedule(b)">修改时间</u-button>
           <u-button size="mini" type="error" plain @click="cancel(b)">取消预约</u-button>
@@ -37,10 +41,22 @@ const store = useUserStore();
 const bookings = ref([]);
 const tab = ref(0);
 const isConsultant = computed(() => store.user?.role === 'consultant');
-const tabs = [{ name: '全部' }, { name: '待确认' }, { name: '已确认' }, { name: '已取消' }];
-const statusLabel = { pending: '待确认', confirmed: '已确认', cancelled: '已取消', completed: '已完成' };
-const statusType = { pending: 'warning', confirmed: 'success', cancelled: 'error', completed: 'info' };
-const statusMap = [null, 'pending', 'confirmed', 'cancelled'];
+const tabs = [{ name: '全部' }, { name: '待支付' }, { name: '待确认' }, { name: '已确认' }, { name: '已取消' }];
+const statusLabel = {
+  pending_payment: '待支付',
+  pending:         '待确认',
+  confirmed:       '已确认',
+  cancelled:       '已取消',
+  completed:       '已完成'
+};
+const statusType = {
+  pending_payment: 'error',
+  pending:         'warning',
+  confirmed:       'success',
+  cancelled:       'error',
+  completed:       'info'
+};
+const statusMap = [null, 'pending_payment', 'pending', 'confirmed', 'cancelled'];
 
 const filtered = computed(() => {
   const s = statusMap[tab.value];
@@ -58,6 +74,15 @@ async function confirmBooking(b) {
     b.status = 'confirmed';
     uni.showToast({ title: '已确认' });
   } catch { uni.showToast({ title: '操作失败', icon: 'none' }); }
+}
+
+function goToPay(b) {
+  const name   = encodeURIComponent(b.consultant_name || '');
+  const time   = encodeURIComponent(b.start_time || '');
+  const amount = b.consultant?.price || 0;
+  uni.navigateTo({
+    url: `/pages/payment/index?bookingId=${b.id}&consultantName=${name}&slotTime=${time}&amount=${amount}`
+  });
 }
 
 function reschedule(b) {

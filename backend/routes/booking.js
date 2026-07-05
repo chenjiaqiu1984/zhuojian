@@ -23,27 +23,45 @@ router.get('/', authMiddleware, async (req, res) => {
 
 router.post('/', authMiddleware, async (req, res) => {
   const { consultant_id, slot_id, second_slot_id, notes } = req.body;
-  const activeCount = await prisma.booking.count({ where: { userId: req.user.id, status: { in: ['pending', 'confirmed'] } } });
+  const activeCount = await prisma.booking.count({
+    where: { userId: req.user.id, status: { in: ['pending_payment', 'pending', 'confirmed'] } }
+  });
   if (activeCount >= 3) return res.status(400).json({ error: '最多同时预约3个时间段' });
 
   const [slot, slot2, consultant] = await Promise.all([
     prisma.timeSlot.findFirst({ where: { id: Number(slot_id), isBooked: 0 } }),
     second_slot_id ? prisma.timeSlot.findFirst({ where: { id: Number(second_slot_id), isBooked: 0 } }) : null,
-    prisma.consultant.findUnique({ where: { id: Number(consultant_id) }, select: { autoConfirm: true } })
+    prisma.consultant.findUnique({
+      where: { id: Number(consultant_id) },
+      select: { autoConfirm: true, price: true }
+    })
   ]);
   if (!slot) return res.status(400).json({ error: '该时间段已被预约' });
   if (second_slot_id && !slot2) return res.status(400).json({ error: '第二个时间段已被预约' });
   const hoursUntil = (new Date(slot.startTime) - Date.now()) / 3600000;
   if (hoursUntil < 48) return res.status(400).json({ error: '须提前48小时预约' });
 
-  const status = consultant?.autoConfirm ? 'confirmed' : 'pending';
+  // 有价格则等待支付；免费才直接 pending/confirmed
+  const needPay = consultant?.price > 0;
+  const status = needPay ? 'pending_payment'
+    : (consultant?.autoConfirm ? 'confirmed' : 'pending');
+
   const updates = [
-    prisma.booking.create({ data: { userId: req.user.id, consultantId: Number(consultant_id), slotId: Number(slot_id), secondSlotId: second_slot_id ? Number(second_slot_id) : null, notes, status } }),
+    prisma.booking.create({
+      data: {
+        userId: req.user.id,
+        consultantId: Number(consultant_id),
+        slotId: Number(slot_id),
+        secondSlotId: second_slot_id ? Number(second_slot_id) : null,
+        notes,
+        status
+      }
+    }),
     prisma.timeSlot.update({ where: { id: Number(slot_id) }, data: { isBooked: 1 } }),
     ...(slot2 ? [prisma.timeSlot.update({ where: { id: Number(second_slot_id) }, data: { isBooked: 1 } })] : [])
   ];
   const [booking] = await prisma.$transaction(updates);
-  res.json({ ok: true, id: booking.id });
+  res.json({ ok: true, id: booking.id, needPay, status });
 });
 
 router.put('/:id/status', authMiddleware, async (req, res) => {
@@ -58,15 +76,25 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
   }
 
   if (status === 'cancelled') {
-    const hoursUntil = (new Date(booking.slot.startTime) - Date.now()) / 3600000;
-    if (hoursUntil < 12) return res.status(400).json({ error: '距预约时间不足12小时，无法取消' });
-    const msg = hoursUntil < 24 ? '已取消（距预约时间不足24小时，将扣除30%费用）' : (message || '已取消');
-    const ops = [
-      prisma.booking.update({ where: { id: booking.id }, data: { status, message: msg } }),
-      prisma.timeSlot.update({ where: { id: booking.slotId }, data: { isBooked: 0 } }),
-    ];
-    if (booking.secondSlotId) ops.push(prisma.timeSlot.update({ where: { id: booking.secondSlotId }, data: { isBooked: 0 } }));
-    await prisma.$transaction(ops);
+    // pending_payment 状态（尚未支付）：直接取消，无时间限制
+    if (booking.status === 'pending_payment') {
+      const ops = [
+        prisma.booking.update({ where: { id: booking.id }, data: { status: 'cancelled', message: '用户取消' } }),
+        prisma.timeSlot.update({ where: { id: booking.slotId }, data: { isBooked: 0 } }),
+      ];
+      if (booking.secondSlotId) ops.push(prisma.timeSlot.update({ where: { id: booking.secondSlotId }, data: { isBooked: 0 } }));
+      await prisma.$transaction(ops);
+    } else {
+      const hoursUntil = (new Date(booking.slot.startTime) - Date.now()) / 3600000;
+      if (hoursUntil < 12) return res.status(400).json({ error: '距预约时间不足12小时，无法取消' });
+      const msg = hoursUntil < 24 ? '已取消（距预约时间不足24小时，将扣除30%费用）' : (message || '已取消');
+      const ops = [
+        prisma.booking.update({ where: { id: booking.id }, data: { status, message: msg } }),
+        prisma.timeSlot.update({ where: { id: booking.slotId }, data: { isBooked: 0 } }),
+      ];
+      if (booking.secondSlotId) ops.push(prisma.timeSlot.update({ where: { id: booking.secondSlotId }, data: { isBooked: 0 } }));
+      await prisma.$transaction(ops);
+    }
   } else {
     await prisma.booking.update({ where: { id: booking.id }, data: { status, message } });
   }

@@ -26,6 +26,7 @@ model User {
   consultant   Consultant?
   assessmentResults AssessmentResult[]
   orders       Order[]
+  userPackages UserPackage[]
 }
 
 model VerifyCode {
@@ -75,6 +76,7 @@ model Consultant {
   certifications    String?
   workExperience String?     @map("work_experience")
   price          Int         @default(0)
+  discountRate   Float       @default(1.0) @map("discount_rate")  // 折扣率：1.0=无折扣, 0.8=八折
   autoConfirm    Int         @default(0) @map("auto_confirm")
   weeklyTemplate String?     @map("weekly_template")
   isActive   Int         @default(1) @map("is_active")
@@ -564,10 +566,45 @@ model Order {
   transactionId String? @map("transaction_id")         // 微信支付交易号
   expireAt    DateTime @map("expire_at")               // 15分钟未支付自动过期
   paidAt      DateTime? @map("paid_at")
+  originalAmount Int?     @map("original_amount")              // 折扣前原价（分），无折扣时为 null
+  discountRate   Float    @default(1.0) @map("discount_rate")  // 下单时折扣快照
+  userPackageId  Int?     @map("user_package_id")              // 套餐购买订单关联
   createdAt   DateTime @default(now()) @map("created_at")
   user        User     @relation(fields: [userId], references: [id])
   booking     Booking? @relation(fields: [bookingId], references: [id])
+  userPackage UserPackage? @relation(fields: [userPackageId], references: [id])
   @@map("orders")
+}
+
+// ── 套餐定义（admin 配置）────────────────────────────────────────
+model ConsultPackage {
+  id             Int           @id @default(autoincrement())
+  name           String                                        // 套餐名称，如"十次套餐"
+  sessions       Int                                           // 购买次数（如 10）
+  bonusSessions  Int           @default(0) @map("bonus_sessions") // 赠送次数（如 1）
+  description    String?                                       // 套餐说明
+  isActive       Int           @default(1) @map("is_active")
+  sortOrder      Int           @default(0) @map("sort_order")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  userPackages   UserPackage[]
+  @@map("consult_packages")
+}
+
+// ── 用户持有的套餐 ──────────────────────────────────────────────
+model UserPackage {
+  id             Int            @id @default(autoincrement())
+  userId         Int            @map("user_id")
+  packageId      Int            @map("package_id")
+  totalSessions  Int            @map("total_sessions")         // 购买+赠送总次数
+  usedSessions   Int            @default(0) @map("used_sessions")
+  paidAmount     Int            @map("paid_amount")            // 实付金额（分）
+  status         String         @default("active")             // active / exhausted / expired
+  expireAt       DateTime?      @map("expire_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  user           User           @relation(fields: [userId], references: [id])
+  package        ConsultPackage @relation(fields: [packageId], references: [id])
+  orders         Order[]
+  @@map("user_packages")
 }
 
 model MoodEntry {
