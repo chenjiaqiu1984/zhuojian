@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>那个关上门的孩子，后来怎样了</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: #f5f0e8;
+            color: #3d2b1f;
+            line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+        }
+        .hero-image {
+            width: 100%;
+            height: 420px;
+            object-fit: cover;
+            display: block;
+        }
+        .content {
+            padding: 28px 22px 40px;
+        }
+        .title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #2c1a0e;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #9e8a72;
+            margin-bottom: 28px;
+            border-bottom: 1px solid #e8e0d4;
+            padding-bottom: 16px;
+        }
+        .section {
+            margin-bottom: 36px;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #8b5e3c;
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 12px;
+        }
+        .section-title::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 4px;
+            background: linear-gradient(180deg, #c4956a, #8b5e3c);
+            border-radius: 2px;
+        }
+        p {
+            font-size: 16px;
+            color: #4a3b2e;
+            margin-bottom: 16px;
+            text-align: justify;
+            text-indent: 2em;
+        }
+        .dialogue {
+            background: #faf6f0;
+            border-left: 3px solid #c4956a;
+            padding: 16px 18px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .dialogue p {
+            text-indent: 0;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .dialogue p:last-child {
+            margin-bottom: 0;
+        }
+        .quote-box {
+            background: linear-gradient(135deg, #fdf8f0, #f5ede0);
+            border-radius: 12px;
+            padding: 22px;
+            margin: 24px 0;
+            position: relative;
+        }
+        .quote-box::before {
+            content: """;
+            font-size: 48px;
+            color: #c4956a;
+            position: absolute;
+            top: 4px;
+            left: 14px;
+            line-height: 1;
+            font-family: Georgia, serif;
+        }
+        .quote-box p {
+            text-indent: 0;
+            font-size: 15px;
+            color: #5a4a3a;
+            padding-left: 20px;
+        }
+        .quote-author {
+            text-align: right;
+            font-size: 13px;
+            color: #9e8a72;
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        .image-block {
+            margin: 24px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .image-block img {
+            width: 100%;
+            display: block;
+        }
+        .image-caption {
+            font-size: 12px;
+            color: #9e8a72;
+            text-align: center;
+            padding: 8px 12px;
+            background: #faf6f0;
+        }
+        .highlight-text {
+            color: #8b5e3c;
+            font-weight: 600;
+        }
+        .scene-desc {
+            background: #fdf8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px dashed #d4c4a8;
+        }
+        .scene-desc p {
+            text-indent: 0;
+            font-size: 15px;
+            color: #5a4a3a;
+            margin-bottom: 10px;
+        }
+        .scene-desc p:last-child {
+            margin-bottom: 0;
+        }
+        .modules-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .module-item {
+            background: #faf6f0;
+            border-radius: 10px;
+            padding: 14px 12px;
+            text-align: center;
+            font-size: 13px;
+            color: #5a4a3a;
+            border: 1px solid #e8e0d4;
+        }
+        .module-item .icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .ending-box {
+            background: linear-gradient(135deg, #8b5e3c, #6b4226);
+            color: #fff;
+            border-radius: 16px;
+            padding: 28px 22px;
+            margin-top: 32px;
+            text-align: center;
+        }
+        .ending-box .ending-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            letter-spacing: 2px;
+        }
+        .ending-box p {
+            color: #f0e6d8;
+            font-size: 14px;
+            text-indent: 0;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .ending-box .highlight {
+            color: #ffd699;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        .cta-btn {
+            display: inline-block;
+            background: #ffd699;
+            color: #5a3a1a;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 14px 36px;
+            border-radius: 30px;
+            margin-top: 18px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .footer-note {
+            font-size: 12px;
+            color: #b0a08a;
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e8e0d4;
+        }
+        .reg-section {
+            margin-top: 32px;
+            padding: 28px 22px;
+            background: linear-gradient(135deg, #fdf8f0, #f5ede0);
+            border-radius: 16px;
+            border: 1px solid #e8d8c0;
+            text-align: center;
+        }
+        .reg-section .reg-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #5a3a1a;
+            margin-bottom: 8px;
+        }
+        .reg-section .reg-desc {
+            font-size: 14px;
+            color: #9e8a72;
+            margin-bottom: 20px;
+            text-indent: 0;
+        }
+        .reg-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #c4956a, #8b5e3c);
+            color: #fff;
+            font-size: 17px;
+            font-weight: 700;
+            padding: 14px 48px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(139,94,60,0.35);
+            letter-spacing: 2px;
+        }
+        .reg-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .reg-overlay.show { display: flex; }
+        .reg-modal {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px 28px;
+            width: 90%;
+            max-width: 360px;
+            text-align: center;
+        }
+        .reg-modal h3 { font-size: 20px; color: #3d2b1f; margin-bottom: 8px; }
+        .reg-modal .tip { font-size: 13px; color: #9e8a72; margin-bottom: 20px; line-height: 1.6; }
+        .reg-modal input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #d4c4a8;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            box-sizing: border-box;
+            margin-bottom: 14px;
+            color: #3d2b1f;
+        }
+        .reg-modal input:focus { border-color: #c4956a; }
+        .reg-modal .submit-btn {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #c4956a, #8b5e3c);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .reg-modal .cancel-btn {
+            background: none;
+            border: none;
+            color: #b0a08a;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .reg-modal .msg { font-size: 14px; margin-top: 10px; min-height: 18px; }
+        .msg-ok { color: #5a8a3c; }
+        .msg-err { color: #c43c3c; }
+        .divider {
+            text-align: center;
+            margin: 28px 0;
+            color: #c4956a;
+            font-size: 18px;
+            letter-spacing: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 封面大图 -->
+        <div class="image-block" style="margin:0; border-radius:0;">
+            <img src="https://kimi-web-img.moonshot.cn/img/www.hlnhw.com/be926cacd583dc3571dfbaff20b737a68383874d.jpg" alt="腾格里沙漠亲子徒步">
+        </div>
+
+        <div class="content">
+            <h1 class="title">那个关上门的孩子，后来怎样了</h1>
+            <div class="subtitle">2026腾格里沙漠全国青少年亲子徒步千人挑战赛</div>
+
+            <div class="section">
+                <div class="dialogue">
+                    <p>晚上十点，你推开孩子的房门。</p>
+                    <p><strong>"作业写完了吗？"</strong></p>
+                    <p><strong>"写完了。"</strong></p>
+                    <p><strong>"早点睡。"</strong></p>
+                    <p><strong>"嗯。"</strong></p>
+                    <p>门关上了。你站在走廊里，突然觉得——你们之间好像隔了一堵看不见的墙。</p>
+                </div>
+                <p>你明明每天都在家，明明什么条件都给了，可那个曾经黏着你要讲故事的孩子，好像在某一个你不知道的瞬间，悄悄走远了。</p>
+            </div>
+
+            <div class="divider">* * *</div>
+
+            <div class="section">
+                <h2 class="section-title">我们给了孩子一切，唯独没给"一起扛过一件事"的记忆</h2>
+
+                <div class="quote-box">
+                    <p>"我给他报了最好的学校，请了最贵的家教，可他已经半年没跟我说过超过三句话了。"</p>
+                    <div class="quote-author">——一位眼圈发红的母亲</div>
+                </div>
+
+                <p>我们这代父母，真的太努力了。努力到把所有资源都堆在孩子身上，努力到忘了——<span class="highlight-text">亲子关系最深的纽带，不是物质，是共同经历。</span></p>
+
+                <p>是那种"我们一起熬过一件事"的记忆。是暴雨天你背着他走过积水的那段路。是他摔倒了你没扶，他咬着牙自己站起来时你眼眶发热的那个瞬间。</p>
+
+                <p>这些事，手机给不了，补习班给不了，商场里买买买也给不了。</p>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/hk-dreamtrip.com/94ba2be366f7ec24d62852c84d73e3221d8ede63.jpg" alt="沙漠亲子徒步背影">
+                <div class="image-caption">沙漠中，父母与孩子并肩前行</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">真正的亲密，发生在"不容易"里</h2>
+
+                <p>心理学里有个说法：<span class="highlight-text">关系的深度，取决于共同经历的强度。</span></p>
+
+                <p>你和一个人一起笑过，那叫愉快。你和一个人一起扛过，那叫信任。你和一个人一起撑过了极限，那叫一辈子的羁绊。</p>
+
+                <p>想想你自己。你这辈子最铁的朋友是谁？大概率不是请你吃饭最多的人，而是和你一起吃过苦、扛过事的那个人。</p>
+
+                <p>孩子也一样。你带他去迪士尼，他开心三天。你带他穿越一片沙漠，他能记一辈子。</p>
+            </div>
+
+            <div class="divider">* * *</div>
+
+            <div class="section">
+                <h2 class="section-title">21.25公里，没有WiFi，没有退路，只有你和孩子</h2>
+
+                <div class="scene-desc">
+                    <p>🏜️ <strong>腾格里沙漠</strong>，四周只有沙。</p>
+                    <p>📵 手机信号时有时无，城市的声音远得像另一个世界。</p>
+                    <p>🎒 你和孩子，背着重装，一步一步走在沙脊上。</p>
+                    <p>💨 风很大。沙子灌进鞋里。腿开始酸了。</p>
+                    <p>👀 孩子回头看你一眼，没说话，但那个眼神你懂了——<strong>"我还能走。"</strong></p>
+                </div>
+
+                <p>那一刻，你们之间不需要语言。因为你们正在一起做一件不容易的事。而"一起扛过"这件事，会在你们之间种下一颗种子，以后无论他走多远，遇到什么事，想起这片沙漠，想起你陪他走过的每一步，心里就有力量。</p>
+
+                <p>这不是旅行，不是夏令营，不是换个地方玩手机。这是用<span class="highlight-text">6天5晚</span>，把你们的关系重新走一遍。</p>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/img3.chinadaily.com.cn/f83776fb7c153ff0dbdd5e86589d678eb0d95edd.jpeg" alt="沙漠篝火晚会">
+                <div class="image-caption">星空下的篝火晚会，烟花盛典</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">这场沙漠长征，到底在做什么</h2>
+
+                <p>它叫<span class="highlight-text">"自古英雄出少年"</span>——2026腾格里沙漠全国青少年亲子徒步千人挑战赛。</p>
+
+                <p><strong>6天5晚，8大模块：</strong></p>
+
+                <div class="modules-grid">
+                    <div class="module-item">
+                        <span class="icon">🚩</span>
+                        出征大典<br>千人授旗
+                    </div>
+                    <div class="module-item">
+                        <span class="icon">🏛️</span>
+                        西夏陵前<br>历史对话
+                    </div>
+                    <div class="module-item">
+                        <span class="icon">🌱</span>
+                        沙漠植树<br>治沙行动
+                    </div>
+                    <div class="module-item">
+                        <span class="icon">🧘</span>
+                        星空冥想<br>亲子对话
+                    </div>
+                    <div class="module-item">
+                        <span class="icon">🥾</span>
+                        13公里<br>首日征途
+                    </div>
+                    <div class="module-item">
+                        <span class="icon">🏁</span>
+                        8.25公里<br>凯旋冲线
+                    </div>
+                    <div class="module-item">
+                        <span class="icon">🔥</span>
+                        篝火晚会<br>烟花盛典
+                    </div>
+                    <div class="module-item">
+                        <span class="icon">🎂</span>
+                        庆功宴上<br>少年英雄
+                    </div>
+                </div>
+
+                <div class="image-block">
+                    <img src="https://kimi-web-img.moonshot.cn/img/finance.people.com.cn/cf3d1fe6a00670d5c0b4ea4ee420a8fc5f569566.jpg" alt="沙漠植树治沙">
+                    <div class="image-caption">在沙漠中亲手种下一棵治沙植物</div>
+                </div>
+
+                <p>但最让我在意的，不是这些仪式感。是它的<strong>底层设计</strong>——通过极限环境，重建亲子之间的信任系统。</p>
+
+                <p>沙漠里没有角色。不是"严父"，不是"乖孩子"，不是"叛逆少年"。只有两个正在一起走路的人。孩子可能比你先到达补给点，你蒙着眼睛时只能靠孩子的声音引路。</p>
+
+                <p><span class="highlight-text">角色反过来了。关系就松动了。松动之后，才有真正的对话。</span></p>
+
+                <p>全程还有心灵导师陪伴，结束后会为孩子出具一份专业的《青少年生涯成长规划书》——不是为了让你焦虑未来，而是让你看见，<strong>你的孩子，比你以为的更辽阔。</strong></p>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/www.hlnhw.com/fe74bd85bb0fee00e3fafee257106f52e3b057b0.jpg" alt="腾格里沙漠亲子营">
+                <div class="image-caption">腾格里沙漠亲子徒步挑战</div>
+            </div>
+
+            <div class="divider">* * *</div>
+
+            <div class="section">
+                <h2 class="section-title">写在最后</h2>
+
+                <p>有个问题，我一直想问——</p>
+
+                <p>如果有一天你的孩子长大成人，回想起来，关于你，他最先想起的是什么？</p>
+
+                <p>是那个总是催他写作业的人？还是那个陪他走过一片沙漠、在风沙里对他笑过的人？</p>
+
+                <div class="quote-box">
+                    <p>父母存在的意义，不是给孩子舒适和富裕的生活。而是多年以后，当他想起你的时候，内心会充满力量，会感到温暖，从而拥有克服困难的勇气和能力。</p>
+                </div>
+            </div>
+
+            <div class="ending-box">
+                <div class="ending-title">21.25公里 · 6天5晚</div>
+                <p>用一次<span class="highlight">"一起扛过"</span></p>
+                <p>换回那个愿意牵你手的孩子</p>
+                <p style="margin-top:8px; font-size:13px;">——腾格里沙漠在等，你敢来吗？</p>
+            </div>
+
+            <div class="reg-section">
+                <div class="reg-title">立即报名参加</div>
+                <p class="reg-desc">留下手机号，我们会主动联系您，为您提供详细活动信息</p>
+                <button class="reg-btn" onclick="document.getElementById('regOverlay').classList.add('show')">我要报名</button>
+            </div>
+
+            <div class="footer-note">
+                2026"自古英雄出少年"腾格里沙漠全国青少年亲子徒步千人挑战赛<br>正在招募中 · 关键词搜索即可了解详情
+            </div>
+        </div>
+    </div>
+
+    <div class="reg-overlay" id="regOverlay">
+        <div class="reg-modal">
+            <h3>活动报名</h3>
+            <p class="tip">填写手机号后，我们将记录您的报名信息，<br>工作人员会与您联系确认详情。</p>
+            <input type="tel" id="regPhone" placeholder="请输入手机号" maxlength="11" />
+            <button class="submit-btn" id="regSubmit" onclick="submitReg()">确认报名</button>
+            <div class="msg" id="regMsg"></div>
+            <button class="cancel-btn" onclick="document.getElementById('regOverlay').classList.remove('show');document.getElementById('regMsg').textContent=''">取消</button>
+        </div>
+    </div>
+
+    <script>
+    async function submitReg() {
+        const phone = document.getElementById('regPhone').value.trim();
+        const msg = document.getElementById('regMsg');
+        if (!/^1[3-9]\d{9}$/.test(phone)) { msg.className='msg msg-err'; msg.textContent='请输入有效的11位手机号'; return; }
+        document.getElementById('regSubmit').disabled = true;
+        try {
+            const r = await fetch('/api/registrations', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone, source: '腾格里沙漠亲子徒步' }) });
+            if (r.ok) { msg.className='msg msg-ok'; msg.textContent='报名成功！我们会尽快联系您'; document.getElementById('regPhone').value=''; }
+            else { const d = await r.json(); msg.className='msg msg-err'; msg.textContent=d.error||'提交失败，请稍后重试'; }
+        } catch { msg.className='msg msg-err'; msg.textContent='网络错误，请稍后重试'; }
+        finally { document.getElementById('regSubmit').disabled = false; }
+    }
+    </script>
+</body>
+</html>

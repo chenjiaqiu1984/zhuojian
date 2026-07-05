@@ -1,0 +1,651 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "sqlite"
+  url      = "file:./zhuojian.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String?   @unique
+  password     String?
+  phone        String?   @unique
+  email        String?   @unique
+  wechatOpenid String?   @unique @map("wechat_openid")
+  qqOpenid     String?   @unique @map("qq_openid")
+  role         String    @default("user")
+  name         String?
+  avatar       String?
+  termsAcceptedAt DateTime? @map("terms_accepted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  bookings     Booking[]
+  ohRecords    OhCardRecord[]
+  consultant   Consultant?
+  assessmentResults AssessmentResult[]
+  orders       Order[]
+}
+
+model VerifyCode {
+  id        Int    @id @default(autoincrement())
+  target    String
+  code      String
+  type      String
+  expiresAt BigInt @map("expires_at")
+  used      Int    @default(0)
+}
+
+model TermsVersion {
+  id          Int       @id @default(autoincrement())
+  version     String    // e.g. "1.0", "1.1"
+  title       String    @default("用户服务协议")
+  content     String    // 协议正文（Markdown 或纯文本）
+  isDraft     Int       @default(1) @map("is_draft")   // 1=草稿 0=已发布
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+}
+
+model About {
+  id          Int      @id @default(autoincrement())
+  title       String?
+  content     String?
+  bannerImage String?  @map("banner_image")
+  images      String?
+  tickerType  String?  @default("news")
+  tickerItems String?
+  menuGroups  String?  @map("menu_groups")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+}
+
+model Consultant {
+  id         Int         @id @default(autoincrement())
+  userId     Int?        @unique @map("user_id")
+  name       String
+  avatar     String?
+  title      String?
+  bio        String?
+  specialties String?
+  education  String?
+  yearsExp          Int         @default(0) @map("years_exp")
+  consultHours      Int         @default(0) @map("consult_hours")
+  supervisionHours  Int         @default(0) @map("supervision_hours")
+  certifications    String?
+  workExperience String?     @map("work_experience")
+  price          Int         @default(0)
+  autoConfirm    Int         @default(0) @map("auto_confirm")
+  weeklyTemplate String?     @map("weekly_template")
+  isActive   Int         @default(1) @map("is_active")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  user       User?       @relation(fields: [userId], references: [id])
+  slots      TimeSlot[]
+  bookings   Booking[]
+}
+
+model TimeSlot {
+  id           Int        @id @default(autoincrement())
+  consultantId Int        @map("consultant_id")
+  startTime    String     @map("start_time")
+  endTime      String     @map("end_time")
+  isBooked     Int        @default(0) @map("is_booked")
+  consultant   Consultant @relation(fields: [consultantId], references: [id])
+  booking      Booking?   @relation("FirstSlot")
+  secondBooking Booking?  @relation("SecondSlot")
+}
+
+model Booking {
+  id             Int        @id @default(autoincrement())
+  userId         Int        @map("user_id")
+  consultantId   Int        @map("consultant_id")
+  slotId         Int        @unique @map("slot_id")
+  secondSlotId   Int?       @unique @map("second_slot_id")
+  status         String     @default("pending")
+  notes          String?
+  message        String?
+  createdAt      DateTime   @default(now()) @map("created_at")
+  user           User       @relation(fields: [userId], references: [id])
+  consultant     Consultant @relation(fields: [consultantId], references: [id])
+  slot           TimeSlot   @relation("FirstSlot", fields: [slotId], references: [id])
+  secondSlot     TimeSlot?  @relation("SecondSlot", fields: [secondSlotId], references: [id])
+  order          Order?
+}
+
+model News {
+  id          Int      @id @default(autoincrement())
+  title       String
+  summary     String?
+  content     String?
+  coverImage  String?  @map("cover_image")
+  videoUrl    String?  @map("video_url")
+  type        String   @default("news")
+  author      String?
+  isPaid      Int      @default(0) @map("is_paid")   // 0=免费 1=付费
+  price       Int      @default(0)                    // 单位：分
+  isPublished Int      @default(1) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at")
+}
+
+model OhCardCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        String
+  description String?
+  cover       String?
+  isActive    Int      @default(1) @map("is_active")
+  wordCatId   Int?     @map("word_cat_id")
+  imgSrcCatId Int?     @map("img_src_cat_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  cards       OhCard[]
+}
+
+model OhCard {
+  id          Int            @id @default(autoincrement())
+  categoryId  Int            @map("category_id")
+  imageUrl    String?        @map("image_url")
+  word        String?
+  description String?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  category    OhCardCategory @relation(fields: [categoryId], references: [id])
+}
+
+model OhCardRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String
+  data      String
+  note      String?
+  audioUrl  String?  @map("audio_url")
+  roomId    String?  @map("room_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model OhCardPreset {
+  id        Int      @id @default(autoincrement())
+  type      String
+  title     String
+  icon      String   @default("🃏")
+  color     String   @default("#4A7BBA")
+  isActive  Int      @default(1) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  config    String
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model AssessmentScale {
+  id               Int      @id @default(autoincrement())
+  code             String   @unique
+  name             String
+  category         String
+  description      String
+  introduction     String?
+  instruction      String?
+  isPaid           Boolean  @default(false)
+  price            Int      @default(0)
+  totalQuestions   Int
+  estimatedMinutes Int      @default(10)
+  isActive         Boolean  @default(true)
+  usageCount       Int      @default(0)
+  scoringRule      String
+  scenarios        String   @default("[]")
+  createdAt        DateTime @default(now())
+  questions        AssessmentQuestion[]
+  results          AssessmentResult[]
+  interpretations  AssessmentInterpretation[]
+  vouchers         AssessmentVoucher[]
+  favorites        AssessmentFavorite[]
+}
+
+model AssessmentQuestion {
+  id        Int     @id @default(autoincrement())
+  scaleId   Int
+  orderNum  Int
+  content   String
+  options   String
+  dimension String?
+  ageMin    Int?    @map("age_min")
+  ageMax    Int?    @map("age_max")
+  gender    String?
+  scale     AssessmentScale @relation(fields: [scaleId], references: [id])
+}
+
+model AssessmentResult {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  scaleId     Int
+  answers     String
+  totalScore  Float
+  dimensions  String?
+  level       String
+  completedAt DateTime  @default(now())
+  voucherId   Int?
+  user        User            @relation(fields: [userId], references: [id])
+  scale       AssessmentScale @relation(fields: [scaleId], references: [id])
+  voucher     AssessmentVoucher? @relation(fields: [voucherId], references: [id])
+  answerItems AssessmentAnswer[]
+}
+
+model AssessmentVoucher {
+  id           Int       @id @default(autoincrement())
+  code         String    @unique
+  scaleId      Int?
+  createdBy    Int
+  targetUserId Int?      @map("target_user_id")
+  usedBy       Int?
+  usedAt       DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  results      AssessmentResult[]
+  scale        AssessmentScale? @relation(fields: [scaleId], references: [id])
+}
+
+model EventLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  event     String
+  page      String
+  data      String?
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model NewsLike {
+  id        Int      @id @default(autoincrement())
+  newsId    Int      @map("news_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([newsId, userId])
+}
+
+model NewsFavorite {
+  id        Int      @id @default(autoincrement())
+  newsId    Int      @map("news_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([newsId, userId])
+}
+
+model NewsComment {
+  id        Int      @id @default(autoincrement())
+  newsId    Int      @map("news_id")
+  userId    Int      @map("user_id")
+  content   String
+  parentId  Int?     @map("parent_id")
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model ActivityRegistration {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  newsId    Int?     @map("news_id")
+  source    String?
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model AssessmentProgress {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  scaleId   Int
+  answers   String
+  updatedAt DateTime @updatedAt
+  @@unique([userId, scaleId])
+}
+
+model AssessmentAnswer {
+  id         Int              @id @default(autoincrement())
+  resultId   Int
+  questionId Int
+  score      Int
+  result     AssessmentResult @relation(fields: [resultId], references: [id])
+}
+
+model AssessmentInterpretation {
+  id                Int     @id @default(autoincrement())
+  scaleId           Int
+  dimension         String?
+  calculationMethod String?
+  standardScore     Float?
+  variance          Float?
+  minScore          Float
+  maxScore          Float
+  ageMin            Int?
+  ageMax            Int?
+  gender            String?
+  isNormal          String?
+  level             String?
+  detail            String
+  scale             AssessmentScale @relation(fields: [scaleId], references: [id])
+}
+
+model AssessmentFavorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  scaleId   Int
+  createdAt DateTime @default(now())
+  scale     AssessmentScale @relation(fields: [scaleId], references: [id])
+  @@unique([userId, scaleId])
+}
+
+// ── SYSINFODB 镜像表 ──────────────────────────────────────────────
+
+model MdbAccount {
+  id      Int     @id @default(autoincrement())
+  no      Int?
+  agemin  Int?
+  agemax  Int?
+  xb      String?
+  hmid    Int?
+  name    String?
+  min     Float?
+  max     Float?
+  explain String?
+  @@map("mdb_account")
+}
+
+model MdbAverageSD {
+  id      Int     @id @default(autoincrement())
+  age     Int?
+  gender  String?
+  average Float?
+  sd      Float?
+  @@map("mdb_average_sd")
+}
+
+model MdbConvertMmpi {
+  id             Int     @id
+  userSex        String? @map("user_sex")
+  lstyle         String?
+  factorNumber   String? @map("factor_number")
+  originalScore  Int?    @map("original_score")
+  convertedScore Int?    @map("converted_score")
+  @@map("mdb_convert_mmpi")
+}
+
+model MdbHmez {
+  id     Int     @id
+  agemin Int?
+  agemax Int?
+  xb     String?
+  hmid   Int?
+  ez     String?
+  topid  String?
+  @@map("mdb_hmez")
+}
+
+model MdbToplr {
+  id      Int     @id @default(autoincrement())
+  no      Int?
+  hmid    Int?
+  topid   Int?
+  hmna    String?
+  toplr   String?
+  chc     Int?
+  a       String?
+  b       String?
+  c       String?
+  d       String?
+  e       String?
+  f       String?
+  g       String?
+  h       String?
+  i       String?
+  j       String?
+  ac      Float?
+  bc      Float?
+  cc      Float?
+  dc      Float?
+  ec      Float?
+  fc      Float?
+  gc      Float?
+  hc      Float?
+  ic      Float?
+  jc      Float?
+  picture String?
+  @@map("mdb_toplr")
+}
+
+model MdbTreename {
+  id       Int     @id
+  name     String?
+  parentid Int?
+  chc      Int?
+  maxavg   Float?
+  hmjg     String?
+  max      Float?
+  min      Float?
+  csr      String?
+  xb       String?
+  @@map("mdb_treename")
+}
+
+model MdbTT {
+  id      Int     @id @default(autoincrement())
+  no      Int?
+  hmid    Int?
+  topid   Int?
+  hmna    String?
+  toplr   String?
+  chc     Int?
+  a       String?
+  b       String?
+  c       String?
+  d       String?
+  e       String?
+  f       String?
+  g       String?
+  h       String?
+  i       String?
+  j       String?
+  ac      Float?
+  bc      Float?
+  cc      Float?
+  dc      Float?
+  ec      Float?
+  fc      Float?
+  gc      Float?
+  hc      Float?
+  ic      Float?
+  jc      Float?
+  picture String?
+  @@map("mdb_tt")
+}
+
+// ── GUESTINFODB 镜像表 ────────────────────────────────────────────
+
+model MdbUsername {
+  id       String  @id
+  name     String?
+  xb       String?
+  csdate   String?
+  tel      String?
+  address  String?
+  testgrou String?
+  @@map("mdb_username")
+}
+
+model MdbUsebb {
+  id     Int     @id
+  mzh    String?
+  name   String?
+  xb     String?
+  csdate String?
+  hwno   String?
+  @@map("mdb_usebb")
+}
+
+model MdbUsekb {
+  id     Int     @id
+  mzh    String?
+  hwno   String?
+  hwdate String?
+  hcm    String?
+  wkg    String?
+  tel    String?
+  addr   String?
+  cx     String?
+  @@map("mdb_usekb")
+}
+
+model MdbUsexg {
+  id   Int     @id
+  mzh  String?
+  hwno String?
+  name String?
+  ral  String?
+  tel  String?
+  @@map("mdb_usexg")
+}
+
+model MdbUsexx {
+  id   Int     @id
+  mzh  String?
+  hwno String?
+  hmlr String?
+  hmjg String?
+  @@map("mdb_usexx")
+}
+
+model MdbJg {
+  id          Int     @id
+  userid      String?
+  username    String?
+  timeing     String?
+  hmna        String?
+  tmc         String?
+  sumcount    Float?
+  avgcount    Float?
+  maxavgcount Float?
+  exc         String?
+  type        String?
+  exlev       String?
+  exavg       Float?
+  bgr         String?
+  @@map("mdb_jg")
+}
+
+model MdbJgmx {
+  id       Int     @id
+  jgid     Int?
+  hmna     String?
+  sumcount Float?
+  avgcount Float?
+  type     String?
+  explain  String?
+  @@map("mdb_jgmx")
+}
+
+model MdbJgmxx {
+  id    Int  @id
+  jgid  Int?
+  topid Int?
+  sorc  Int?
+  @@map("mdb_jgmxx")
+}
+
+model MdbTestsave {
+  id     Int     @id @default(autoincrement())
+  hmid   Int?
+  userid String?
+  topid  Int?
+  ch     String?
+  @@map("mdb_testsave")
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  orderNo     String   @unique @map("order_no")       // 商户订单号
+  userId      Int      @map("user_id")
+  bookingId   Int?     @unique @map("booking_id")      // 关联预约（可空，未来支持其他付费场景）
+  amount      Int                                      // 单位：分
+  status      String   @default("pending")             // pending / paid / cancelled / refunded
+  payType     String   @default("wxpay") @map("pay_type")
+  prepayId    String?  @map("prepay_id")               // 微信预支付ID
+  transactionId String? @map("transaction_id")         // 微信支付交易号
+  expireAt    DateTime @map("expire_at")               // 15分钟未支付自动过期
+  paidAt      DateTime? @map("paid_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
+  booking     Booking? @relation(fields: [bookingId], references: [id])
+  @@map("orders")
+}
+
+model MoodEntry {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  mood      Int
+  note      String?
+  tags      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  @@map("mood_entries")
+}
+
+model CbtRecord {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  situation       String
+  autoThought     String   @map("auto_thought")
+  emotion         String
+  evidenceFor     String?  @map("evidence_for")
+  evidenceAgainst String?  @map("evidence_against")
+  balancedThought String?  @map("balanced_thought")
+  outcome         String?
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  @@map("cbt_records")
+}
+
+model DreamRecord {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  dreamContent    String   @map("dream_content")
+  freeAssociation String?  @map("free_association")
+  interpretation  String?
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  @@map("dream_records")
+}
+
+model IcebergRecord {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  behavior          String
+  coping            String?
+  feeling           String?
+  feelingOfFeeling  String?  @map("feeling_of_feeling")
+  belief            String?
+  expectation       String?
+  yearning          String?
+  self              String?
+  notes             String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  @@map("iceberg_records")
+}
+
+model HomeworkHelp {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  consultantId Int?     @map("consultant_id")
+  recordType   String   @map("record_type")
+  recordId     Int      @map("record_id")
+  status       String   @default("pending")
+  reply        String?
+  price        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  @@map("homework_help")
+}
+
+model RuleRecord {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @map("user_id")
+  originalRule     String   @map("original_rule")
+  context          String?
+  source           String?
+  originalFunction String?  @map("original_function")
+  cost             String?
+  exceptions       String?
+  newRule          String?  @map("new_rule")
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  @@map("rule_records")
+}

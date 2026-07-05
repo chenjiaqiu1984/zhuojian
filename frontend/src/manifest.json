@@ -1,0 +1,23 @@
+{
+  "name": "卓见心理",
+  "appid": "__UNI__ZHUOJIAN",
+  "description": "卓见心理 - 专业心理咨询平台",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "YOUR_APPID",
+    "setting": { "urlCheck": false },
+    "usingComponents": true,
+    "permission": {
+      "scope.record": { "desc": "用于录制您对心理图卡的感想" }
+    }
+  },
+  "h5": {
+    "title": "卓见心理",
+    "router": { "mode": "hash" }
+  },
+  "app-plus": {
+    "nativePlugins": []
+  }
+}

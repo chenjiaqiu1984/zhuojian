@@ -1,0 +1,106 @@
+<template>
+  <view class="page">
+    <view v-if="!store.isLoggedIn()" class="not-login">
+      <u-icon name="lock" size="64" color="#9BBCB4" />
+      <text class="empty-text">请先登录</text>
+      <view class="login-btn" @click="uni.navigateTo({url:'/pages/login/index'})">去登录</view>
+    </view>
+    <view v-else>
+      <view class="header">
+        <image class="avatar" :src="store.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" @click="changeAvatar" />
+        <view class="header-info">
+          <text class="name">{{store.user?.name || store.user?.username}}</text>
+          <view class="role-badge">{{roleLabel[store.user?.role] || '用户'}}</view>
+        </view>
+      </view>
+      <view class="menus">
+        <view class="menu-item" v-for="m in menus" :key="m.label" @click="menuClick(m)">
+          <text class="menu-emoji">{{m.icon}}</text>
+          <text class="menu-label">{{m.label}}</text>
+          <text class="menu-arrow">›</text>
+        </view>
+      </view>
+      <view class="logout" @click="logout">退出登录</view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import { computed, onMounted } from 'vue';
+import { useUserStore } from '../../store/user';
+import { authApi } from '../../api/index';
+import { SERVER } from '../../config';
+import { track } from '../../utils/track';
+
+const BASE_URL = SERVER;
+const store = useUserStore();
+const roleLabel = { user: '用户', consultant: '咨询师', admin: '管理员' };
+
+onMounted(() => track('page_view', '/pages/profile/index'));
+
+function menuClick(m) {
+  track('menu_click', '/pages/profile/index', { menu: m.label });
+  m.action();
+}
+
+const menus = computed(() => {
+  const base = [
+    { label: '我的预约',   icon: '📅',  action: () => uni.navigateTo({ url: '/pages/booking/index' }) },
+    { label: '心理测评',   icon: '📝',  action: () => uni.navigateTo({ url: '/pages/assessment/my' }) },
+    { label: '测评记录',   icon: '📋',  action: () => uni.navigateTo({ url: '/pages/assessment/results' }) },
+    { label: '抽卡记录',   icon: '🃏',  action: () => uni.navigateTo({ url: '/pages/ohcard/record' }) },
+    { label: '我的券码',   icon: '🎟️',  action: () => uni.navigateTo({ url: '/pages/profile/vouchers' }) },
+    { label: '设置',       icon: '⚙️',  action: () => uni.navigateTo({ url: '/pages/profile/settings' }) },
+  ];
+  if (store.user?.role === 'consultant') {
+    base.splice(1, 0, { label: '排班管理', icon: '🕐', action: () => uni.navigateTo({ url: '/pages/consultants/schedule' }) });
+  }
+  return base;
+});
+
+function changeAvatar() {
+  uni.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'],
+    success: ({ tempFilePaths }) => {
+      uni.uploadFile({
+        url: `${BASE_URL}/api/upload/avatar`,
+        filePath: tempFilePaths[0],
+        name: 'file',
+        header: { Authorization: `Bearer ${uni.getStorageSync('token')}` },
+        success: res => {
+          const { url } = JSON.parse(res.data);
+          authApi.updateProfile({ avatar: BASE_URL + url }).then(r => {
+            store.user.avatar = BASE_URL + url;
+            uni.setStorageSync('user', JSON.stringify(store.user));
+          });
+        }
+      });
+    }
+  });
+}
+
+function logout() {
+  uni.showModal({ title: '确认退出', content: '确认退出登录？', success: r => { if (r.confirm) { track('logout', '/pages/profile/index'); store.logout(); } } });
+}
+</script>
+
+<style scoped lang="scss">
+.page { min-height: 100vh; background: #F5F7F6; }
+
+.not-login { display: flex; flex-direction: column; align-items: center; padding: 120rpx 32rpx; gap: 24rpx; }
+.empty-text { font-size: 30rpx; color: #9BBCB4; }
+.login-btn { margin-top: 8rpx; background: #4A8A7A; color: #fff; font-size: 28rpx; padding: 20rpx 80rpx; border-radius: 50rpx; }
+
+.header { display: flex; gap: 24rpx; align-items: center; background: linear-gradient(135deg,#4A8A7A,#3A6E80); padding: 60rpx 32rpx 40rpx; }
+.avatar { width: 120rpx; height: 120rpx; border-radius: 50%; border: 4rpx solid rgba(255,255,255,.4); }
+.header-info { display: flex; flex-direction: column; gap: 12rpx; }
+.name { font-size: 34rpx; font-weight: bold; color: #fff; }
+.role-badge { background: rgba(255,255,255,.2); color: #fff; font-size: 22rpx; padding: 4rpx 16rpx; border-radius: 20rpx; align-self: flex-start; }
+
+.menus { background: #fff; margin: 24rpx; border-radius: 16rpx; overflow: hidden; }
+.menu-item { display: flex; align-items: center; gap: 20rpx; padding: 32rpx 24rpx; border-bottom: 1rpx solid #f0f2f1; }
+.menu-emoji { font-size: 36rpx; width: 44rpx; text-align: center; }
+.menu-label { flex: 1; font-size: 28rpx; color: #1C2A27; }
+.menu-arrow { font-size: 32rpx; color: #ccc; }
+
+.logout { text-align: center; color: #9BBCB4; font-size: 28rpx; margin: 24rpx; background: #fff; padding: 30rpx; border-radius: 16rpx; }
+</style>

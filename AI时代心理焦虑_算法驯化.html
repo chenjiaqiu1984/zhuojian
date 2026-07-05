@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AI时代心理焦虑：我们正在被算法"驯化"？</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: #f0ede8;
+            color: #2d2a26;
+            line-height: 1.85;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+        }
+        .hero-image {
+            width: 100%;
+            height: 420px;
+            object-fit: cover;
+            display: block;
+        }
+        .content {
+            padding: 28px 22px 40px;
+        }
+        .title {
+            font-size: 23px;
+            font-weight: 700;
+            color: #1a1816;
+            line-height: 1.45;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .subtitle {
+            font-size: 13px;
+            color: #8a8078;
+            margin-bottom: 26px;
+            border-bottom: 1px solid #e8e2d8;
+            padding-bottom: 16px;
+        }
+        .section {
+            margin-bottom: 34px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4a4238;
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 12px;
+        }
+        .section-title::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 5px;
+            bottom: 5px;
+            width: 4px;
+            background: linear-gradient(180deg, #8a7a68, #5a5048);
+            border-radius: 2px;
+        }
+        p {
+            font-size: 15.5px;
+            color: #3d3830;
+            margin-bottom: 15px;
+            text-align: justify;
+            text-indent: 2em;
+        }
+        .opening-scene {
+            background: linear-gradient(135deg, #fdf8f0, #f5ede0);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 20px 0;
+            border: 1px solid #e8ddd0;
+        }
+        .opening-scene p {
+            text-indent: 0;
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: #4a4238;
+        }
+        .opening-scene .highlight-line {
+            color: #8a6a4a;
+            font-weight: 600;
+            font-size: 15.5px;
+        }
+        .opening-scene .quote-speech {
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin: 12px 0;
+            border-left: 3px solid #c4a882;
+            font-style: italic;
+            color: #6a5a4a;
+        }
+        .data-card {
+            background: linear-gradient(135deg, #f8f4ee, #f0e8dc);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 22px 0;
+            text-align: center;
+            border: 1px solid #e0d8cc;
+        }
+        .data-card .big-num {
+            font-size: 40px;
+            font-weight: 800;
+            color: #7a6a58;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .data-card .data-label {
+            font-size: 14px;
+            color: #8a7a6a;
+            margin-bottom: 4px;
+        }
+        .data-card .data-source {
+            font-size: 11px;
+            color: #a09080;
+            margin-top: 8px;
+        }
+        .quote-box {
+            background: #faf6f0;
+            border-left: 4px solid #a09080;
+            border-radius: 0 10px 10px 0;
+            padding: 18px 18px 18px 22px;
+            margin: 22px 0;
+            position: relative;
+        }
+        .quote-box::before {
+            content: """;
+            font-size: 42px;
+            color: #c4b8a0;
+            position: absolute;
+            top: 2px;
+            left: 10px;
+            line-height: 1;
+            font-family: Georgia, serif;
+            opacity: 0.5;
+        }
+        .quote-box p {
+            text-indent: 0;
+            font-size: 14.5px;
+            color: #5a5048;
+            padding-left: 18px;
+            margin-bottom: 0;
+        }
+        .image-block {
+            margin: 22px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.07);
+        }
+        .image-block img {
+            width: 100%;
+            display: block;
+        }
+        .image-caption {
+            font-size: 12px;
+            color: #8a8078;
+            text-align: center;
+            padding: 8px 12px;
+            background: #faf6f0;
+        }
+        .highlight-text {
+            color: #7a6a58;
+            font-weight: 600;
+        }
+        .divider {
+            text-align: center;
+            margin: 28px 0;
+            color: #b0a898;
+            font-size: 16px;
+            letter-spacing: 10px;
+        }
+        .three-layers {
+            margin: 20px 0;
+        }
+        .layer-item {
+            background: #fdf9f3;
+            border-radius: 12px;
+            padding: 18px 18px 18px 20px;
+            margin-bottom: 14px;
+            border: 1px solid #e8ddd0;
+            position: relative;
+            overflow: hidden;
+        }
+        .layer-item::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: linear-gradient(180deg, #b0a090, #8a7a68);
+        }
+        .layer-item .layer-num {
+            font-size: 13px;
+            color: #a09080;
+            font-weight: 600;
+            margin-bottom: 6px;
+            padding-left: 8px;
+        }
+        .layer-item .layer-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #4a4238;
+            margin-bottom: 8px;
+            padding-left: 8px;
+        }
+        .layer-item .layer-desc {
+            font-size: 14px;
+            color: #5a5048;
+            line-height: 1.7;
+            padding-left: 8px;
+        }
+        .layer-item .layer-desc p {
+            text-indent: 0;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .layer-item .layer-desc p:last-child {
+            margin-bottom: 0;
+        }
+        .question-box {
+            background: #f5f0e8;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .question-box .q-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .question-box .q-item:last-child {
+            margin-bottom: 0;
+        }
+        .question-box .q-num {
+            width: 28px;
+            height: 28px;
+            background: #8a7a68;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-right: 12px;
+            margin-top: 2px;
+        }
+        .question-box .q-text {
+            font-size: 14.5px;
+            color: #4a4238;
+            line-height: 1.7;
+        }
+        .question-box .q-text strong {
+            color: #6a5a48;
+        }
+        .ending-box {
+            background: linear-gradient(135deg, #5a5048, #3d3530);
+            color: #fff;
+            border-radius: 16px;
+            padding: 28px 22px;
+            margin-top: 32px;
+            text-align: center;
+        }
+        .ending-box .ending-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            letter-spacing: 2px;
+            color: #f0e6d8;
+        }
+        .ending-box p {
+            color: #d8ccc0;
+            font-size: 14px;
+            text-indent: 0;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .ending-box .highlight {
+            color: #f5d0a0;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .cta-btn {
+            display: inline-block;
+            background: #f5d0a0;
+            color: #3d2e1e;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 13px 32px;
+            border-radius: 30px;
+            margin-top: 16px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .footer-note {
+            font-size: 12px;
+            color: #a09890;
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e8e2d8;
+        }
+        .ai-contrast {
+            background: linear-gradient(135deg, #f0ece4, #e8e2d8);
+            border-radius: 14px;
+            padding: 22px;
+            margin: 22px 0;
+            border: 1px dashed #c4b8a8;
+        }
+        .ai-contrast .contrast-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #5a5048;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+        .ai-contrast .contrast-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .ai-contrast .contrast-row:last-child {
+            margin-bottom: 0;
+        }
+        .ai-contrast .contrast-ai {
+            flex: 1;
+            background: #fff;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-right: 8px;
+            font-size: 13px;
+            color: #6a6058;
+            text-align: center;
+            border: 1px solid #ddd8d0;
+        }
+        .ai-contrast .contrast-human {
+            flex: 1;
+            background: #fff;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #7a6050;
+            text-align: center;
+            border: 1px solid #d4c8b8;
+            font-weight: 600;
+        }
+        .ai-contrast .vs-label {
+            font-size: 11px;
+            color: #a09080;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 封面大图 -->
+        <div class="image-block" style="margin:0; border-radius:0;">
+            <img src="https://kimi-web-img.moonshot.cn/img/image.woshipm.com/4f313eade793216e5eca48b7a9fe50118ffb320f.jpg" alt="AI算法驯化">
+        </div>
+
+        <div class="content">
+            <h1 class="title">AI 时代心理焦虑：我们正在被算法"驯化"？</h1>
+            <div class="subtitle">当连卖"铁饭碗"的人都在慌，我们到底在怕什么</div>
+
+            <div class="section">
+                <div class="opening-scene">
+                    <p>📍 <strong>6月3号晚上，中国人民大学明德楼。</strong></p>
+                    <p>粉笔CEO张小龙站在台上，对着底下几百号学生说：AI时代，炒股才是未来。他甚至掏出自己的账户——<strong>8000万现金全部买了美股，上个月挣了5300万。</strong></p>
+                    <p>台下，沉默。</p>
+                    <p>没人鼓掌，没人提问。有人低头看手机，有人悄悄离场。</p>
+                    <div class="quote-speech">
+                        "你们找不到工作是应该的"<br>
+                        "除了考个公务员混吃等死，也没什么本事"<br>
+                        "你们非常差"
+                    </div>
+                    <p>然后摔麦走了。粉笔股价当天跌了7%。</p>
+                    <p class="highlight-line">但你有没有注意到一个更深的细节——这场讲座的主题，临时从"考公辅导行业"换成了"AI时代的职业规划"。</p>
+                    <p class="highlight-line">一个做考公培训的CEO，自己都不想聊考公了，非要聊AI。</p>
+                    <p style="color:#8a6a4a; font-weight:700; font-size:16px; margin-top:12px;">这才是真正让人不安的地方：连卖"铁饭碗"的人，都在慌。</p>
+                </div>
+            </div>
+
+            <div class="divider">* * *</div>
+
+            <div class="section">
+                <h2 class="section-title">01 你怕的不是AI取代你，你怕的是"我不够快"</h2>
+
+                <div class="data-card">
+                    <div class="big-num">62.8%</div>
+                    <div class="data-label">的18-35岁青年处于中高压力状态</div>
+                    <div class="big-num" style="font-size:32px; color:#9a7a5a;">每两个人里就有一个</div>
+                    <div class="data-label">存在抑郁风险</div>
+                    <div class="data-source">来源：《2026青年情绪白皮书》</div>
+                </div>
+
+                <p>更值得玩味的是另一个数字：超过半数的青年，面对情绪困扰的第一反应是<span class="highlight-text">"向内归因"</span>——默认"是我不够好""是我不够努力""是我抗压能力差"。</p>
+
+                <p>报告管这叫<span class="highlight-text">"自我PUA"</span>。</p>
+
+                <p>你想想，什么时候开始的？刷到AI写文章比你好，你第一反应不是"工具可以帮我"，而是<span class="highlight-text">"我是不是要被淘汰了"</span>。看到同龄人用AI提效三倍升了职，你焦虑的不是"我也该学"，而是<span class="highlight-text">"我已经落后了"</span>。</p>
+
+                <p>你每天被算法推送着"AI将替代XX职业"的标题，点进去看完，焦虑又深了一层。</p>
+
+                <div class="quote-box">
+                    <p>这就是AI时代最隐蔽的内耗：不是AI在逼你，是你用AI的标准在逼自己。<br><br>算法永远在加速，永远在优化，永远不知疲倦。于是你开始不自觉地用同样的标准要求自己——要快，要高效，要24小时在线，要同时处理十件事。</p>
+                </div>
+
+                <p>你觉得自己不够快，不够聪明，不够有用。可你有没有想过：<span class="highlight-text">你是在跟一个工具比效率，然后因为比不过而焦虑？</span></p>
+
+                <p>这不是你不行。这是赛制有问题。</p>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/p0.itc.cn/09c2b4582b3e372eec3ffa8832237454687c24d5.png" alt="职场焦虑疲惫的年轻人">
+                <div class="image-caption">在算法加速的世界里，人正在被自己的效率焦虑拖垮</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">02 三重内耗：替代恐惧、信息过载、算法自我怀疑</h2>
+
+                <p>AI时代的心理焦虑，不是一种，是三层套着来。</p>
+
+                <div class="three-layers">
+                    <div class="layer-item">
+                        <div class="layer-num">第一层</div>
+                        <div class="layer-title">替代恐惧 —— "我的工作还保得住吗？"</div>
+                        <div class="layer-desc">
+                            <p>5月底，中国心理学会在桂林开了2026年学术年会，主题叫<span class="highlight-text">"心理机制与人工智能共生驱动智能未来"</span>。近800名专家到场，几乎所有讨论都在指向一个问题：当机器越来越像人，人的位置在哪？</p>
+                            <p>张小龙在人大的那场翻车演讲，某种程度上就是这个问题的极端变形——他不是在分享AI洞察，他是在用"我拥抱了AI所以我赢了"的逻辑，碾压台下还没准备好的人。</p>
+                            <p>可恐惧本身不会让你被替代。恐惧只会让你做出两个错误决定：要么拼命学所有AI工具，结果哪个都没学精；要么干脆摆烂，"反正早晚被替代"。</p>
+                        </div>
+                    </div>
+
+                    <div class="layer-item">
+                        <div class="layer-num">第二层</div>
+                        <div class="layer-title">信息过载焦虑 —— "我是不是漏了什么？"</div>
+                        <div class="layer-desc">
+                            <p>你每天刷到的AI资讯，比你能消化的多十倍。新模型、新功能、新应用，每隔几天就来一波。每一个推送都在暗示：你再不学就晚了。</p>
+                            <p>但你想过没有？这些推送本身就是算法的产物。<span class="highlight-text">算法用"AI焦虑"喂养"AI焦虑"</span>，你每点一次，它就多推一条。</p>
+                            <p>你不是在主动学习，你是在被动恐慌。信息过载最可怕的后果不是"不知道"，是"什么都想知道却什么都来不及"——于是你永远处于"还没开始就已经落后"的感觉里，动弹不得。</p>
+                        </div>
+                    </div>
+
+                    <div class="layer-item">
+                        <div class="layer-num">第三层</div>
+                        <div class="layer-title">算法自我怀疑 —— "我到底还有什么不可替代的？"</div>
+                        <div class="layer-desc">
+                            <p>这是最深的一层。当你发现AI写文案、做PPT、写代码、甚至做心理咨询都越来越像样的时候，你会开始怀疑：我的价值到底在哪？</p>
+                            <p>PLOS Mental Health做过一个实验，让830人分辨心理咨询建议是AI写的还是人类写的——准确率只有56%，跟扔硬币差不多。更扎心的是，在共情力、文化敏感度等维度上，ChatGPT的评分甚至高于人类治疗师。</p>
+                            <p>但你猜怎么着？<span class="highlight-text">当人们知道答案是AI写的，评分立刻暴跌。</span></p>
+                            <p>我们不是不接受AI的能力，我们是不愿意承认——也许"不可替代"这件事，本来就没什么保障。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quote-box">
+                    <p>可这正是问题所在：<strong>你为什么需要"不可替代"才能觉得自己有价值？</strong></p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/news.ustc.edu.cn/f21c206efd233f0b37e6c1164024bd44b47ceb91.jpg" alt="大脑也怕超载">
+                <div class="image-caption">信息过载时代，大脑正在承受前所未有的压力</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">03 AI心理咨询接受度只有11%，这个数字说明了什么</h2>
+
+                <div class="data-card">
+                    <div class="big-num" style="font-size:36px; color:#8a7a68;">7.4%</div>
+                    <div class="data-label">专业心理服务使用率</div>
+                    <div class="big-num" style="font-size:36px; color:#9a8a78;">57.5%</div>
+                    <div class="data-label">从未体验过专业服务的青年</div>
+                    <div class="data-source">来源：《2026青年情绪白皮书》</div>
+                </div>
+
+                <p>与此同时，越来越多人开始跟AI聊天倾诉。白皮书里甚至提到一个现象：<span class="highlight-text">"越来越多的人会在深夜与DeepSeek交流直至流泪。"</span></p>
+
+                <p>RAND研究所的最新调查也印证了这个趋势：19%的12-21岁年轻人曾向AI聊天机器人寻求心理健康建议，比2025年初的13%又涨了。</p>
+
+                <p>你看出了一个矛盾吗？</p>
+
+                <div class="quote-box">
+                    <p><strong>人们不敢跟人说心里话，但愿意跟机器说。</strong></p>
+                </div>
+
+                <p>不是因为AI比人好，是因为AI不会评判你。它不会说"你想太多了"，不会说"别人比你更难"，不会在你还没说完的时候就给你一个解决方案。它只是听，然后回应。</p>
+
+                <p>这恰恰暴露了我们的心理支持系统有多匮乏——<span class="highlight-text">不是AI太好用，是人的通道太堵了。</span></p>
+
+                <div class="ai-contrast">
+                    <div class="contrast-title">AI能给的 vs 人能给的区别</div>
+                    <div class="vs-label">具体任务</div>
+                    <div class="contrast-row">
+                        <div class="contrast-ai">AI：快速处理信息<br>制定应对策略<br>24小时在线</div>
+                        <div class="contrast-human">人：笨拙地理解你<br>陪你一起沉默<br>说"我也不知道怎么办"</div>
+                    </div>
+                    <div class="vs-label">情感联结</div>
+                    <div class="contrast-row">
+                        <div class="contrast-ai">AI：计算最优回应<br>没有真实感受<br>可能导致依赖恶化</div>
+                        <div class="contrast-human">人：真实的共情<br>会犯错、会迟到<br>但"我陪着你"是真的</div>
+                    </div>
+                </div>
+
+                <p>心理学研究已经发现，当AI帮助完成具体任务时（比如反思、制定应对策略），用户反馈积极。但当情感联结没有明确目标支撑时——比如纯粹寻求陪伴——用户反而更容易陷入依赖、症状恶化、羞耻感增加。</p>
+
+                <div class="quote-box">
+                    <p><strong>算法能接住你的话，但接不住你。</strong></p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/www.tuikebi.com/3ccbc2436fb9d0d36c2ccdd7b55e7a3c6757ac6a.jpg" alt="AI情感陪伴">
+                <div class="image-caption">深夜，越来越多的人选择与AI对话——不是因为AI更好，而是因为人的通道太堵了</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">04 真正的焦虑不是AI会取代你，而是你开始像机器一样要求自己</h2>
+
+                <p>回到张小龙那场翻车演讲。</p>
+
+                <p>他骂学生"混吃等死"，核心逻辑是什么？是<span class="highlight-text">"你们没有像AI一样快速响应我"</span>。</p>
+
+                <p>台下没有掌声，没有互动，没有反馈——在算法的世界里，这叫"低效"。一个习惯了数据驱动、即时反馈的CEO，面对真实的人类沉默，第一反应不是理解，是愤怒。</p>
+
+                <p>他不是在对学生发火，他是在对一个<span class="highlight-text">"不够高效"的系统</span>发火。</p>
+
+                <p>这不就是我们每个人正在做的事吗？</p>
+
+                <p>对伴侣没有秒回感到不满，对同事理解慢了感到急躁，对自己学AI学得不够快感到焦虑——<span class="highlight-text">我们在用算法的速度要求活人的节奏。</span></p>
+
+                <div class="quote-box">
+                    <p>可人是需要沉默的，是需要"没反应"的，是需要慢慢理解的。<br><br><strong>那些被你嫌弃"太慢"的部分，恰恰是你之所以是人的部分。</strong></p>
+                </div>
+
+                <p>心理学年会的主题是"心理与AI共生"，不是"心理被AI替代"。共生意味着各有各的位置，不是谁取代谁。</p>
+
+                <p>AI可以更快地处理信息，但无法替代你在深夜为朋友的一条消息担心；AI可以写出完美的安慰话术，但无法替代一个人笨拙地说出<span class="highlight-text">"我也不知道怎么办，但我陪着你"</span>。</p>
+
+                <p>你的价值不在于你有多高效，而在于你有多真实。</p>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/www.mypsychology.my/0a12510faabbac02ec82a00fc4c2efa43df99abe.png" alt="职场疲惫的年轻人">
+                <div class="image-caption">在算法加速的世界里，允许自己慢下来，是一种勇气</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">05 别用算法的速度要求活人的节奏</h2>
+
+                <p>如果你正在被AI焦虑困扰，试着问自己三个问题：</p>
+
+                <div class="question-box">
+                    <div class="q-item">
+                        <div class="q-num">1</div>
+                        <div class="q-text"><strong>我害怕的到底是"被替代"，还是"我现在的自己不够好"？</strong><br>很多时候，AI只是一个触发器。你真正害怕的，是你对自己价值的怀疑——这种怀疑在你听说AI之前就已经在了。</div>
+                    </div>
+                    <div class="q-item">
+                        <div class="q-num">2</div>
+                        <div class="q-text"><strong>我每天刷的AI资讯，有多少是真正在帮我，有多少只是在喂我的焦虑？</strong><br>试试关掉那些"AI将替代XX"的推送三天，看看你的焦虑有没有变少。信息过载的解法不是学更多，是学会屏蔽。</div>
+                    </div>
+                    <div class="q-item">
+                        <div class="q-num">3</div>
+                        <div class="q-text"><strong>我上一次跟一个真人说出心里话，是什么时候？</strong><br>如果你最近的倾诉对象都是AI——这不是"方便"，这是一个信号。它在告诉你：你跟人之间的通道堵了。不是你的问题，是时候去修一修了。</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">06 我们不需要跑过算法，我们需要跑回自己</h2>
+
+                <p>AI不会消失，焦虑也不会。</p>
+
+                <p>但你可以选择：是被算法的速度带着跑，还是找回自己的节奏。</p>
+
+                <p>张小龙在人大讲台上骂学生"非常差"的那一刻，他不是在说学生——他在说一个拒绝按他节奏鼓掌的世界。</p>
+
+                <p>可世界不需要按你的节奏鼓掌。人也不需要。</p>
+
+                <p>你不需要像AI一样24小时在线、秒级响应、永远高效。你需要的是：<span class="highlight-text">允许自己慢下来，允许自己不完美，允许自己是一个会累、会哭、会在深夜对着天花板发呆的人。</span></p>
+
+                <div class="quote-box">
+                    <p><strong>算法可以优化一切，唯独优化不了你的感受。</strong><br><br>你的感受不是bug，是你活着的证据。</p>
+                </div>
+            </div>
+
+            <div class="ending-box">
+                <div class="ending-title">跑回自己</div>
+                <p>算法可以优化效率</p>
+                <p>但优化不了<span class="highlight">你的感受</span></p>
+                <p style="margin-top:8px; font-size:13px;">你的感受不是bug，是你活着的证据</p>
+                <a href="#" class="cta-btn">找回自己的节奏</a>
+            </div>
+
+            <div class="footer-note">
+                数据来源：《2026青年情绪白皮书》、中国心理学会2026学术年会、PLOS Mental Health、RAND研究所<br>
+                在AI时代，做一个人，而不是一台机器
+            </div>
+        </div>
+    </div>
+</body>
+</html>

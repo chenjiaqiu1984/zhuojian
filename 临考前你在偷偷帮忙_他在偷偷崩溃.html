@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>临考前你在偷偷"帮忙"，他在偷偷崩溃</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: #f5f2ee;
+            color: #2d2a26;
+            line-height: 1.85;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+        }
+        .hero-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            display: block;
+        }
+        .content {
+            padding: 28px 22px 40px;
+        }
+        .title {
+            font-size: 23px;
+            font-weight: 700;
+            color: #1a1816;
+            line-height: 1.45;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .subtitle {
+            font-size: 13px;
+            color: #8a8078;
+            margin-bottom: 26px;
+            border-bottom: 1px solid #e8e2d8;
+            padding-bottom: 16px;
+        }
+        .section {
+            margin-bottom: 34px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4a4238;
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 12px;
+        }
+        .section-title::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 5px;
+            bottom: 5px;
+            width: 4px;
+            background: linear-gradient(180deg, #c4a882, #8a7a68);
+            border-radius: 2px;
+        }
+        p {
+            font-size: 15.5px;
+            color: #3d3830;
+            margin-bottom: 15px;
+            text-align: justify;
+            text-indent: 2em;
+        }
+        .opening-scene {
+            background: linear-gradient(135deg, #fdf8f0, #f5ede0);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 20px 0;
+            border: 1px solid #e8ddd0;
+        }
+        .opening-scene p {
+            text-indent: 0;
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: #4a4238;
+        }
+        .opening-scene .highlight-line {
+            color: #8a6a4a;
+            font-weight: 600;
+            font-size: 15.5px;
+        }
+        .quote-box {
+            background: #faf6f0;
+            border-left: 4px solid #c4a882;
+            border-radius: 0 10px 10px 0;
+            padding: 18px 18px 18px 22px;
+            margin: 22px 0;
+            position: relative;
+        }
+        .quote-box::before {
+            content: """;
+            font-size: 42px;
+            color: #c4b8a0;
+            position: absolute;
+            top: 2px;
+            left: 10px;
+            line-height: 1;
+            font-family: Georgia, serif;
+            opacity: 0.5;
+        }
+        .quote-box p {
+            text-indent: 0;
+            font-size: 14.5px;
+            color: #5a5048;
+            padding-left: 18px;
+            margin-bottom: 0;
+        }
+        .image-block {
+            margin: 22px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.07);
+        }
+        .image-block img {
+            width: 100%;
+            display: block;
+        }
+        .image-caption {
+            font-size: 12px;
+            color: #8a8078;
+            text-align: center;
+            padding: 8px 12px;
+            background: #faf6f0;
+        }
+        .highlight-text {
+            color: #8a6a4a;
+            font-weight: 600;
+        }
+        .divider {
+            text-align: center;
+            margin: 28px 0;
+            color: #b0a898;
+            font-size: 16px;
+            letter-spacing: 10px;
+        }
+        .story-box {
+            background: #fdf9f3;
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 18px 0;
+            border: 1px dashed #d4c8b8;
+        }
+        .story-box .story-label {
+            font-size: 13px;
+            color: #a09080;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .story-box p {
+            text-indent: 0;
+            font-size: 14.5px;
+            color: #5a5048;
+            margin-bottom: 8px;
+        }
+        .story-box p:last-child {
+            margin-bottom: 0;
+        }
+        .story-box .story-highlight {
+            color: #8a6a4a;
+            font-weight: 600;
+        }
+        .phrase-list {
+            margin: 20px 0;
+        }
+        .phrase-item {
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border: 1px solid #e8e0d8;
+            display: flex;
+            align-items: flex-start;
+        }
+        .phrase-item .phrase-wrong {
+            flex: 1;
+            font-size: 14px;
+            color: #8a6a5a;
+            text-decoration: line-through;
+            margin-right: 10px;
+        }
+        .phrase-item .phrase-arrow {
+            color: #c4a882;
+            font-size: 16px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .phrase-item .phrase-right {
+            flex: 1;
+            font-size: 14px;
+            color: #5a7a5a;
+            font-weight: 600;
+        }
+        .guide-box {
+            background: linear-gradient(135deg, #f8f4ee, #f0e8dc);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 22px 0;
+            border: 1px solid #e0d8cc;
+        }
+        .guide-box .guide-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #5a5048;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .guide-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .guide-item:last-child {
+            margin-bottom: 0;
+        }
+        .guide-num {
+            width: 28px;
+            height: 28px;
+            background: #8a7a68;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-right: 12px;
+            margin-top: 2px;
+        }
+        .guide-text {
+            font-size: 14px;
+            color: #4a4238;
+            line-height: 1.7;
+        }
+        .guide-text strong {
+            color: #6a5a4a;
+        }
+        .ending-box {
+            background: linear-gradient(135deg, #7a6a5a, #5a4a3a);
+            color: #fff;
+            border-radius: 16px;
+            padding: 28px 22px;
+            margin-top: 32px;
+            text-align: center;
+        }
+        .ending-box .ending-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            letter-spacing: 2px;
+            color: #f0e6d8;
+        }
+        .ending-box p {
+            color: #e0d4c4;
+            font-size: 14px;
+            text-indent: 0;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .ending-box .highlight {
+            color: #f5d0a0;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .cta-btn {
+            display: inline-block;
+            background: #f5d0a0;
+            color: #4a3a2a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 13px 32px;
+            border-radius: 30px;
+            margin-top: 16px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .footer-note {
+            font-size: 12px;
+            color: #a09890;
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e8e2d8;
+        }
+        .interactive-box {
+            background: linear-gradient(135deg, #fdf6ed, #f0e8dc);
+            border-radius: 14px;
+            padding: 22px;
+            margin-top: 28px;
+            text-align: center;
+            border: 2px dashed #d4c4a8;
+        }
+        .interactive-box .interactive-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #6b5a4a;
+            margin-bottom: 10px;
+        }
+        .interactive-box p {
+            text-indent: 0;
+            text-align: center;
+            font-size: 14px;
+            color: #7a6a5a;
+            margin-bottom: 0;
+        }
+        .interactive-box .tag {
+            display: inline-block;
+            background: #c4a882;
+            color: #fff;
+            font-size: 13px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            margin-top: 12px;
+            font-weight: 600;
+        }
+        .note-card {
+            background: linear-gradient(135deg, #f8f4ee, #f0e8dc);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 22px 0;
+            text-align: center;
+            border: 1px solid #e0d8cc;
+        }
+        .note-card .note-text {
+            font-size: 15px;
+            color: #5a5048;
+            line-height: 1.8;
+            text-indent: 0;
+            margin-bottom: 0;
+        }
+        .note-card .note-highlight {
+            color: #8a6a4a;
+            font-weight: 700;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 封面大图 -->
+        <div class="image-block" style="margin:0; border-radius:0;">
+            <img src="https://kimi-web-img.moonshot.cn/img/p3.itc.cn/31ddd033fd47e6124c9a8e07f05e4c29ece68368.png" alt="陪考家长">
+        </div>
+
+        <div class="content">
+            <h1 class="title">临考前你在偷偷"帮忙"，他在偷偷崩溃</h1>
+            <div class="subtitle">考试季，家里最紧张的人，大概率不是孩子，是你</div>
+
+            <div class="section">
+                <div class="opening-scene">
+                    <p>🎯 <strong>先告诉你一个可能不愿承认的事实——</strong></p>
+                    <p>考试季，家里最紧张的人，大概率不是孩子，是你。</p>
+                    <p>你以为藏得很好。</p>
+                    <p>但每天多炒一个菜，走路开始踮脚，说话前先想三秒措辞……</p>
+                    <p class="highlight-line">你的每一个"帮"，其实都在反复告诉她同一句话："这件事，连大人都怕了。"</p>
+                </div>
+            </div>
+
+            <div class="divider">* * *</div>
+
+            <div class="section">
+                <h2 class="section-title">"我什么都没说"——是最大的压力信号</h2>
+
+                <div class="story-box">
+                    <div class="story-label">📖 故事一：炖汤的妈妈</div>
+                    <p>我认识一个妈妈，女儿今年高考。</p>
+                    <p>她说："<span class="story-highlight">我什么都没说，连'加油'都没说，我就每天给她炖汤。</span>"</p>
+                    <p>我问她："平时也每天炖吗？"</p>
+                    <p>她一愣："……不。之前我工作忙，基本上都是她自己搞定的，也就是这半年我为了她特意调整了工作……"</p>
+                    <p>你看，她什么都没说。</p>
+                    <p><strong>但妈妈突然变成了另一个人——这件事本身，就是最大的压力信号。</strong></p>
+                </div>
+
+                <div class="story-box">
+                    <div class="story-label">📖 故事二：突然接送的爸爸</div>
+                    <p>还有个爸爸，平时基本不管学习，最近两个月突然天天接送。</p>
+                    <p>"我就是想多陪陪她。"</p>
+                    <p>后来孩子对心理咨询师说：<span class="story-highlight">"我爸一来，我更紧张。他从来不来，他突然来，说明这事真的很严重。"</span></p>
+                </div>
+
+                <div class="quote-box">
+                    <p><strong>你做了平时不做的事。你以为是关心。<br><br>孩子读到的，是恐慌。</strong></p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/5b0988e595225.cdn.sohucs.com/6528e1277199ec57be979ae2fd772cce446150b0.jpeg" alt="考场外焦虑的家长">
+                <div class="image-caption">家长勿过度关注，小心孩子患上高考焦虑症</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">那些"安慰"的话，为什么越说越糟</h2>
+
+                <p>再说句最常见的——<span class="highlight-text">"考不好也没关系。"</span></p>
+
+                <p>说这句话的时候，你自己心里是不是也咯噔了一下？</p>
+
+                <p>你知道自己没那么洒脱。自己都不信"没关系"，孩子会信吗？</p>
+
+                <p>她听到的不是"没关系"。</p>
+
+                <p>她听到的是——<span class="highlight-text">"连我爸妈都觉得我可能考不好了，才提前安慰我。"</span></p>
+
+                <div class="phrase-list">
+                    <div class="phrase-item">
+                        <div class="phrase-wrong">"别紧张。"</div>
+                        <div class="phrase-arrow">→</div>
+                        <div class="phrase-right">你比她还紧张</div>
+                    </div>
+                    <div class="phrase-item">
+                        <div class="phrase-wrong">"正常发挥就行。"</div>
+                        <div class="phrase-arrow">→</div>
+                        <div class="phrase-right">你的表情在说：你现在连正常都做不到了？</div>
+                    </div>
+                    <div class="phrase-item">
+                        <div class="phrase-wrong">"随便考考。"</div>
+                        <div class="phrase-arrow">→</div>
+                        <div class="phrase-right">说这话时，你的声音是不是都在抖？</div>
+                    </div>
+                </div>
+
+                <div class="quote-box">
+                    <p>不是你说错了。<br><br><strong>是你的身体在替你说真话。</strong></p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/imgm.gmw.cn/86f81470416a89da5e3a3767290506885c995fdf.jpg" alt="家长与考生沟通">
+                <div class="image-caption">高考期间家长与考生沟通的艺术——少说，多听</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">那到底该怎么办？</h2>
+
+                <p>答案比你想的简单，也比你想的难——</p>
+
+                <div class="note-card">
+                    <p class="note-text"><span class="note-highlight">少做。</span></p>
+                    <p class="note-text">不是不管，是回到你平时的样子。</p>
+                </div>
+
+                <p>平时不进厨房，就别突然天天炖汤。</p>
+                <p>平时不接送，就别天天出现在校门口。</p>
+                <p>平时大大咧咧，就别突然变身心理咨询师。</p>
+
+                <div class="quote-box">
+                    <p><strong>你的"日常感"，才是她最大的安全感。</strong><br><br>她需要看到：这件事没让天塌下来，因为家里一切照旧。</p>
+                </div>
+
+                <p><strong>如果她主动聊考试，你就听。</strong></p>
+                <p>不是"嗯嗯嗯好好好"那种，是真的听。听她抱怨题难、骂出题人，你只管点头，不接话、不分析、不给建议。</p>
+                <p>她不需要你解决。她需要的是——<span class="highlight-text">我可以说烦，并且没人在我烦的时候教育我。</span></p>
+
+                <p><strong>如果她没提考试，你就聊点别的。</strong></p>
+                <p>今天公司的破事、她弟又干了什么蠢事、楼下那只野猫又来蹭饭了。</p>
+                <p>家里至少要有一个频道，是不播考试新闻的。</p>
+                <p>让她知道：<span class="highlight-text">在这里，她不只是一个考生。</span></p>
+
+                <p><strong>如果她自己说"我好紧张"——</strong></p>
+
+                <div class="phrase-list">
+                    <div class="phrase-item">
+                        <div class="phrase-wrong">❌ 别说"别紧张"。</div>
+                        <div class="phrase-arrow">→</div>
+                        <div class="phrase-right">✅ 说："紧张很正常。"</div>
+                    </div>
+                </div>
+
+                <p>然后加一句：<span class="highlight-text">"你会紧张，说明你在乎，在乎说明你是个认真的人。"</span></p>
+
+                <p>你看，换个说法，紧张就从"毛病"变成了"品质"。</p>
+
+                <p>她不需要不紧张。她需要被允许紧张。</p>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/ynsjkj.yn.gov.cn/3632a691bdd497c61c3d773cda3f1356330494e9.jpg" alt="耶克斯-多德森定律">
+                <div class="image-caption">适度焦虑最有利于发挥——不是不紧张，是被允许紧张</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">考完第一面，准备一个"零压力场景"</h2>
+
+                <p>考完那天，别问"怎么样"。</p>
+
+                <p>她考好了，自己会蹦着出来。没考好，你一问，就是重新把她拽回难受里。</p>
+
+                <p>你只需要做一件事——<span class="highlight-text">买好她爱喝的那杯奶茶，车里放她喜欢的歌。</span></p>
+
+                <p>她上车，你递过去。什么都不用说。</p>
+
+                <div class="quote-box">
+                    <p>她会记得这一天。不是因为考了什么，而是因为——<strong>没有人逼她再去想一遍。</strong></p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/ctdsb.clouddiffuse.xyz/ec432e1f351bce98e5e3464df2cca9e7bd93bbdf" alt="考场外温暖拥抱">
+                <div class="image-caption">高考结束，考场外的拥抱和鲜花汇成海洋——不问"难不难"，只说"走，吃你最想吃的"</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">给家长的一份"不添乱"指南（建议收藏）</h2>
+
+                <p>如果前面讲的你记不住，这个部分可以直接拿来用。</p>
+
+                <div class="guide-box">
+                    <div class="guide-title">📋 六条"不添乱"指南</div>
+                    <div class="guide-item">
+                        <div class="guide-num">1</div>
+                        <div class="guide-text">
+                            <strong>管住"突然的关怀"</strong><br>
+                            平时不做的事，考前别突然开始做。你那杯"突然的燕窝"，她喝下去的全是压力。
+                        </div>
+                    </div>
+                    <div class="guide-item">
+                        <div class="guide-num">2</div>
+                        <div class="guide-text">
+                            <strong>改掉三句口头禅</strong><br>
+                            "考不好没关系" ➔ "不管结果怎样，先安心把这几天过完。"<br>
+                            "别紧张" ➔ "紧张很正常，带着它也能考。"<br>
+                            "正常发挥就行" ➔ "把你会的写出来，就赢了。"
+                        </div>
+                    </div>
+                    <div class="guide-item">
+                        <div class="guide-num">3</div>
+                        <div class="guide-text">
+                            <strong>在家里保留一个"废话频道"</strong><br>
+                            饭桌上至少三分之二的时间，聊考试以外的事。让她知道，这个家对她的爱，不只绑定在分数上。
+                        </div>
+                    </div>
+                    <div class="guide-item">
+                        <div class="guide-num">4</div>
+                        <div class="guide-text">
+                            <strong>做孩子的"情绪容器"，不是"问题解决器"</strong><br>
+                            她说烦，你就听。别马上说"我帮你问问哪个老师"。她吐槽的时候，你最该说的是："那确实挺烦的。"被理解，比被帮忙更重要。
+                        </div>
+                    </div>
+                    <div class="guide-item">
+                        <div class="guide-num">5</div>
+                        <div class="guide-text">
+                            <strong>考前三天，做回"隐形人"</strong><br>
+                            不再提醒"东西带齐了吗"，不再反复确认时间。相信她，比提醒她，更能让她觉得自己能行。
+                        </div>
+                    </div>
+                    <div class="guide-item">
+                        <div class="guide-num">6</div>
+                        <div class="guide-text">
+                            <strong>考完第一面，准备一个"零压力场景"</strong><br>
+                            不问"难不难"，只说："走，吃你最想吃的。"让她知道，无论结果，回到家都有人给她留着一盏灯，而不是一张试卷分析表。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">写在最后</h2>
+
+                <p>考试季，你最该做的可能不是"帮"。</p>
+
+                <p>是你自己先松下来。</p>
+
+                <p>你松了，她就松了；你稳了，家就稳了。</p>
+
+                <div class="quote-box">
+                    <p><strong>一个正常的家，就是最好的备考。</strong><br><br>你不需要做一个更用力的家长。<br>做回那个平时的你，就刚刚好。</p>
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <div class="interactive-title">💬 互动话题</div>
+                <p>你家考前谁更紧张？</p>
+                <p>你是那个忍不住"帮忙"的，还是拼命假装淡定的？</p>
+                <p>评论区聊聊吧。说出来，可能就是你松一口气的开始。</p>
+                <div class="tag">#考前谁更紧张</div>
+            </div>
+
+            <div class="ending-box">
+                <div class="ending-title">做回平时的你，就刚刚好</div>
+                <p>你不需要做一个更用力的家长</p>
+                <p>一个<span class="highlight">正常的家</span></p>
+                <p>就是最好的备考</p>
+                <a href="#" class="cta-btn">收藏这份指南</a>
+            </div>
+
+            <div class="footer-note">
+                图片来源：极目新闻、光明网、搜狐网、云南省疾控局<br>
+                心理学概念：情绪传染、耶克斯-多德森定律<br>
+                致所有家长：你稳了，家就稳了
+            </div>
+        </div>
+    </div>
+</body>
+</html>

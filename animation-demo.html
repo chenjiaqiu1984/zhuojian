@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>动画效果预览</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f0f2f5; font-family: -apple-system, sans-serif; padding: 24px; }
+h2 { color: #333; margin: 32px 0 16px; font-size: 16px; }
+h2:first-of-type { margin-top: 0; }
+
+/* ===== 1. 翻牌 ===== */
+.flip-demo { display: flex; gap: 16px; flex-wrap: wrap; }
+.card-wrap {
+  perspective: 1000px;
+  width: 140px; height: 200px;
+  cursor: pointer;
+}
+.card {
+  position: relative; width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+}
+.card.flipped { transform: rotateY(180deg); }
+.card-front, .card-back {
+  position: absolute; width: 100%; height: 100%;
+  border-radius: 12px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 8px;
+}
+.card-front {
+  background: linear-gradient(135deg, #4A7BBA, #6fa3e0);
+  color: white; font-size: 40px;
+}
+.card-front span { font-size: 13px; opacity: 0.8; }
+.card-back {
+  background: white;
+  transform: rotateY(180deg);
+  border: 1px solid #e8e8e8;
+  padding: 16px; text-align: center;
+}
+.card-back .word { font-size: 28px; font-weight: bold; color: #4A7BBA; }
+.card-back .desc { font-size: 12px; color: #888; margin-top: 4px; }
+.card-back .emoji { font-size: 32px; }
+
+/* ===== 2. 页面过渡 ===== */
+.page-demo { position: relative; height: 200px; overflow: hidden; border-radius: 12px; background: white; border: 1px solid #e8e8e8; }
+.fake-page {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px;
+}
+.fake-page.a { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+.fake-page.b {
+  background: white;
+  transform: translateY(100%);
+  transition: transform 0.35s ease;
+}
+.fake-page.b.active { transform: translateY(0); }
+.fake-page h3 { font-size: 20px; }
+.fake-page p { font-size: 13px; opacity: 0.7; }
+.btn {
+  padding: 8px 20px; border-radius: 8px; border: none;
+  background: rgba(255,255,255,0.25); color: white;
+  cursor: pointer; font-size: 13px; backdrop-filter: blur(4px);
+}
+.btn-primary {
+  background: #4A7BBA; color: white; border: none;
+  padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 13px;
+}
+
+/* ===== 3. 测评结果 ===== */
+.result-demo { background: white; border-radius: 12px; border: 1px solid #e8e8e8; overflow: hidden; }
+.result-header {
+  background: linear-gradient(135deg, #4A7BBA, #6fa3e0);
+  padding: 20px; color: white; text-align: center;
+}
+.result-header .score { font-size: 56px; font-weight: bold; line-height: 1; }
+.result-header .score-label { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+.result-body { padding: 16px; }
+.result-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid #f5f5f5;
+  opacity: 0; transform: translateY(20px);
+}
+.result-item:last-child { border-bottom: none; }
+.result-item.animate { animation: reveal 0.5s ease forwards; }
+.result-item:nth-child(1) { animation-delay: 0.05s; }
+.result-item:nth-child(2) { animation-delay: 0.2s; }
+.result-item:nth-child(3) { animation-delay: 0.35s; }
+.result-item:nth-child(4) { animation-delay: 0.5s; }
+.item-icon { font-size: 24px; width: 40px; text-align: center; flex-shrink: 0; }
+.item-label { font-size: 13px; color: #888; }
+.item-value { font-size: 15px; font-weight: 600; color: #333; }
+.item-bar-wrap { flex: 1; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+.item-bar { height: 100%; border-radius: 3px; background: #4A7BBA; width: 0; transition: width 1s ease 0.3s; }
+.item-bar.animate { }
+
+@keyframes reveal {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+.score.animate { animation: countUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; }
+
+/* replay btn */
+.replay-btn {
+  display: block; margin: 12px auto 0;
+  padding: 6px 16px; border-radius: 6px;
+  border: 1px solid #4A7BBA; color: #4A7BBA;
+  background: white; cursor: pointer; font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<h2>① 翻牌动画（点击卡片）</h2>
+<div class="flip-demo">
+  <div class="card-wrap" onclick="this.querySelector('.card').classList.toggle('flipped')">
+    <div class="card">
+      <div class="card-front">🎴<span>点击翻牌</span></div>
+      <div class="card-back">
+        <div class="emoji">🌊</div>
+        <div class="word">自由</div>
+        <div class="desc">你渴望突破束缚<br>追寻内心真正的声音</div>
+      </div>
+    </div>
+  </div>
+  <div class="card-wrap" onclick="this.querySelector('.card').classList.toggle('flipped')">
+    <div class="card">
+      <div class="card-front">🎴<span>点击翻牌</span></div>
+      <div class="card-back">
+        <div class="emoji">🌱</div>
+        <div class="word">成长</div>
+        <div class="desc">每一次经历都是<br>滋养你的养分</div>
+      </div>
+    </div>
+  </div>
+  <div class="card-wrap" onclick="this.querySelector('.card').classList.toggle('flipped')">
+    <div class="card">
+      <div class="card-front">🎴<span>点击翻牌</span></div>
+      <div class="card-back">
+        <div class="emoji">🔥</div>
+        <div class="word">热情</div>
+        <div class="desc">内心有一团火<br>等待被点燃</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>② 页面过渡（slide-in-bottom）</h2>
+<div class="page-demo" id="pageDemo">
+  <div class="fake-page a">
+    <h3>心理测评</h3>
+    <p>题目 8/10</p>
+    <button class="btn" onclick="showResult()">下一题 →</button>
+  </div>
+  <div class="fake-page b" id="pageB">
+    <h3 style="color:#333">测评完成</h3>
+    <p style="color:#888">正在生成您的报告...</p>
+    <button class="btn-primary" onclick="hideResult()">返回</button>
+  </div>
+</div>
+
+<h2>③ 测评结果展示</h2>
+<div class="result-demo">
+  <div class="result-header">
+    <div class="score" id="score">86</div>
+    <div class="score-label">感统综合评分</div>
+  </div>
+  <div class="result-body" id="resultBody">
+    <div class="result-item">
+      <div class="item-icon">👁️</div>
+      <div style="flex:1">
+        <div class="item-label">视觉处理</div>
+        <div class="item-bar-wrap"><div class="item-bar" data-width="88%"></div></div>
+      </div>
+      <div class="item-value">88</div>
+    </div>
+    <div class="result-item">
+      <div class="item-icon">👂</div>
+      <div style="flex:1">
+        <div class="item-label">听觉处理</div>
+        <div class="item-bar-wrap"><div class="item-bar" data-width="72%"></div></div>
+      </div>
+      <div class="item-value">72</div>
+    </div>
+    <div class="result-item">
+      <div class="item-icon">🤸</div>
+      <div style="flex:1">
+        <div class="item-label">前庭觉</div>
+        <div class="item-bar-wrap"><div class="item-bar" data-width="91%"></div></div>
+      </div>
+      <div class="item-value">91</div>
+    </div>
+    <div class="result-item">
+      <div class="item-icon">✋</div>
+      <div style="flex:1">
+        <div class="item-label">触觉敏感</div>
+        <div class="item-bar-wrap"><div class="item-bar" data-width="65%"></div></div>
+      </div>
+      <div class="item-value">65</div>
+    </div>
+  </div>
+  <button class="replay-btn" onclick="replayResult()">重播动画</button>
+</div>
+
+<script>
+// 页面过渡
+function showResult() {
+  document.getElementById('pageB').classList.add('active');
+}
+function hideResult() {
+  document.getElementById('pageB').classList.remove('active');
+}
+
+// 结果动画
+function playResult() {
+  const items = document.querySelectorAll('.result-item');
+  const bars = document.querySelectorAll('.item-bar');
+  const score = document.getElementById('score');
+
+  score.classList.add('animate');
+  items.forEach(el => el.classList.add('animate'));
+
+  setTimeout(() => {
+    bars.forEach(bar => {
+      bar.style.width = bar.dataset.width;
+      bar.style.background = '#4A7BBA';
+    });
+  }, 400);
+}
+
+function replayResult() {
+  const items = document.querySelectorAll('.result-item');
+  const bars = document.querySelectorAll('.item-bar');
+  const score = document.getElementById('score');
+
+  score.classList.remove('animate');
+  items.forEach(el => el.classList.remove('animate'));
+  bars.forEach(bar => { bar.style.width = '0'; bar.style.transition = 'none'; });
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    bars.forEach(bar => { bar.style.transition = 'width 1s ease 0.3s'; });
+    playResult();
+  }));
+}
+
+// 自动播放结果动画
+setTimeout(playResult, 300);
+</script>
+</body>
+</html>

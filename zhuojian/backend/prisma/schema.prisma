@@ -1,0 +1,241 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "sqlite"
+  url      = "file:./zhuojian.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String?   @unique
+  password     String?
+  phone        String?   @unique
+  email        String?   @unique
+  wechatOpenid String?   @unique @map("wechat_openid")
+  qqOpenid     String?   @unique @map("qq_openid")
+  role         String    @default("user")
+  name         String?
+  avatar       String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  bookings     Booking[]
+  ohRecords    OhCardRecord[]
+  consultant   Consultant?
+  assessmentResults AssessmentResult[]
+}
+
+model VerifyCode {
+  id        Int    @id @default(autoincrement())
+  target    String
+  code      String
+  type      String
+  expiresAt BigInt @map("expires_at")
+  used      Int    @default(0)
+}
+
+model About {
+  id          Int      @id @default(autoincrement())
+  title       String?
+  content     String?
+  bannerImage String?  @map("banner_image")
+  images      String?
+  tickerType  String?  @default("news")
+  tickerItems String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+}
+
+model Consultant {
+  id         Int         @id @default(autoincrement())
+  userId     Int?        @unique @map("user_id")
+  name       String
+  avatar     String?
+  title      String?
+  bio        String?
+  specialties String?
+  education  String?
+  yearsExp          Int         @default(0) @map("years_exp")
+  consultHours      Int         @default(0) @map("consult_hours")
+  supervisionHours  Int         @default(0) @map("supervision_hours")
+  certifications    String?
+  workExperience String?     @map("work_experience")
+  price          Int         @default(0)
+  autoConfirm    Int         @default(0) @map("auto_confirm")
+  weeklyTemplate String?     @map("weekly_template")
+  isActive   Int         @default(1) @map("is_active")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  user       User?       @relation(fields: [userId], references: [id])
+  slots      TimeSlot[]
+  bookings   Booking[]
+}
+
+model TimeSlot {
+  id           Int        @id @default(autoincrement())
+  consultantId Int        @map("consultant_id")
+  startTime    String     @map("start_time")
+  endTime      String     @map("end_time")
+  isBooked     Int        @default(0) @map("is_booked")
+  consultant   Consultant @relation(fields: [consultantId], references: [id])
+  booking      Booking?   @relation("FirstSlot")
+  secondBooking Booking?  @relation("SecondSlot")
+}
+
+model Booking {
+  id             Int        @id @default(autoincrement())
+  userId         Int        @map("user_id")
+  consultantId   Int        @map("consultant_id")
+  slotId         Int        @unique @map("slot_id")
+  secondSlotId   Int?       @unique @map("second_slot_id")
+  status         String     @default("pending")
+  notes          String?
+  message        String?
+  createdAt      DateTime   @default(now()) @map("created_at")
+  user           User       @relation(fields: [userId], references: [id])
+  consultant     Consultant @relation(fields: [consultantId], references: [id])
+  slot           TimeSlot   @relation("FirstSlot", fields: [slotId], references: [id])
+  secondSlot     TimeSlot?  @relation("SecondSlot", fields: [secondSlotId], references: [id])
+}
+
+model News {
+  id          Int      @id @default(autoincrement())
+  title       String
+  summary     String?
+  content     String?
+  coverImage  String?  @map("cover_image")
+  videoUrl    String?  @map("video_url")
+  type        String   @default("news")
+  author      String?
+  isPublished Int      @default(1) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at")
+}
+
+model OhCardCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        String
+  description String?
+  cover       String?
+  isActive    Int      @default(1) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  cards       OhCard[]
+}
+
+model OhCard {
+  id          Int            @id @default(autoincrement())
+  categoryId  Int            @map("category_id")
+  imageUrl    String?        @map("image_url")
+  word        String?
+  description String?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  category    OhCardCategory @relation(fields: [categoryId], references: [id])
+}
+
+model OhCardRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String
+  data      String
+  note      String?
+  audioUrl  String?  @map("audio_url")
+  roomId    String?  @map("room_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model AssessmentScale {
+  id               Int      @id @default(autoincrement())
+  code             String   @unique
+  name             String
+  category         String
+  description      String
+  isPaid           Boolean  @default(false)
+  price            Int      @default(0)
+  totalQuestions   Int
+  estimatedMinutes Int      @default(10)
+  isActive         Boolean  @default(true)
+  scoringRule      String
+  createdAt        DateTime @default(now())
+  questions        AssessmentQuestion[]
+  results          AssessmentResult[]
+}
+
+model AssessmentQuestion {
+  id        Int     @id @default(autoincrement())
+  scaleId   Int
+  orderNum  Int
+  content   String
+  options   String
+  dimension String?
+  scale     AssessmentScale @relation(fields: [scaleId], references: [id])
+}
+
+model AssessmentResult {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  scaleId     Int
+  answers     String
+  totalScore  Float
+  dimensions  String?
+  level       String
+  completedAt DateTime  @default(now())
+  voucherId   Int?
+  user        User            @relation(fields: [userId], references: [id])
+  scale       AssessmentScale @relation(fields: [scaleId], references: [id])
+  voucher     AssessmentVoucher? @relation(fields: [voucherId], references: [id])
+}
+
+model AssessmentVoucher {
+  id           Int       @id @default(autoincrement())
+  code         String    @unique
+  scaleId      Int?
+  createdBy    Int
+  targetUserId Int?      @map("target_user_id")
+  usedBy       Int?
+  usedAt       DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  results      AssessmentResult[]
+}
+
+model EventLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  event     String
+  page      String
+  data      String?
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model NewsLike {
+  id        Int      @id @default(autoincrement())
+  newsId    Int      @map("news_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([newsId, userId])
+}
+
+model NewsFavorite {
+  id        Int      @id @default(autoincrement())
+  newsId    Int      @map("news_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([newsId, userId])
+}
+
+model NewsComment {
+  id        Int      @id @default(autoincrement())
+  newsId    Int      @map("news_id")
+  userId    Int      @map("user_id")
+  content   String
+  parentId  Int?     @map("parent_id")
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model ActivityRegistration {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  newsId    Int?     @map("news_id")
+  source    String?
+  createdAt DateTime @default(now()) @map("created_at")
+}
