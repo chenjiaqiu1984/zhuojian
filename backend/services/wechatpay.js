@@ -13,9 +13,9 @@ let _pay = null;
 function getPay() {
   if (_pay) return _pay;
   const privateKey = loadFile('apiclient_key.pem');
-  const publicKey  = loadFile('pub_key.pem');
+  const publicKey  = loadFile('apiclient_cert.pem');
   if (!privateKey) throw new Error('缺少商户私钥文件 certs/apiclient_key.pem');
-  if (!publicKey)  throw new Error('缺少微信平台公钥文件 certs/pub_key.pem');
+  if (!publicKey)  throw new Error('缺少微信平台证书文件 certs/apiclient_cert.pem');
   _pay = new WxPay({
     appid:      process.env.WX_APPID,
     mchid:      process.env.WECHAT_PAY_MCH_ID,

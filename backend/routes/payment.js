@@ -237,6 +237,9 @@ router.post('/h5/:bookingId', authMiddleware, async (req, res) => {
       where: { bookingId, status: { in: ['pending', 'paid'] } }
     });
     if (existing?.status === 'paid') return res.status(400).json({ error: '该预约已支付' });
+    if (existing?.status === 'pending') {
+      await prisma.order.update({ where: { id: existing.id }, data: { status: 'cancelled' } });
+    }
 
     const originalPrice = booking.consultant.price;
     if (!originalPrice || originalPrice <= 0) return res.status(400).json({ error: '咨询师未设置价格' });
@@ -289,6 +292,9 @@ router.post('/alipay/:bookingId', authMiddleware, async (req, res) => {
       where: { bookingId, status: { in: ['pending', 'paid'] } }
     });
     if (existing?.status === 'paid') return res.status(400).json({ error: '该预约已支付' });
+    if (existing?.status === 'pending') {
+      await prisma.order.update({ where: { id: existing.id }, data: { status: 'cancelled' } });
+    }
 
     const originalPrice = booking.consultant.price;
     if (!originalPrice || originalPrice <= 0) return res.status(400).json({ error: '咨询师未设置价格' });
