@@ -176,7 +176,7 @@ const gridCells = computed(() => {
       if (n > 0) {
         const hasPending = Array.from({length: n}, (_,i) => {
           const si = map[d.key]?.[idx+i];
-          return si?.booking?.status === 'pending' || si?.secondBooking?.status === 'pending';
+          return si?.booking?.status === 'pending' || si?.secondBookings?.some?.(b => b.status === 'pending');
         }).some(Boolean);
         cells.push({ id: id++, type: 'cell', col: ci+2, row: idx+1, span: n,
           label: hasPending ? '待确认' : '已预约', cls: hasPending ? 'wg-cell-pending' : 'wg-cell-booked' });
