@@ -73,9 +73,9 @@
       <text class="card-title">可预约时间</text>
       <view class="policy-box">
         <text class="policy-text">· 须提前48小时预约，每次60分钟</text>
-        <text class="policy-text">· 提前24小时以上可免费取消</text>
-        <text class="policy-text warn">· 12–24小时取消收取30%费用</text>
-        <text class="policy-text warn">· 12小时内不可取消</text>
+        <text class="policy-text">· 提前48小时以上取消：全额退款</text>
+        <text class="policy-text warn">· 提前24–48小时取消：退款50%</text>
+        <text class="policy-text warn">· 距预约时间不足24小时：不予退款</text>
       </view>
       <view class="week-grid">
         <!-- 日期头 -->
@@ -255,6 +255,7 @@ async function book() {
     selected.value = null; selectedHalfIdx.value = null; selectedDateKey.value = null;
     uni.navigateBack();
   } catch (e) {
+    if (e?.__authRedirect) return;
     uni.showToast({ title: e.error || '操作失败', icon: 'none' });
   }
 }

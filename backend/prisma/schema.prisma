@@ -112,7 +112,7 @@ model Booking {
   consultant     Consultant @relation(fields: [consultantId], references: [id])
   slot           TimeSlot   @relation("FirstSlot", fields: [slotId], references: [id])
   secondSlot     TimeSlot?  @relation("SecondSlot", fields: [secondSlotId], references: [id])
-  order          Order?
+  orders         Order[]
 }
 
 model News {
@@ -559,7 +559,7 @@ model Order {
   id          Int      @id @default(autoincrement())
   orderNo     String   @unique @map("order_no")       // 商户订单号
   userId      Int      @map("user_id")
-  bookingId   Int?     @unique @map("booking_id")      // 关联预约（可空，未来支持其他付费场景）
+  bookingId   Int?     @map("booking_id")
   amount      Int                                      // 单位：分
   status      String   @default("pending")             // pending / paid / cancelled / refunded
   payType     String   @default("wxpay") @map("pay_type")

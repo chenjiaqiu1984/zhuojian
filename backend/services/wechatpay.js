@@ -57,6 +57,7 @@ async function createH5Order({ orderNo, amount, desc, clientIp, notifyUrl }) {
       h5_info: { type: 'Wap' },
     },
   });
+  console.log('[wechatpay] h5 raw result:', JSON.stringify(result));
   const mwebUrl = result.data?.h5_url;
   if (!mwebUrl) throw new Error(`H5下单失败: ${JSON.stringify(result.data)}`);
   return { mwebUrl };

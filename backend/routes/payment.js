@@ -361,4 +361,44 @@ router.post('/alipay/notify', express.urlencoded({ extended: false }), async (re
   }
 });
 
+// ── 活动报名支付 ──────────────────────────────────────────────────
+// POST /api/payment/activity/:newsId
+router.post('/activity/:newsId', authMiddleware, async (req, res) => {
+  try {
+    const newsId   = Number(req.params.newsId);
+    const userId   = req.user.id;
+    const { payMethod } = req.body;
+    const amount   = 1; // 暂时固定0.01元（1分）
+    const orderNo  = genOrderNo(userId);
+    const expireAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    const news = await prisma.news.findUnique({ where: { id: newsId } });
+    if (!news) return res.status(404).json({ error: '活动不存在' });
+
+    await prisma.order.create({ data: { orderNo, userId, amount, expireAt, payType: payMethod === 'alipay' ? 'alipay' : 'wxpay' } });
+
+    const base = process.env.PAY_NOTIFY_BASE || `http://localhost:${process.env.PORT || 3000}`;
+    const desc  = `活动报名 - ${news.title}`;
+
+    if (payMethod === 'alipay') {
+      const { payUrl } = await createAlipayOrder({ orderNo, amount, desc, notifyUrl: `${base}/api/payment/alipay/notify`, returnUrl: `${base}/payment/result?orderNo=${orderNo}` });
+      return res.json({ orderNo, payUrl });
+    }
+    if (payMethod === 'h5') {
+      const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+      const { mwebUrl } = await createH5Order({ orderNo, amount, desc, clientIp, notifyUrl: notifyUrl() });
+      return res.json({ orderNo, mwebUrl });
+    }
+    // 小程序 jsapi
+    const openid = req.user.wechatOpenid;
+    if (!openid) return res.status(400).json({ error: '需要微信登录才能支付' });
+    const { prepayId, payParams } = await createJsapiOrder({ orderNo, amount, desc, openid, notifyUrl: notifyUrl() });
+    await prisma.order.update({ where: { orderNo }, data: { prepayId } });
+    res.json({ orderNo, payParams });
+  } catch (err) {
+    console.error('[payment] activity order error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

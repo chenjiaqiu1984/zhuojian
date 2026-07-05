@@ -8,7 +8,15 @@ async function request(method, path, data) {
     uni.request({
       url: `${BASE_URL}${path}`, method, data,
       header: { Authorization: `Bearer ${getToken()}` },
-      success: res => res.statusCode >= 400 ? reject(res.data) : resolve(res.data),
+      success: res => {
+        if (res.statusCode === 401) {
+          uni.removeStorageSync('token');
+          uni.removeStorageSync('user');
+          uni.reLaunch({ url: '/pages/login/index' });
+          return reject({ __authRedirect: true });
+        }
+        res.statusCode >= 400 ? reject(res.data) : resolve(res.data);
+      },
       fail: err => reject(err)
     });
   });
@@ -84,6 +92,7 @@ export const paymentApi = {
   createBookingOrder:    (bookingId, d) => post(`/payment/booking/${bookingId}`, d),
   createH5Order:         (bookingId, d) => post(`/payment/h5/${bookingId}`, d),
   createAlipayOrder:     (bookingId, d) => post(`/payment/alipay/${bookingId}`, d),
+  createActivityOrder:   (newsId, d)    => post(`/payment/activity/${newsId}`, d),
   queryOrder:            orderNo        => get(`/payment/order/${orderNo}`),
   refund:                (orderNo, d)   => post(`/payment/refund/${orderNo}`, d),
 };

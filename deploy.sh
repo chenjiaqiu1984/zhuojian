@@ -21,6 +21,6 @@ echo "=== 导入测评量表 ==="
 node db/mdb_seed.js
 
 echo "=== 重启服务 ==="
-pm2 restart ohcard-backend
+pm2 restart zhuojian-backend
 
 echo "=== 部署完成 ==="

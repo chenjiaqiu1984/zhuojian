@@ -8,10 +8,11 @@
     <view v-else>
       <view class="booking-card" v-for="b in filtered" :key="b.id">
         <view class="b-header">
-          <text class="b-name">{{b.consultant_name}}</text>
+          <text class="b-name b-name-link" @click="uni.navigateTo({url:`/pages/consultants/detail?id=${b.consultantId}`})">{{b.consultant_name}} ›</text>
           <u-tag :text="statusLabel[b.status]" :type="statusType[b.status]" />
         </view>
-        <text class="b-time">{{b.start_time}} - {{b.end_time}}</text>
+        <text class="b-time">预约时间：{{b.start_time}} - {{b.end_time}}</text>
+        <text class="b-created">操作时间：{{fmt(b.createdAt)}}</text>
         <text v-if="b.message" class="b-msg">{{b.message}}</text>
         <view class="b-actions" v-if="b.status === 'pending_payment'">
           <u-button size="mini" type="error" @click="goToPay(b)">去支付</u-button>
@@ -91,12 +92,28 @@ function reschedule(b) {
 }
 
 async function cancel(b) {
-  try {
-    await bookingApi.updateStatus(b.id, { status: 'cancelled' });
-    track('booking_cancel', '/pages/booking/index');
-    b.status = 'cancelled';
-    uni.showToast({ title: '已取消' });
-  } catch { uni.showToast({ title: '操作失败', icon: 'none' }); }
+  uni.showModal({
+    title: '确认取消',
+    content: '取消后将触发退款（如已支付）。确认取消此预约？',
+    success: async ({ confirm }) => {
+      if (!confirm) return;
+      try {
+        const res = await bookingApi.updateStatus(b.id, { status: 'cancelled' });
+        track('booking_cancel', '/pages/booking/index');
+        b.status = 'cancelled';
+        if (res.refunded) {
+          const amt = (res.refundAmount / 100).toFixed(2);
+          uni.showToast({ title: `已取消，退款¥${amt}`, icon: 'none', duration: 3000 });
+        } else if (res.refundError) {
+          uni.showToast({ title: res.refundError, icon: 'none', duration: 4000 });
+        } else {
+          uni.showToast({ title: '已取消' });
+        }
+      } catch (e) {
+        uni.showToast({ title: e?.error || '操作失败', icon: 'none' });
+      }
+    }
+  });
 }
 
 async function deleteBooking(b) {
@@ -106,6 +123,11 @@ async function deleteBooking(b) {
     uni.showToast({ title: '已删除' });
   } catch { uni.showToast({ title: '操作失败', icon: 'none' }); }
 }
+
+function fmt(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
 </script>
 
 <style scoped lang="scss">
@@ -114,7 +136,9 @@ async function deleteBooking(b) {
 .booking-card { background: #fff; margin: 16rpx 24rpx; padding: 24rpx; border-radius: 16rpx; }
 .b-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
 .b-name { font-size: 30rpx; font-weight: 600; color: #333; }
-.b-time { font-size: 24rpx; color: #666; display: block; margin-bottom: 8rpx; }
+.b-name-link { color: #4A8A7A; }
+.b-time { font-size: 24rpx; color: #666; display: block; margin-bottom: 4rpx; }
+.b-created { font-size: 22rpx; color: #9BBCB4; display: block; margin-bottom: 8rpx; }
 .b-msg { font-size: 24rpx; color: #4A7BBA; display: block; margin-bottom: 8rpx; }
 .b-actions { margin-top: 12rpx; display: flex; gap: 16rpx; }
 </style>

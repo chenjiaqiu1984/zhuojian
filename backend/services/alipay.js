@@ -35,8 +35,7 @@ async function createAlipayOrder({ orderNo, amount, desc, returnUrl, notifyUrl }
   formData.addField('returnUrl',  returnUrl  || process.env.ALIPAY_RETURN_URL || '');
   formData.addField('notifyUrl',  notifyUrl);
 
-  const result = await sdk.exec('alipay.trade.wap.pay', {}, { formData });
-  // result 是一个包含跳转参数的 URL（GET 方式）
+  const result = await sdk.pageExec('alipay.trade.wap.pay', { formData });
   return { payUrl: result };
 }
 
@@ -50,4 +49,18 @@ function verifyAlipayNotify(postBody) {
   return postBody;
 }
 
-module.exports = { createAlipayOrder, verifyAlipayNotify };
+async function alipayRefund({ tradeNo, refundAmount, outRequestNo, reason }) {
+  const sdk = getSdk();
+  const result = await sdk.exec('alipay.trade.refund', {
+    bizContent: {
+      trade_no:       tradeNo,
+      refund_amount:  (refundAmount / 100).toFixed(2),
+      refund_reason:  reason || '用户取消预约',
+      out_request_no: outRequestNo,
+    }
+  });
+  if (result.code !== '10000') throw new Error(result.subMsg || result.msg || '支付宝退款失败');
+  return result;
+}
+
+module.exports = { createAlipayOrder, verifyAlipayNotify, alipayRefund };

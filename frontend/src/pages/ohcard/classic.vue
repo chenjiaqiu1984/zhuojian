@@ -190,7 +190,8 @@ async function saveRecord() {
     uni.showToast({ title: '已保存' });
     setTimeout(() => uni.navigateBack(), 1500);
   } catch(e) {
-    uni.showToast({ title: '保存失败: ' + (e?.error || e?.message || String(e)), icon: 'none', duration: 3000 });
+    if (e?.__authRedirect) return;
+    uni.showToast({ title: e?.error || '保存失败', icon: 'none', duration: 3000 });
   } finally {
     saving.value = false;
   }

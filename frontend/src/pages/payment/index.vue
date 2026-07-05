@@ -3,17 +3,23 @@
     <!-- 订单信息 -->
     <view class="order-card">
       <text class="order-title">确认支付</text>
-      <view class="order-row">
-        <text class="label">咨询师</text>
-        <text class="value">{{ consultantName }}</text>
+      <view class="order-row" v-if="isActivity">
+        <text class="label">活动名称</text>
+        <text class="value">{{ activityName }}</text>
       </view>
-      <view class="order-row">
-        <text class="label">预约时间</text>
-        <text class="value">{{ slotTime }}</text>
-      </view>
+      <template v-else>
+        <view class="order-row">
+          <text class="label">咨询师</text>
+          <text class="value">{{ consultantName }}</text>
+        </view>
+        <view class="order-row">
+          <text class="label">预约时间</text>
+          <text class="value">{{ slotTime }}</text>
+        </view>
+      </template>
 
-      <!-- 退费须知（内嵌于订单卡片） -->
-      <view class="refund-policy">
+      <!-- 退费须知（内嵌于订单卡片，仅预约支付显示） -->
+      <view class="refund-policy" v-if="!isActivity">
         <view class="refund-title">
           <text class="refund-icon">📋</text>
           <text>退费须知 · 请提前3天预约</text>
@@ -85,8 +91,8 @@
       </view>
     </view>
 
-    <!-- 优惠券选择（有可用券时显示） -->
-    <view class="pay-card" v-if="!usePackage && availableCoupons.length > 0">
+    <!-- 优惠券选择（有可用券时显示，活动支付不用券） -->
+    <view class="pay-card" v-if="!isActivity && !usePackage && availableCoupons.length > 0">
       <view class="pay-item coupon-header">
         <text class="pay-icon">🎟️</text>
         <text class="pay-name">优惠券</text>
@@ -125,8 +131,8 @@
       </view>
     </view>
 
-    <!-- 套餐选项（有可用套餐时显示） -->
-    <view class="pay-card" v-if="activePackages.length > 0">
+    <!-- 套餐选项（有可用套餐时显示，活动支付不用套餐） -->
+    <view class="pay-card" v-if="!isActivity && activePackages.length > 0">
       <view class="pay-item package-header">
         <text class="pay-icon">🎁</text>
         <text class="pay-name">使用套餐次数</text>
@@ -163,7 +169,7 @@
         <template v-else-if="usePackage">使用套餐预约（免支付）</template>
         <template v-else>立即支付 ¥{{ (finalAmount / 100).toFixed(2) }}</template>
       </button>
-      <text class="cancel-link" @click="cancel">取消预约</text>
+      <text class="cancel-link" v-if="!isActivity" @click="cancel">取消预约</text>
     </view>
   </view>
 </template>
@@ -175,10 +181,13 @@ import { paymentApi, bookingApi, packageApi, couponApi } from '../../api/index';
 // uni-app 路由页面通过 URL query 传参，不能用 defineProps 接收
 // 改为本地 ref，在 onMounted 里从 query 读取
 const bookingId      = ref(0);
+const newsId         = ref(0);          // 活动支付时使用
+const activityName   = ref('');
 const consultantName = ref('');
 const slotTime       = ref('');
-const amount         = ref(0);          // 咨询师原价（分）
-const discountRate   = ref(1.0);        // 折扣率（从 URL 或默认1.0）
+const amount         = ref(0);
+const discountRate   = ref(1.0);
+const isActivity     = computed(() => newsId.value > 0);
 
 const loading           = ref(false);
 const orderNo           = ref('');
@@ -267,6 +276,8 @@ onMounted(async () => {
       ? Object.fromEntries(new URLSearchParams(query))
       : query;
     if (p.bookingId)      bookingId.value      = Number(p.bookingId);
+    if (p.newsId)         newsId.value         = Number(p.newsId);
+    if (p.activityName)   activityName.value   = decodeURIComponent(p.activityName);
     if (p.consultantName) consultantName.value = decodeURIComponent(p.consultantName);
     if (p.slotTime)       slotTime.value       = decodeURIComponent(p.slotTime);
     if (p.amount)         amount.value         = Number(p.amount);
@@ -318,7 +329,9 @@ async function doPay() {
   if (loading.value) return;
   loading.value = true;
   try {
-    if (usePackage.value && selectedPackageId.value) {
+    if (isActivity.value) {
+      isH5 ? (payMethod.value === 'alipay' ? await doActivityAlipay() : await doActivityWechatH5()) : await doActivityWechatMiniApp();
+    } else if (usePackage.value && selectedPackageId.value) {
       await doUsePackage();
     } else if (isH5) {
       payMethod.value === 'alipay' ? await doAlipayH5() : await doWechatH5();
@@ -334,6 +347,28 @@ async function doPay() {
 async function doUsePackage() {
   await packageApi.use(selectedPackageId.value, { bookingId: bookingId.value });
   onPaySuccess();
+}
+
+// ── 活动支付 ──────────────────────────────────────────────────────
+async function doActivityWechatMiniApp() {
+  const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'wxpay' });
+  orderNo.value = data.orderNo;
+  const p = data.payParams;
+  await new Promise((resolve, reject) => {
+    uni.requestPayment({ provider: 'wxpay', timeStamp: p.timeStamp, nonceStr: p.nonceStr, package: p.package, signType: p.signType || 'RSA', paySign: p.paySign, success: resolve, fail: reject });
+  });
+  onPaySuccess();
+}
+async function doActivityWechatH5() {
+  const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'h5' });
+  orderNo.value = data.orderNo;
+  const redirectUrl = encodeURIComponent(`${location.origin}/payment/result?orderNo=${data.orderNo}`);
+  location.href = `${data.mwebUrl}&redirect_url=${redirectUrl}`;
+}
+async function doActivityAlipay() {
+  const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'alipay' });
+  orderNo.value = data.orderNo;
+  location.href = data.payUrl;
 }
 
 // ── 小程序微信 JSAPI ──────────────────────────────────────────────
