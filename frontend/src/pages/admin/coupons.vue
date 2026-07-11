@@ -79,7 +79,7 @@
 
         <view class="modal-footer">
           <u-button @click="editModal = false">取消</u-button>
-          <u-button type="primary" :loading="saving" @click="saveCoupon">保存</u-button>
+          <u-button type="primary" :loading="saving" @click="saveCoupon()">保存</u-button>
         </view>
       </view>
     </u-popup>
@@ -97,7 +97,7 @@
         </view>
         <view class="modal-footer">
           <u-button @click="sendModal = false">取消</u-button>
-          <u-button type="primary" :loading="sending" @click="doSend">发送</u-button>
+          <u-button type="primary" :loading="sending" @click="doSend()">发送</u-button>
         </view>
       </view>
     </u-popup>

@@ -70,6 +70,7 @@ app.use('/api/terms', require('./routes/terms'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/packages', require('./routes/packages'));
 app.use('/api/coupons', require('./routes/coupons'));
+app.use('/api/users', require('./routes/users'));
 
 require('./socket/rooms')(io);
 

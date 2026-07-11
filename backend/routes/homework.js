@@ -113,7 +113,7 @@ router.delete('/iceberg/:id', ...auth, async (req, res) => {
 // ── Homework Help ─────────────────────────────────────────────────
 
 router.get('/help/pending', ...requireRole('admin', 'consultant'), async (req, res) => {
-  const isAdmin = req.user.role === 'admin';
+  const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
   const where = isAdmin ? {} : { consultantId: req.user.id };
   const list = await prisma.homeworkHelp.findMany({ where, orderBy: { createdAt: 'desc' } });
   const enriched = await Promise.all(list.map(async h => {

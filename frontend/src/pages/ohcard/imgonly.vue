@@ -19,20 +19,20 @@
     <view v-if="step === 1" class="step">
       <text class="reflect-hint">保持问题在心中，翻开卡牌</text>
       <view class="card-wrap">
-        <view class="card" :class="{flipped}" @click="flip">
+        <view class="card" :class="{flipped}" @click="tapHandler = flip">
           <view class="card-back"><text class="back-text">点击翻转</text></view>
           <view class="card-front" @click.stop="showFs=true">
             <image :src="fullUrl(card?.imageUrl)" mode="aspectFill" class="card-img" />
           </view>
         </view>
-        <text class="swap-btn" @click="redraw">换一张</text>
+        <text class="swap-btn" @click="redraw()">换一张</text>
       </view>
 
       <view v-if="flipped" class="save-section">
         <text class="section-label">此刻感受</text>
         <textarea class="note-input" v-model="note" placeholder="写下你的感想..." maxlength="500" />
-        <u-button type="primary" @click="save" style="margin-top:20rpx">保存记录</u-button>
-        <u-button plain @click="reset" style="margin-top:12rpx">重新抽卡</u-button>
+        <u-button type="primary" @click="save()" style="margin-top:20rpx">保存记录</u-button>
+        <u-button plain @click="reset()" style="margin-top:12rpx">重新抽卡</u-button>
       </view>
     </view>
 
@@ -44,11 +44,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted , watch } from 'vue';
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
 import { SERVER } from '../../config';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const store = useUserStore();
 const step = ref(0);

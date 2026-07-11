@@ -41,7 +41,7 @@ router.post('/', ...requireRole('admin'), async (req, res) => {
 router.put('/:id', authMiddleware, async (req, res) => {
   const c = await prisma.consultant.findUnique({ where: { id: Number(req.params.id) } });
   if (!c) return res.status(404).json({ error: '未找到' });
-  if (req.user.role !== 'admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
   await prisma.consultant.update({ where: { id: c.id }, data: req.body });
   res.json({ ok: true });
 });
@@ -55,7 +55,7 @@ router.get('/:id/week-slots', authMiddleware, async (req, res) => {
   const id = Number(req.params.id);
   const c = await prisma.consultant.findUnique({ where: { id } });
   if (!c) return res.status(404).json({ error: '未找到' });
-  if (req.user.role !== 'admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
   const now = new Date().toISOString();
   const max = new Date(Date.now() + 8 * 86400000).toISOString();
   const slots = await prisma.timeSlot.findMany({ where: { consultantId: id, startTime: { gte: now, lte: max } }, orderBy: { startTime: 'asc' } });
@@ -66,7 +66,7 @@ router.post('/:id/apply-template', authMiddleware, async (req, res) => {
   const id = Number(req.params.id);
   const c = await prisma.consultant.findUnique({ where: { id } });
   if (!c) return res.status(404).json({ error: '未找到' });
-  if (req.user.role !== 'admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
   if (!c.weeklyTemplate) return res.status(400).json({ error: '未设置模板' });
   const tpl = JSON.parse(c.weeklyTemplate);
   const now = new Date();
@@ -90,7 +90,7 @@ router.post('/:id/apply-template', authMiddleware, async (req, res) => {
 router.post('/:id/slots', authMiddleware, async (req, res) => {
   const c = await prisma.consultant.findUnique({ where: { id: Number(req.params.id) } });
   if (!c) return res.status(404).json({ error: '未找到' });
-  if (req.user.role !== 'admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
   const { slots } = req.body;
   await prisma.timeSlot.createMany({ data: slots.map(s => ({ consultantId: c.id, startTime: s.start_time, endTime: s.end_time })) });
   res.json({ ok: true });
@@ -100,7 +100,7 @@ router.delete('/slots/:slotId', authMiddleware, async (req, res) => {
   const slot = await prisma.timeSlot.findUnique({ where: { id: Number(req.params.slotId) }, include: { consultant: true } });
   if (!slot) return res.status(404).json({ error: '未找到' });
   if (slot.isBooked) return res.status(400).json({ error: '该时间段已有预约，无法删除' });
-  if (req.user.role !== 'admin' && slot.consultant.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin' && slot.consultant.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
   await prisma.timeSlot.delete({ where: { id: slot.id } });
   res.json({ ok: true });
 });

@@ -19,6 +19,7 @@ const routes = [
       { path: 'analytics', component: () => import('../views/Analytics.vue') },
       { path: 'crisis', component: () => import('../views/CrisisEvents.vue') },
       { path: 'terms', component: () => import('../views/TermsManager.vue') },
+      { path: 'users', component: () => import('../views/Users.vue') },
     ]
   }
 ];

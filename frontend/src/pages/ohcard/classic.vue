@@ -15,21 +15,23 @@
         <!-- Image card (left) -->
         <view class="card-col">
           <text class="card-label">图卡</text>
-          <view class="card img-card" @click="handleImgClick">
+          <!-- 去掉外层 overflow:hidden，避免微信小程序吞掉点击事件 -->
+          <view class="card img-card" :style="{transform: imgRotate, transition: 'transform 0.21s ease-in-out'}" @click="tapHandler = handleImgClick">
             <view v-if="!imgFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
             <view v-else class="card-front">
               <image :src="fullUrl(imgCard?.imageUrl)" mode="aspectFill" class="card-img" />
             </view>
           </view>
           <view class="swap-row">
-            <text class="swap-btn" :class="{disabled: imgLoading}" @click="redrawImg">{{imgLoading ? '加载中…' : '换一个'}}</text>
+            <!-- 用 view 替换 text，微信小程序 text 不支持 @click -->
+            <view class="swap-btn" :class="{disabled: imgLoading}" @click="tapHandler = redrawImg">{{imgLoading ? '加载中…' : '换一个'}}</view>
           </view>
         </view>
 
         <!-- Word card (right, larger) -->
         <view v-if="selDeck?.wordCatId" class="card-col">
           <text class="card-label">{{wordCard?.imageUrl ? '情况卡' : '字卡'}}</text>
-          <view class="card word-card" @click="flipWord">
+          <view class="card word-card" :style="{transform: wordRotate, transition: 'transform 0.21s ease-in-out'}" @click="tapHandler = flipWord">
             <view v-if="!wordFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
             <view v-else class="card-front" :class="wordCard?.imageUrl ? '' : 'word-front'">
               <image v-if="wordCard?.imageUrl" :src="fullUrl(wordCard.imageUrl)" mode="aspectFill" class="card-img" />
@@ -39,7 +41,7 @@
             </view>
           </view>
           <view class="swap-row">
-            <text class="swap-btn" :class="{disabled: wordLoading}" @click="redrawWord">{{wordLoading ? '加载中…' : '换一个'}}</text>
+            <view class="swap-btn" :class="{disabled: wordLoading}" @click="tapHandler = redrawWord">{{wordLoading ? '加载中…' : '换一个'}}</view>
           </view>
         </view>
       </view>
@@ -58,7 +60,7 @@
         <text class="section-label" style="margin-top:28rpx">此刻感受</text>
         <textarea class="note-input" v-model="note" placeholder="写下你的感想..." maxlength="500" />
         <view class="btn-group">
-          <u-button type="primary" :disabled="saving" @click="saveRecord">{{saving?'保存中...':'保存记录'}}</u-button>
+          <u-button type="primary" :disabled="saving" @click="saveRecord()">{{saving?'保存中...':'保存记录'}}</u-button>
           <u-button plain @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</u-button>
           <u-button plain @click="uni.navigateBack()">返回抽卡菜单</u-button>
         </view>
@@ -68,12 +70,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick , watch } from 'vue';
 import { onBackPress, onLoad } from '@dcloudio/uni-app';
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
 import { SERVER } from '../../config';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const BASE_IMG = SERVER;
 const store = useUserStore();
@@ -97,6 +104,12 @@ const showFullscreen = ref(false);
 const saving = ref(false);
 const imgLoading = ref(false);
 const wordLoading = ref(false);
+
+// flip animation state
+const imgRotate = ref('rotateY(0deg)');
+const wordRotate = ref('rotateY(0deg)');
+const imgAnimating = ref(false);
+const wordAnimating = ref(false);
 
 function preloadImage(url) {
   if (!url || typeof Image === 'undefined') return Promise.resolve();
@@ -155,44 +168,87 @@ async function startDraw(deck) {
 }
 
 async function redrawImg() {
-  if (imgLoading.value) return;
+  if (imgLoading.value || imgAnimating.value) return;
   imgLoading.value = true;
-  const wasFlipped = imgFlipped.value;
-  imgFlipped.value = false;
+  if (imgFlipped.value) {
+    imgAnimating.value = true;
+    imgRotate.value = 'rotateY(-90deg)';
+    await new Promise(r => setTimeout(r, 210));
+    imgFlipped.value = false;
+    imgRotate.value = 'rotateY(90deg)';
+    await nextTick();
+    imgRotate.value = 'rotateY(0deg)';
+    await new Promise(r => setTimeout(r, 210));
+    imgAnimating.value = false;
+  }
   try {
     const imgs = await ohcardApi.cards({ category_id: selDeck.value.imgCatId, count: 1 });
     if (imgs.length) {
-      await preloadImage(fullUrl(imgs[0]?.imageUrl));
-      if (wasFlipped) await new Promise(r => setTimeout(r, 650));
+      preloadImage(fullUrl(imgs[0]?.imageUrl));
       imgCard.value = imgs[0];
     }
   } catch {} finally { imgLoading.value = false; }
 }
 
 async function redrawWord() {
-  if (wordLoading.value) return;
+  if (wordLoading.value || wordAnimating.value) return;
   wordLoading.value = true;
-  const wasFlipped = wordFlipped.value;
-  wordFlipped.value = false;
+  if (wordFlipped.value) {
+    wordAnimating.value = true;
+    wordRotate.value = 'rotateY(-90deg)';
+    await new Promise(r => setTimeout(r, 210));
+    wordFlipped.value = false;
+    wordRotate.value = 'rotateY(90deg)';
+    await nextTick();
+    wordRotate.value = 'rotateY(0deg)';
+    await new Promise(r => setTimeout(r, 210));
+    wordAnimating.value = false;
+  }
   try {
     const words = await ohcardApi.cards({ category_id: selDeck.value.wordCatId, count: 1 });
     if (words.length) {
-      await preloadImage(fullUrl(words[0]?.imageUrl));
-      if (wasFlipped) await new Promise(r => setTimeout(r, 650));
+      preloadImage(fullUrl(words[0]?.imageUrl));
       wordCard.value = words[0];
     }
   } catch {} finally { wordLoading.value = false; }
 }
 
-function handleImgClick() {
-  if (!imgFlipped.value) imgFlipped.value = true;
-  else showFullscreen.value = true;
+async function handleImgClick() {
+  if (imgAnimating.value) return;
+  if (!imgFlipped.value) {
+    imgAnimating.value = true;
+    imgRotate.value = 'rotateY(90deg)';
+    await new Promise(r => setTimeout(r, 210));
+    imgFlipped.value = true;
+    imgRotate.value = 'rotateY(-90deg)';
+    await nextTick();
+    imgRotate.value = 'rotateY(0deg)';
+    await new Promise(r => setTimeout(r, 210));
+    imgAnimating.value = false;
+  } else {
+    showFullscreen.value = true;
+  }
 }
-function flipWord() { if (!wordFlipped.value) wordFlipped.value = true; }
+async function flipWord() {
+  if (wordAnimating.value || wordFlipped.value) return;
+  wordAnimating.value = true;
+  wordRotate.value = 'rotateY(90deg)';
+  await new Promise(r => setTimeout(r, 210));
+  wordFlipped.value = true;
+  wordRotate.value = 'rotateY(-90deg)';
+  await nextTick();
+  wordRotate.value = 'rotateY(0deg)';
+  await new Promise(r => setTimeout(r, 210));
+  wordAnimating.value = false;
+}
 
 async function saveRecord() {
   if (saving.value) return;
-  if (!store.isLoggedIn()) return uni.navigateTo({ url: '/pages/login/index' });
+  if (!store.isLoggedIn()) {
+    uni.showToast({ title: '请先登录', icon: 'none' });
+    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 800);
+    return;
+  }
   saving.value = true;
   try {
     await ohcardApi.saveRecord({
@@ -200,7 +256,7 @@ async function saveRecord() {
       data: { imgCard: imgCard.value, wordCard: wordCard.value, compositeUrl: compositeUrl.value, deckName: selDeck.value?.name },
       note: note.value
     });
-    uni.showToast({ title: '已保存' });
+    uni.showToast({ title: '已保存', icon: 'success' });
     setTimeout(() => uni.navigateBack(), 1500);
   } catch(e) {
     if (e?.__authRedirect) return;
@@ -246,7 +302,7 @@ function reset() {
 .card-label { font-size: 24rpx; color: #888; margin-bottom: 12rpx; }
 
 /* Card flip */
-.card { position: relative; border-radius: 16rpx; overflow: hidden; }
+.card { position: relative; border-radius: 16rpx; overflow: hidden; will-change: transform; }
 .card-back, .card-front { width: 100%; height: 100%; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; }
 .card-back { background: linear-gradient(135deg, #4A7BBA, #7B68EE); }
 .back-text { color: #fff; font-size: 24rpx; }

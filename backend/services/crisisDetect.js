@@ -47,7 +47,8 @@ async function record(opts) {
       data: {
         userId: opts.userId || null,
         event: 'crisis_trigger',
-        meta: JSON.stringify({
+        page: '',
+        data: JSON.stringify({
           source: opts.source,
           level: opts.level,
           matched: opts.matched,

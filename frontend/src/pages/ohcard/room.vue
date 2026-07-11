@@ -4,14 +4,14 @@
       <text class="title">房间抽卡</text>
       <text class="desc">输入房间号加入，或创建新房间</text>
       <u-input v-model="roomInput" placeholder="输入房间号" type="number" style="margin:32rpx 0" />
-      <u-button type="primary" @click="joinRoom">加入房间</u-button>
-      <u-button plain @click="createRoom" style="margin-top:16rpx">创建新房间</u-button>
+      <u-button type="primary" @click="joinRoom()">加入房间</u-button>
+      <u-button plain @click="createRoom()" style="margin-top:16rpx">创建新房间</u-button>
     </view>
 
     <view v-else class="room">
       <view class="room-header">
         <text class="room-id">房间号：{{roomId}}</text>
-        <u-button size="mini" @click="dealCards">发牌</u-button>
+        <u-button size="mini" @click="dealCards()">发牌</u-button>
       </view>
       <view class="members">
         <view class="member" v-for="m in members" :key="m.socketId">
@@ -42,9 +42,9 @@
         </scroll-view>
       </view>
       <view class="actions">
-        <u-button type="primary" @click="setReady" :disabled="isReady">{{isReady ? '已准备' : '准备好了'}}</u-button>
-        <u-button :type="isShared ? 'warning' : 'success'" @click="toggleShare">{{isShared ? '取消分享' : '分享给大家'}}</u-button>
-        <u-button type="error" plain @click="leaveRoom">离开房间</u-button>
+        <u-button type="primary" @click="setReady()" :disabled="isReady">{{isReady ? '已准备' : '准备好了'}}</u-button>
+        <u-button :type="isShared ? 'warning' : 'success'" @click="toggleShare()">{{isShared ? '取消分享' : '分享给大家'}}</u-button>
+        <u-button type="error" plain @click="leaveRoom()">离开房间</u-button>
       </view>
     </view>
   </view>

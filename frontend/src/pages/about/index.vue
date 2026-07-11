@@ -107,8 +107,8 @@
         <text class="contact-item">小程序开发联系：553997877@qq.com</text>
       </view>
       <view class="icp-row">
-        <text class="icp-text" @click="openIcp">苏ICP备2026043098号</text>
-        <view class="beian-row" @click="openBeian">
+        <text class="icp-text" @click="openIcp()">苏ICP备2026043098号</text>
+        <view class="beian-row" @click="tapHandler = openBeian">
           <image class="beian-icon" src="/static/beian.png" mode="aspectFit" />
           <text class="icp-text">苏公网安备32010402002563号</text>
         </view>
@@ -118,8 +118,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import {ref, onMounted, watch } from 'vue';
 import { aboutApi } from '../../api/index';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const about = ref({});
 

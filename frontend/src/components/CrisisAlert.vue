@@ -7,15 +7,20 @@
       <text class="subtitle">你不需要独自面对，我们的咨询师随时可以陪伴你</text>
 
       <view class="btn-row">
-        <view class="btn-consult" @click="goConsult">预约咨询师</view>
-        <view class="btn-close" @click="close">我知道了</view>
+        <view class="btn-consult" @click="tapHandler = goConsult">预约咨询师</view>
+        <view class="btn-close" @click="tapHandler = close">我知道了</view>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import {ref, watch } from 'vue';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const visible = ref(false);
 

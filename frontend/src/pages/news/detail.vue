@@ -16,15 +16,15 @@
     </view>
 
     <view class="action-bar">
-      <view class="action-btn" @click="toggleLike">
+      <view class="action-btn" @click="tapHandler = toggleLike">
         <u-icon :name="news.isLiked ? 'thumb-up-fill' : 'thumb-up'" :color="news.isLiked ? '#4A8A7A' : '#999'" size="44" />
         <text :class="['action-label', news.isLiked && 'active']">{{news.likeCount || 0}}</text>
       </view>
-      <view class="action-btn" @click="toggleFavorite">
+      <view class="action-btn" @click="tapHandler = toggleFavorite">
         <u-icon :name="news.isFavorited ? 'star-fill' : 'star'" :color="news.isFavorited ? '#E6A23C' : '#999'" size="44" />
         <text :class="['action-label', news.isFavorited && 'active-fav']">{{news.favoriteCount || 0}}</text>
       </view>
-      <view class="action-btn" @click="share">
+      <view class="action-btn" @click="tapHandler = share">
         <u-icon name="share" color="#999" size="44" />
         <text class="action-label">转发</text>
       </view>
@@ -34,7 +34,7 @@
       <text class="section-title">留言</text>
       <view class="comment-input-row">
         <input class="comment-input" v-model="commentText" placeholder="写下你的留言..." />
-        <view class="send-btn" @click="submitComment">发送</view>
+        <view class="send-btn" @click="tapHandler = submitComment">发送</view>
       </view>
       <view class="comment-list">
         <view class="comment-item" v-for="c in comments" :key="c.id" :class="{ reply: c.parentId }">
@@ -52,9 +52,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import {ref, onMounted, computed, watch } from 'vue';
 import DOMPurify from 'dompurify';
 import { newsApi } from '../../api/index';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const loading = ref(true);
 const news = ref(null);

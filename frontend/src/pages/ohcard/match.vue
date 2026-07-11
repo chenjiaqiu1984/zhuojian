@@ -3,7 +3,7 @@
     <view v-if="!drawn">
       <text class="title">图字随机匹配</text>
       <text class="desc">随机抽取图卡与字卡，用直觉为图卡配上字卡</text>
-      <u-button type="primary" @click="drawCards" style="margin-top:40rpx">开始抽卡</u-button>
+      <u-button type="primary" @click="drawCards()" style="margin-top:40rpx">开始抽卡</u-button>
     </view>
     <view v-else>
       <text class="title">为每张图卡选择一张字卡</text>
@@ -20,7 +20,7 @@
           </view>
         </scroll-view>
       </view>
-      <u-button type="primary" :disabled="!allMatched" @click="save" style="margin-top:32rpx">保存匹配</u-button>
+      <u-button type="primary" :disabled="!allMatched" @click="save()" style="margin-top:32rpx">保存匹配</u-button>
       <u-button plain @click="drawn=false" style="margin-top:16rpx">重新抽卡</u-button>
     </view>
   </view>

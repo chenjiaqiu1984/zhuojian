@@ -4,7 +4,7 @@
       <div class="logo">卓见心理</div>
       <el-menu router :default-active="$route.path" background-color="#001529" text-color="#aaa" active-text-color="#fff">
         <el-menu-item index="/dashboard"><el-icon><Odometer /></el-icon>概览</el-menu-item>
-        <template v-if="store.user?.role === 'admin'">
+        <template v-if="['admin','super_admin'].includes(store.user?.role)">
           <el-menu-item index="/about"><el-icon><InfoFilled /></el-icon>关于我们</el-menu-item>
           <el-menu-item index="/news"><el-icon><Promotion /></el-icon>新闻活动</el-menu-item>
           <el-menu-item index="/ohcard"><el-icon><Grid /></el-icon>图卡管理</el-menu-item>
@@ -12,6 +12,7 @@
           <el-menu-item index="/analytics"><el-icon><TrendCharts /></el-icon>埋点统计</el-menu-item>
           <el-menu-item index="/crisis"><el-icon><Warning /></el-icon>危机事件</el-menu-item>
           <el-menu-item index="/terms"><el-icon><Document /></el-icon>协议管理</el-menu-item>
+          <el-menu-item index="/users"><el-icon><User /></el-icon>用户管理</el-menu-item>
         </template>
         <el-menu-item index="/consultants"><el-icon><Avatar /></el-icon>咨询师</el-menu-item>
         <el-menu-item index="/booking"><el-icon><Calendar /></el-icon>预约管理</el-menu-item>

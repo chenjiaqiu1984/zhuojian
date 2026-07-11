@@ -10,7 +10,7 @@
         <text class="hint-text">{{f.hint}}</text>
         <textarea class="input" v-model="form[f.key]" :placeholder="f.placeholder" />
       </view>
-      <view class="save-btn" @click="save">保存记录</view>
+      <view class="save-btn" @click="tapHandler = save">保存记录</view>
     </view>
 
     <view v-if="list.length" class="history-section">
@@ -43,7 +43,7 @@
             </view>
             <view class="note-input-row">
               <textarea class="note-input" v-model="noteInput" placeholder="写下新的思考..." />
-              <view class="note-add-btn" @click="appendNote">追加</view>
+              <view class="note-add-btn" @click="tapHandler = appendNote">追加</view>
             </view>
           </view>
         </view>
@@ -54,10 +54,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import {ref, computed, onMounted, watch } from 'vue';
 import { homeworkApi } from '../../api/index';
 import { track } from '../../utils/track';
 import CrisisAlert from '../../components/CrisisAlert.vue';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const fields = [
   { key: 'behavior',         depth: 1, label: '行为',        required: true,  hint: '（水面）可见的行为、故事内容',         placeholder: '如：强忍眼泪、独自离开' },
@@ -97,7 +102,11 @@ async function save() {
     await load();
     uni.showToast({ title: '已保存', icon: 'success' });
     if (res?.crisis) crisisRef.value?.show();
-  } catch { uni.showToast({ title: '请先登录', icon: 'none' }); }
+  } catch(e) {
+    if (e?.__authRedirect) return;
+    const msg = e?.error || e?.message || '保存失败，请重试';
+    uni.showToast({ title: msg, icon: 'none' });
+  }
 }
 
 function view(r) { selected.value = r; noteInput.value = ''; popup.value.open(); }

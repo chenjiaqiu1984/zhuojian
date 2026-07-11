@@ -124,16 +124,23 @@ onMounted(async () => {
   track('page_view', '/pages/ohcard/index');
   // 从API 获取真实 ID 和顺序（覆盖硬编码的 id）
   try {
-    const [combos, scenes, dils, cats] = await Promise.all([
+    const [combos, scenes, dils, cats, singles] = await Promise.all([
       ohcardApi.presets('combo'),
       ohcardApi.presets('scene'),
       ohcardApi.presets('dilemma'),
-      ohcardApi.categories()
+      ohcardApi.categories(),
+      ohcardApi.presets('single'),
     ]);
     if (combos?.length) comboPreviews.value = combos.map(p => ({ id:p.id, icon:p.icon, color:p.color, title:p.title, for:p.config?.for }));
     if (scenes?.length) scenePreviews.value = scenes.map(p => ({ id:p.id, icon:p.icon, color:p.color, title:p.title }));
     if (dils?.length) dilemmas.value = dils.map(p => ({ id:p.id, icon:p.icon, color:p.color, title:p.title }));
-    if (cats?.length) {
+    if (singles?.length) {
+      singleDecks.value = singles.map(p => ({
+        name: p.title, icon: p.icon, color: p.color,
+        imgCatId: p.config?.imgCatId || null,
+        wordCatId: p.config?.wordCatId || null
+      }));
+    } else if (cats?.length) {
       const imgCats = cats.filter(c => c.type === 'image');
       singleDecks.value = singleDecks.value.map(d => {
         const cat = imgCats.find(c => c.name === d.name);

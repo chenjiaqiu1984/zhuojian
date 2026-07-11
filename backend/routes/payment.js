@@ -161,7 +161,7 @@ router.post('/notify', async (req, res) => {
 // ── 用户订单列表 ──────────────────────────────────────────────────
 // GET /api/payment/orders
 router.get('/orders', authMiddleware, async (req, res) => {
-  const where = req.user.role === 'admin'
+  const where = req.user.role === 'admin' || req.user.role === 'super_admin'
     ? {}
     : { userId: req.user.id, status: 'paid' };
   const orders = await prisma.order.findMany({
@@ -283,7 +283,7 @@ router.post('/refund/:orderNo', authMiddleware, async (req, res) => {
     const order = await prisma.order.findUnique({ where: { orderNo: req.params.orderNo } });
     if (!order) return res.status(404).json({ error: '订单不存在' });
     if (order.status !== 'paid') return res.status(400).json({ error: '订单未支付，无需退款' });
-    if (order.userId !== req.user.id && req.user.role !== 'admin')
+    if (order.userId !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'super_admin')
       return res.status(403).json({ error: '权限不足' });
 
     const { refundRatio = 1 } = req.body; // 1=全退, 0.7=退70%
@@ -524,7 +524,7 @@ router.post('/activity/:newsId', authMiddleware, async (req, res) => {
 // ── 管理员查询第三方支付状态 ──────────────────────────────────────
 // GET /api/payment/query/:orderNo
 router.get('/query/:orderNo', authMiddleware, async (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: '权限不足' });
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin') return res.status(403).json({ error: '权限不足' });
   const order = await prisma.order.findUnique({
     where: { orderNo: req.params.orderNo },
     select: { id: true, orderNo: true, amount: true, status: true, payType: true, transactionId: true }

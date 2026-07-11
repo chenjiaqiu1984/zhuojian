@@ -7,7 +7,7 @@
     </view>
     <view v-else>
       <view class="header">
-        <image class="avatar" :src="store.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" @click="changeAvatar" />
+        <image class="avatar" :src="store.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" @click="changeAvatar()" />
         <view class="header-info">
           <text class="name">{{store.user?.name || store.user?.username}}</text>
           <view class="role-badge">{{roleLabel[store.user?.role] || '用户'}}</view>
@@ -20,7 +20,7 @@
           <text class="menu-arrow">›</text>
         </view>
       </view>
-      <view class="logout" @click="logout">退出登录</view>
+      <view class="logout" @click="tapHandler = logout">退出登录</view>
       <view class="footer-info">
         <text class="footer-item">客服邮箱：345958875@qq.com</text>
         <text class="footer-item">© 小程序开发：553997877@qq.com</text>
@@ -30,11 +30,16 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { SERVER } from '../../config';
 import { track } from '../../utils/track';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const BASE_URL = SERVER;
 const store = useUserStore();

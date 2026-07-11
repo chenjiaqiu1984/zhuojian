@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get('/', optionalAuth, async (req, res) => {
   const { type, page = 1, limit = 10 } = req.query;
-  const showDraft = req.user?.role === 'admin' && req.query.includeDraft === '1';
+  const showDraft = (req.user?.role === 'admin' || req.user?.role === 'super_admin') && req.query.includeDraft === '1';
   const where = { ...(showDraft ? {} : { isPublished: 1 }), ...(type ? { type } : {}) };
   const list = await prisma.news.findMany({ where, orderBy: { createdAt: 'desc' }, take: Number(limit), skip: (Number(page) - 1) * Number(limit) });
   const withCounts = await Promise.all(list.map(async n => {
@@ -90,7 +90,7 @@ router.delete('/:id', ...requireRole('admin'), async (req, res) => {
 router.get('/:id/comments', optionalAuth, async (req, res) => {
   const newsId = Number(req.params.id);
   const uid = req.user?.id;
-  const isAdmin = req.user?.role === 'admin';
+  const isAdmin = req.user?.role === 'admin' || req.user?.role === 'super_admin';
   if (!uid) return res.json([]);
   const where = isAdmin ? { newsId } : { newsId, OR: [{ userId: uid }, { parentId: { not: null } }] };
   const comments = await prisma.newsComment.findMany({ where, orderBy: { createdAt: 'asc' } });
@@ -114,7 +114,7 @@ router.post('/comments/:id/reply', ...requireRole('admin'), async (req, res) => 
 router.delete('/comments/:id', ...requireRole('user', 'admin', 'consultant'), async (req, res) => {
   const c = await prisma.newsComment.findUnique({ where: { id: Number(req.params.id) } });
   if (!c) return res.status(404).json({ error: '未找到' });
-  if (req.user.role !== 'admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
   await prisma.newsComment.delete({ where: { id: c.id } });
   res.json({ ok: true });
 });

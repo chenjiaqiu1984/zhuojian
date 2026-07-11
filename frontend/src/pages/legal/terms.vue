@@ -73,7 +73,7 @@
     <!-- 签署区域（未签署时显示） -->
     <view v-if="store.isLoggedIn() && !signed" class="sign-bar">
       <text class="sign-tip">阅读并同意以上协议内容</text>
-      <view class="sign-btn" @click="signTerms">同意并签署</view>
+      <view class="sign-btn" @click="tapHandler = signTerms">同意并签署</view>
     </view>
     <view v-else-if="signed" class="signed-bar">
       <text class="signed-text">✅ 已签署 · {{fmtDate(store.user.termsAcceptedAt)}}</text>
@@ -82,9 +82,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import {computed, watch } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const store = useUserStore();
 const signed = computed(() => !!store.user?.termsAcceptedAt);

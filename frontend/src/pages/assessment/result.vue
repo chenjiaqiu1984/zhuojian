@@ -8,7 +8,7 @@
         <text v-if="isLoggedIn" :class="['level', levelClass]">{{level}}</text>
         <text v-if="isLoggedIn && mbtiTypeName" class="mbti-name">{{mbtiTypeName}}</text>
         <text v-if="isLoggedIn && typeDesc" class="type-desc">{{typeDesc}}</text>
-        <text v-if="!isLoggedIn" class="level lvl-locked" @click="goLogin">登录查看结论 →</text>
+        <text v-if="!isLoggedIn" class="level lvl-locked" @click="goLogin()">登录查看结论 →</text>
         <text class="date">{{date}}</text>
       </view>
 
@@ -28,8 +28,8 @@
         <view v-if="!isLoggedIn" class="blur-wrap">
           <text class="detail-text muted">登录后可查看分数含义及专业解读</text>
           <view class="login-row">
-            <button class="btn-login" @click="goLogin">登录</button>
-            <button class="btn-register" @click="goRegister">注册</button>
+            <button class="btn-login" @click="goLogin()">登录</button>
+            <button class="btn-register" @click="goRegister()">注册</button>
           </view>
         </view>
         <text v-else-if="detail" class="detail-text">{{detail}}</text>
@@ -43,12 +43,12 @@
 
       <view v-if="showConsultant" class="consult-card">
         <text class="consult-text">您的测评结果提示某些方面值得关注，建议与专业咨询师进一步交流，获得个性化的支持与建议。</text>
-        <button class="consult-btn" @click="goConsult">预约专业咨询</button>
+        <button class="consult-btn" @click="goConsult()">预约专业咨询</button>
       </view>
 
       <view class="btns">
-        <button class="btn-history" @click="goHistory">历史记录</button>
-        <button class="btn-retry" @click="goBack">回到测评列表</button>
+        <button class="btn-history" @click="goHistory()">历史记录</button>
+        <button class="btn-retry" @click="goBack()">回到测评列表</button>
       </view>
     </view>
     <CrisisAlert ref="crisisRef" />

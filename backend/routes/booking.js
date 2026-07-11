@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', authMiddleware, async (req, res) => {
   const { role, id } = req.user;
   let bookings;
-  if (role === 'admin') {
+  if (role === 'admin' || role === 'super_admin') {
     bookings = await prisma.booking.findMany({ include: { user: true, consultant: true, slot: true }, orderBy: { createdAt: 'desc' } });
   } else if (role === 'consultant') {
     const c = await prisma.consultant.findUnique({ where: { userId: id } });

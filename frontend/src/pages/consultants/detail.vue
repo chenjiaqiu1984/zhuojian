@@ -101,7 +101,7 @@
     </view>
 
     <view class="footer">
-      <button class="book-btn" :disabled="!selected" @click="book">{{rescheduleId ? '确认修改' : '立即预约'}}</button>
+      <button class="book-btn" :disabled="!selected" @click="book()">{{rescheduleId ? '确认修改' : '立即预约'}}</button>
     </view>
   </view>
   <view v-else-if="loading" class="loading">加载中...</view>

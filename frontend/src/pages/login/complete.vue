@@ -25,20 +25,25 @@
         </view>
       </view>
 
-      <view class="submit-btn" @click="submit">
+      <view class="submit-btn" @click="tapHandler = submit">
         <text>{{loading ? '保存中...' : '完成'}}</text>
       </view>
 
-      <text class="skip-link" @click="skip">暂时跳过，稍后在设置中完善</text>
+      <text class="skip-link" @click="skip()">暂时跳过，稍后在设置中完善</text>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import {ref, watch } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { hashPassword } from '../../utils/crypto';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const store = useUserStore();
 const loading = ref(false);

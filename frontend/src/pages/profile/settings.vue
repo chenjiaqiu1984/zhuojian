@@ -6,7 +6,7 @@
         <text class="label">昵称</text>
         <input class="input" v-model="form.name" placeholder="请输入昵称" />
       </view>
-      <view class="btn-save" @click="saveName">保存</view>
+      <view class="btn-save" @click="tapHandler = saveName">保存</view>
     </view>
 
     <!-- 绑定/更换手机 -->
@@ -14,7 +14,7 @@
       <text class="section-title">手机号</text>
       <view v-if="store.user?.phone && !changingPhone" class="bound-row">
         <text class="bound-val">{{store.user.phone}}</text>
-        <text class="bound-action" @click="startChangePhone">更换</text>
+        <text class="bound-action" @click="startChangePhone()">更换</text>
       </view>
       <template v-else>
         <view class="row">
@@ -22,19 +22,19 @@
           <input class="input" v-model="phoneForm.phone" placeholder="请输入新手机号" type="number" maxlength="11" />
         </view>
         <view class="captcha-row">
-          <image class="captcha-img" :src="captchaUrl" @click="refreshCaptcha" mode="aspectFit" />
+          <image class="captcha-img" :src="captchaUrl" @click="refreshCaptcha()" mode="aspectFit" />
           <input class="input captcha-input" v-model="captchaAnswer" placeholder="点击图片可刷新" maxlength="4" />
         </view>
         <view class="row">
           <text class="label">验证码</text>
           <input class="input" v-model="phoneForm.code" placeholder="请输入验证码" type="number" maxlength="6" />
-          <text class="btn-code" :class="{disabled: phoneCd > 0}" @click="sendPhoneCode">
+          <text class="btn-code" :class="{disabled: phoneCd > 0}" @click="sendPhoneCode()">
             {{phoneCd > 0 ? `${phoneCd}s` : '发送'}}
           </text>
         </view>
         <view style="display:flex;gap:16rpx">
-          <view class="btn-save btn-cancel" style="flex:1" v-if="changingPhone" @click="cancelChangePhone">取消</view>
-          <view class="btn-save" style="flex:2" @click="submitPhone">
+          <view class="btn-save btn-cancel" style="flex:1" v-if="changingPhone" @click="tapHandler = cancelChangePhone">取消</view>
+          <view class="btn-save" style="flex:2" @click="tapHandler = submitPhone">
             {{store.user?.phone ? '确认更换' : '绑定手机'}}
           </view>
         </view>
@@ -56,7 +56,7 @@
         <text class="label">确认密码</text>
         <input class="input" v-model="pwdForm.new2" placeholder="再次输入新密码" password />
       </view>
-      <view class="btn-save" @click="changePassword">修改密码</view>
+      <view class="btn-save" @click="tapHandler = changePassword">修改密码</view>
     </view>
 
     <!-- 法律文件 -->
@@ -82,11 +82,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import {ref, onMounted, watch } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { hashPassword } from '../../utils/crypto';
 import { useCaptcha } from '../../composables/useCaptcha';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const store = useUserStore();
 const form = ref({ name: store.user?.name || '' });

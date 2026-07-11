@@ -84,27 +84,21 @@ import api from '../api/index.js';
 
 const DEFAULT_MENU_GROUPS = [
   {
-    label: '咨询预约',
+    label: '咨询 · 资讯',
     items: [
-      { path: '/pages/consultants/index', label: '咨询师',  icon: '/static/icons/grid/consultant.svg', color: '#EDF7F4' },
-      { path: '/pages/booking/index',     label: '预约咨询', icon: '/static/icons/grid/booking.svg',    color: '#EDF7F4' },
-      { path: '/pages/about/index',       label: '关于我们', icon: '/static/icons/grid/about.svg',      color: '#EDF7F4' },
+      { path: '/pages/consultants/index', label: '咨询师',  icon: '/static/icons/grid/consultant.svg', color: '#4A8A7A' },
+      { path: '/pages/activity/index',    label: '活动报名', icon: '/static/icons/grid/activity.svg',   color: '#4A8A7A' },
+      { path: '/pages/news/index',        label: '动态资讯', icon: '/static/icons/grid/news.svg',       color: '#4A8A7A' },
+      { path: '/pages/about/index',       label: '关于我们', icon: '/static/icons/grid/about.svg',      color: '#4A8A7A' },
     ],
   },
   {
     label: '心理工具',
     items: [
-      { path: '/pages/assessment/index',  label: '心理测评', icon: '/static/icons/grid/assessment.svg', color: '#EAF2F8' },
-      { path: '/pages/ohcard/index',      label: '心理图卡', icon: '/static/icons/grid/ohcard.svg',     color: '#EAF2F8' },
-      { path: '/pages/homework/index',    label: '咨询工具', icon: '/static/icons/grid/homework.svg',   color: '#EAF2F8' },
-    ],
-  },
-  {
-    label: '动态社区',
-    items: [
-      { path: '/pages/news/index',        label: '动态资讯', icon: '/static/icons/grid/news.svg',       color: '#F0EDF7' },
-      { path: '/pages/activity/index',    label: '活动报名', icon: '/static/icons/grid/activity.svg',   color: '#F0EDF7' },
-      { path: '/pages/learning/index',    label: '学习进阶', icon: '/static/icons/grid/learning.svg',   color: '#F0EDF7' },
+      { path: '/pages/assessment/index',  label: '心理测评', icon: '/static/icons/grid/assessment.svg', color: '#3A6E80' },
+      { path: '/pages/ohcard/index',      label: '心理图卡', icon: '/static/icons/grid/ohcard.svg',     color: '#3A6E80' },
+      { path: '/pages/homework/index',    label: '咨询工具', icon: '/static/icons/grid/homework.svg',   color: '#3A6E80' },
+      { path: '/pages/learning/index',    label: '学习进阶', icon: '/static/icons/grid/learning.svg',   color: '#3A6E80' },
     ],
   },
 ];

@@ -4,7 +4,7 @@
       <text class="title">找回密码</text>
       <view class="input-wrap"><input class="ipt" v-model="form.target" placeholder="请输入手机号" type="number" maxlength="11" /></view>
       <view class="captcha-row" style="margin-bottom:24rpx">
-        <image class="captcha-img" :src="captchaUrl" @click="refreshCaptcha" mode="aspectFit" />
+        <image class="captcha-img" :src="captchaUrl" @click="refreshCaptcha()" mode="aspectFit" />
         <view class="input-wrap" style="flex:1;margin-bottom:0">
           <input class="ipt" v-model="captchaAnswer" placeholder="点击图片可刷新" maxlength="4" />
         </view>
@@ -13,12 +13,12 @@
         <view class="input-wrap" style="flex:1;margin-bottom:0">
           <input class="ipt" v-model="form.code" placeholder="验证码" type="number" maxlength="6" />
         </view>
-        <u-button size="mini" :disabled="form.countdown>0" @click="sendCode" type="primary" plain style="margin-left:16rpx;flex-shrink:0">
+        <u-button size="mini" :disabled="form.countdown>0" @click="sendCode()" type="primary" plain style="margin-left:16rpx;flex-shrink:0">
           {{form.countdown>0 ? `${form.countdown}s` : '获取验证码'}}
         </u-button>
       </view>
       <view class="input-wrap"><input class="ipt" v-model="form.newPwd" placeholder="新密码（6位以上）" password /></view>
-      <u-button type="primary" @click="doReset" :loading="loading" style="margin-top:32rpx">确认重置</u-button>
+      <u-button type="primary" @click="doReset()" :loading="loading" style="margin-top:32rpx">确认重置</u-button>
     </view>
   </view>
 </template>

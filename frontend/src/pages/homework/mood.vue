@@ -9,7 +9,7 @@
         </view>
       </view>
       <textarea class="note-input" v-model="form.note" placeholder="写下此刻的感受（可选）" />
-      <view class="save-btn" @click="save">记录</view>
+      <view class="save-btn" @click="tapHandler = save">记录</view>
     </view>
 
     <text class="section-title">历史记录</text>
@@ -29,10 +29,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import {ref, onMounted, watch } from 'vue';
 import { homeworkApi } from '../../api/index';
 import { track } from '../../utils/track';
 import CrisisAlert from '../../components/CrisisAlert.vue';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const EMOJIS = ['😔','😕','😐','🙂','😊'];
 const LABELS = ['很差','较差','一般','不错','很好'];
@@ -54,7 +59,11 @@ async function save() {
     await load();
     uni.showToast({ title: '已记录', icon: 'success' });
     if (res?.crisis) crisisRef.value?.show();
-  } catch { uni.showToast({ title: '请先登录', icon: 'none' }); }
+  } catch(e) {
+    if (e?.__authRedirect) return; // api.js 已处理401跳转，不重复提示
+    const msg = e?.error || e?.message || '保存失败，请重试';
+    uni.showToast({ title: msg, icon: 'none' });
+  }
 }
 
 async function del(id) {

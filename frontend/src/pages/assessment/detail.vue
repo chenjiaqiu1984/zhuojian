@@ -10,7 +10,7 @@
         <text>{{questions.length}} 题</text>
         <text>约 {{scale.estimatedMinutes}} 分钟</text>
       </view>
-      <button class="btn-start" @click="startTest">开始测评</button>
+      <button class="btn-start" @click="startTest()">开始测评</button>
     </view>
     <view v-else-if="scale">
       <view class="progress-bar">
@@ -37,7 +37,7 @@
       <view v-if="!isFlow" class="nav-btns">
         <button v-if="current > 0" class="btn-prev" @click="current--">上一题</button>
         <button v-if="current < questions.length-1" class="btn-next" :disabled="answers[questions[current].id] === undefined" @click="current < questions.length-1 && current++">下一题</button>
-        <button v-else class="btn-submit" :disabled="!allAnswered || submitting" @click="trySubmit">{{submitting ? '提交中...' : '提交测评'}}</button>
+        <button v-else class="btn-submit" :disabled="!allAnswered || submitting" @click="trySubmit()">{{submitting ? '提交中...' : '提交测评'}}</button>
       </view>
     </view>
 
@@ -46,8 +46,8 @@
       <view class="login-modal">
         <text class="lm-title">登录后查看完整解析</text>
         <text class="lm-desc">完成测评后，登录用户可查看分数含义和专业解读</text>
-        <button class="lm-btn-login" @click="goLogin">登录</button>
-        <button class="lm-btn-reg" @click="goRegister">新用户注册</button>
+        <button class="lm-btn-login" @click="goLogin()">登录</button>
+        <button class="lm-btn-reg" @click="goRegister()">新用户注册</button>
         <text class="lm-skip" @click="showLoginPrompt=false">先测评，稍后登录</text>
       </view>
     </view>
@@ -61,8 +61,8 @@
         <input v-model="voucherCode" placeholder="有兑换码？请输入" class="voucher-input" />
         <view class="modal-btns">
           <button class="btn-cancel" @click="showPayModal=false">取消</button>
-          <button v-if="voucherCode" class="btn-confirm" @click="submitWithVoucher">使用兑换码</button>
-          <button v-else class="btn-pay" @click="handlePay">去支付</button>
+          <button v-if="voucherCode" class="btn-confirm" @click="submitWithVoucher()">使用兑换码</button>
+          <button v-else class="btn-pay" @click="handlePay()">去支付</button>
         </view>
       </view>
     </view>

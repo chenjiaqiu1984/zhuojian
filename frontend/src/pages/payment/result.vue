@@ -9,14 +9,14 @@
       <text class="state-icon">✅</text>
       <text class="state-msg">支付成功</text>
       <text class="state-sub">预约已确认，感谢您的选择</text>
-      <button class="action-btn" @click="goHome">返回首页</button>
+      <button class="action-btn" @click="goHome()">返回首页</button>
     </view>
 
     <view v-else class="state-box fail">
       <text class="state-icon">❌</text>
       <text class="state-msg">支付未完成</text>
       <text class="state-sub">{{ errorMsg }}</text>
-      <button class="action-btn" @click="goBack">重新支付</button>
+      <button class="action-btn" @click="goBack()">重新支付</button>
     </view>
   </view>
 </template>

@@ -11,17 +11,22 @@
       <text v-if="selectedId===c.id" class="check">✓</text>
     </view>
     <u-empty v-if="!consultants.length" text="暂无咨询师" mode="data" />
-    <view v-if="selectedId" class="submit-btn" @click="submit">
+    <view v-if="selectedId" class="submit-btn" @click="tapHandler = submit">
       提交申请（¥{{consultants.find(c=>c.id===selectedId)?.price || 0}}）
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import {ref, onMounted, watch } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { consultantApi, homeworkApi } from '../../api/index';
 import { SERVER } from '../../config';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const consultants = ref([]);
 const selectedId = ref(null);

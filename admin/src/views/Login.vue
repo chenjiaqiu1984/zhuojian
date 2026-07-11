@@ -32,7 +32,7 @@ async function login() {
   loading.value = true;
   try {
     const res = await api.post('/auth/login', { username: form.value.username, password: await sha256(form.value.password) });
-    if (!['admin', 'consultant'].includes(res.user.role)) return ElMessage.error('无管理权限');
+    if (!['admin', 'super_admin', 'consultant'].includes(res.user.role)) return ElMessage.error('无管理权限');
     store.setAuth(res.token, res.user);
     router.push('/');
   } catch (e) {

@@ -20,7 +20,7 @@
         </text>
       </view>
 
-      <u-button type="primary" @click="doRegister" :loading="loading" style="margin-top:24rpx">注册</u-button>
+      <u-button type="primary" @click="doRegister()" :loading="loading" style="margin-top:24rpx">注册</u-button>
     </view>
   </view>
 </template>

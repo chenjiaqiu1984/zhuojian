@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const prisma = require('../db/database');
 const { JWT_SECRET } = require('../middleware/auth');
+const ROLE_MAP = { '超级管理员': 'super_admin', '管理员': 'admin', '咨询师': 'consultant', '普通用户': 'user' };
 const { sendSms } = require('../services/sms');
 const { grantWelcomeCoupon } = require('./coupons');
 const smsRateLimit = require('../middleware/smsRateLimit');
@@ -33,7 +34,8 @@ function makeToken(u, rememberMe = false) {
 }
 
 function safeUser(u) {
-  return { id: u.id, username: u.username, phone: u.phone, email: u.email, role: u.role, name: u.name, avatar: u.avatar, termsAcceptedAt: u.termsAcceptedAt, hasPassword: !!u.password };
+  const role = ROLE_MAP[u.role] || u.role;
+  return { id: u.id, username: u.username, phone: u.phone, email: u.email, role, name: u.name, avatar: u.avatar, termsAcceptedAt: u.termsAcceptedAt, hasPassword: !!u.password };
 }
 
 router.get('/captcha', (req, res) => {

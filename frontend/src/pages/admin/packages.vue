@@ -66,7 +66,7 @@
         </u-form>
         <view class="modal-footer">
           <u-button @click="showModal = false">取消</u-button>
-          <u-button type="primary" :loading="saving" @click="savePkg">保存</u-button>
+          <u-button type="primary" :loading="saving" @click="savePkg()">保存</u-button>
         </view>
       </view>
     </u-popup>

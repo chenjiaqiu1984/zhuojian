@@ -26,7 +26,7 @@
       <view class="cards-wrap">
         <view class="card-item" v-for="(c,i) in cards" :key="i">
           <text class="card-label">{{c.label}}</text>
-          <view class="flip-card" @click="flip(i)">
+          <view class="flip-card" :style="{transform: c.rotate, transition: 'transform 0.21s ease-in-out'}" @click="flip(i)">
             <view v-if="!c.flipped" class="card-back" :style="{background:catStyle(c.cat)}"><text class="back-txt">{{c.cat}}</text></view>
             <view v-else class="card-front" :class="c.word ? 'word-front' : ''">
               <image v-if="c.imageUrl" :src="fullUrl(c.imageUrl)" mode="aspectFill" class="card-img" @click.stop="preview(c.imageUrl)" />
@@ -45,7 +45,7 @@
         </view>
         <textarea class="note-input" v-model="note" placeholder="写下此刻的感受（可选）..." maxlength="500" />
         <view class="btn-group">
-          <u-button type="primary" @click="save">保存记录</u-button>
+          <u-button type="primary" @click="save()">保存记录</u-button>
           <u-button plain @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</u-button>
           <u-button plain @click="uni.navigateBack()">返回抽卡菜单</u-button>
         </view>
@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { onLoad, onReady } from '@dcloudio/uni-app';
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
@@ -209,7 +209,7 @@ async function start(combo) {
       const res = await ohcardApi.cards({ category_id: g.catId, count: g.indices.length });
       g.indices.forEach((idx, i) => {
         const card = res[i % res.length];
-        results[idx] = { ...card, label: combo.slots[idx].label, cat: combo.slots[idx].cat, flipped: false };
+        results[idx] = { ...card, label: combo.slots[idx].label, cat: combo.slots[idx].cat, flipped: false, rotate: 'rotateY(0deg)', animating: false };
       });
     }));
     cards.value = results;
@@ -217,18 +217,37 @@ async function start(combo) {
   } catch { uni.showToast({ title: '抽卡失败', icon: 'none' }); }
 }
 
-function flip(i) { if (!cards.value[i].flipped) cards.value[i].flipped = true; }
+async function flip(i) {
+  const card = cards.value[i];
+  if (card.flipped || card.animating) return;
+  card.animating = true;
+  card.rotate = 'rotateY(90deg)';
+  await new Promise(r => setTimeout(r, 210));
+  card.flipped = true;
+  card.rotate = 'rotateY(-90deg)';
+  await nextTick();
+  card.rotate = 'rotateY(0deg)';
+  await new Promise(r => setTimeout(r, 210));
+  card.animating = false;
+}
 
 async function save() {
-  if (!store.isLoggedIn()) return uni.navigateTo({ url: '/pages/login/index' });
+  if (!store.isLoggedIn()) {
+    uni.showToast({ title: '请先登录', icon: 'none' });
+    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 800);
+    return;
+  }
   try {
     await ohcardApi.saveRecord({
       type: 'combo',
       data: { combo: { id: sel.value.id, title: sel.value.title }, cards: cards.value.map(c => ({ id:c.id, imageUrl:c.imageUrl, word:c.word, label:c.label, cat:c.cat })) },
       note: note.value
     });
-    uni.showToast({ title: '已保存' });
-  } catch { uni.showToast({ title: '保存失败', icon: 'none' }); }
+    uni.showToast({ title: '已保存', icon: 'success' });
+  } catch(e) {
+    if (e?.__authRedirect) return;
+    uni.showToast({ title: e?.error || '保存失败', icon: 'none' });
+  }
 }
 
 function reset() { step.value = 0; sel.value = null; cards.value = []; note.value = ''; }
@@ -252,9 +271,9 @@ function reset() { step.value = 0; sel.value = null; cards.value = []; note.valu
 .draw-tip { font-size:22rpx; color:#999; display:block; margin-top:8rpx; }
 .cards-wrap { display:flex; flex-wrap:wrap; gap:16rpx; padding:0 8rpx 16rpx; margin-bottom:12rpx; }
 
-.card-item { display:flex; flex-direction:column; align-items:center; width:calc((100% - 32rpx) / 3); }
+.card-item { display:flex; flex-direction:column; align-items:center; width:calc((100% - 32rpx) / 3); max-width: 160px; }
 .card-label { font-size:20rpx; color:#666; margin-bottom:8rpx; text-align:center; line-height:1.4; height:56rpx; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-.flip-card { width:100%; height:260rpx; position:relative; border-radius:14rpx; }
+.flip-card { width:100%; aspect-ratio: 5/7; position:relative; border-radius:14rpx; will-change: transform; }
 .card-back, .card-front { width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
 .card-back { background:linear-gradient(135deg,#4A7BBA,#7B68EE); flex-direction:column; gap:8rpx; }
 .back-txt { color:rgba(255,255,255,.8); font-size:20rpx; }

@@ -11,7 +11,7 @@
         <text class="label">自动确认预约</text>
         <switch :checked="autoConfirm" color="#4A8A7A" @change="autoConfirm = $event.detail.value" />
       </view>
-      <view class="btn-save" @click="saveSettings">保存设置</view>
+      <view class="btn-save" @click="tapHandler = saveSettings">保存设置</view>
     </view>
 
     <view class="tabs">
@@ -58,8 +58,8 @@
         </view>
       </scroll-view>
       <view class="btn-row">
-        <view class="btn-tpl" @click="saveTemplate">保存模板</view>
-        <view class="btn-tpl apply" @click="applyTemplate">应用到未来7天</view>
+        <view class="btn-tpl" @click="tapHandler = saveTemplate">保存模板</view>
+        <view class="btn-tpl apply" @click="tapHandler = applyTemplate">应用到未来7天</view>
       </view>
     </view>
     </template>
@@ -67,8 +67,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import {ref, computed, onMounted, watch } from 'vue';
 import { consultantApi } from '../../api/index';
+
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
 
 const HALVES = Array.from({ length: 28 }, (_, i) => i); // 08:00–21:30
 const TPL_DAYS = [

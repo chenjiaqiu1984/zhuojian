@@ -24,18 +24,17 @@
         <view class="field-group">
           <text class="field-label">用户名</text>
           <view class="input-wrap">
-            <input class="ipt" v-model="pwd.username" placeholder="请输入用户名" />
+            <input class="ipt" :value="pwd.username" @input="pwd.username = $event.detail?.value ?? ''" placeholder="请输入用户名" />
           </view>
         </view>
         <view class="field-group">
           <text class="field-label">密码</text>
           <view class="input-wrap">
-            <input class="ipt" v-model="pwd.password" placeholder="请输入密码" password />
+            <input class="ipt" :value="pwd.password" @input="pwd.password = $event.detail?.value ?? ''" placeholder="请输入密码" type="password" />
           </view>
         </view>
-        <view class="submit-btn" @click="loginPwd">
-          <text>{{loading ? '登录中...' : '登录'}}</text>
-        </view>
+        <!-- 内联调用而非方法引用，避免 uni-app 编译为 e=>_ 的间接模式 -->
+        <text class="submit-btn" @click="loginTrigger++">{{loading ? '登录中...' : '登录'}}</text>
         <!-- #ifdef H5 -->
         <view class="remember-row" @click="rememberMe=!rememberMe">
           <view :class="['checkbox', rememberMe && 'checked']" />
@@ -53,13 +52,13 @@
         <view class="field-group">
           <text class="field-label">手机号</text>
           <view class="input-wrap">
-            <input class="ipt" v-model="phone.num" placeholder="请输入手机号" type="number" maxlength="11" />
+            <input class="ipt" :value="phone.num" @input="phone.num = $event.detail?.value ?? ''" placeholder="请输入手机号" type="number" maxlength="11" />
           </view>
         </view>
         <view class="field-group">
           <text class="field-label">图形码</text>
           <view class="captcha-row">
-            <image class="captcha-img" :src="captchaUrl" @click="refreshCaptcha" mode="aspectFit" />
+            <image class="captcha-img" :src="captchaUrl" @click="tapHandler = refreshCaptcha" mode="aspectFit" />
             <view class="input-wrap" style="flex:1">
               <input class="ipt" v-model="captchaAnswer" placeholder="点击图片可刷新" maxlength="4" />
             </view>
@@ -71,14 +70,12 @@
             <view class="input-wrap" style="flex:1">
               <input class="ipt" v-model="phone.code" placeholder="6位验证码" type="number" maxlength="6" />
             </view>
-            <view :class="['send-btn', phone.countdown>0 && 'send-btn-disabled']" @click="sendSms">
+            <view :class="['send-btn', phone.countdown>0 && 'send-btn-disabled']" @click="tapHandler = sendSms">
               <text>{{phone.countdown>0 ? `${phone.countdown}s` : '获取验证码'}}</text>
             </view>
           </view>
         </view>
-        <view class="submit-btn" @click="loginPhone">
-          <text>{{loading ? '登录中...' : '登录 / 注册'}}</text>
-        </view>
+        <text class="submit-btn" @click="phoneTrigger++">{{loading ? '登录中...' : '登录 / 注册'}}</text>
         <!-- #ifdef H5 -->
         <view class="remember-row" @click="rememberMe=!rememberMe">
           <view :class="['checkbox', rememberMe && 'checked']" />
@@ -93,15 +90,15 @@
         <view class="divider"><text class="divider-txt">其他方式登录</text></view>
         <view class="third-btns">
           <!-- #ifdef MP-WEIXIN -->
-          <view class="third-btn wechat" @click="loginWechat">
+          <view class="third-btn wechat" @click="tapHandler = loginWechat">
             <u-icon name="weixin-circle-fill" color="#fff" size="36" />
           </view>
           <!-- #endif -->
           <!-- #ifndef MP-WEIXIN -->
-          <view class="third-btn wechat" @click="loginWechat">
+          <view class="third-btn wechat" @click="tapHandler = loginWechat">
             <u-icon name="weixin-circle-fill" color="#fff" size="36" />
           </view>
-          <view class="third-btn qq" @click="loginQQ">
+          <view class="third-btn qq" @click="tapHandler = loginQQ">
             <u-icon name="qq-circle-fill" color="#fff" size="36" />
           </view>
           <!-- #endif -->
@@ -112,16 +109,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { track } from '../../utils/track';
 import { useCaptcha } from '../../composables/useCaptcha';
 
+// #ifndef H5
+const tapHandler = ref(null);
+watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
+// #endif
+
 const store = useUserStore();
 const activeTab = ref(0);
 const loading = ref(false);
 const tabs = ['密码登录', '手机登录'];
+
+// 用响应式触发器替代直接方法绑定——微信小程序对方法引用有兼容问题
+// @click="loginTrigger++" 是内联赋值，和 tab 切换一样可靠
+const loginTrigger = ref(0);
+const phoneTrigger = ref(0);
+// #ifndef H5
+watch(loginTrigger, () => { if (loginTrigger.value > 0) loginPwd(); });
+watch(phoneTrigger, () => { if (phoneTrigger.value > 0) loginPhone(); });
+// #endif
 
 const phone = ref({ num: '', code: '', countdown: 0 });
 const pwd = ref({ username: '', password: '' });
@@ -134,6 +145,11 @@ const rememberMe = ref(false);
 
 const { captchaUrl, captchaToken, captchaAnswer, refreshCaptcha } = useCaptcha();
 onMounted(() => refreshCaptcha());
+
+// 显式 input handler，避免微信小程序中内联赋值不更新 ref
+function onUsernameInput(e) { pwd.value.username = e.detail?.value ?? ''; }
+function onPasswordInput(e) { pwd.value.password = e.detail?.value ?? ''; }
+function onPhoneInput(e)    { phone.value.num    = e.detail?.value ?? ''; }
 
 function startCountdown(target) {
   target.countdown = 60;
@@ -282,13 +298,14 @@ function success() {
 .send-btn-disabled { background: #F2F4F3; }
 .send-btn-disabled text { color: #B0BEB8; }
 
-/* 提交按钮 */
+/* 提交按钮 — text 元素避免 view 的动态 bindtap 在微信小程序某些版本失效的问题 */
 .submit-btn {
   background: linear-gradient(135deg, #4A8A7A, #3A6E80);
-  border-radius: 16rpx; padding: 28rpx 0;
+  border-radius: 16rpx; padding: 28rpx 24rpx;
   text-align: center; margin-top: 8rpx;
+  color: #fff; font-size: 30rpx; font-weight: 700; letter-spacing: 1rpx;
+  width: 100%; box-sizing: border-box;
 }
-.submit-btn text { color: #fff; font-size: 30rpx; font-weight: 700; letter-spacing: 1rpx; }
 
 /* 辅助链接 */
 .aux-row { display: flex; justify-content: center; gap: 48rpx; margin-top: 24rpx; }

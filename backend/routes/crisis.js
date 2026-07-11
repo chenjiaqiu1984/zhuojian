@@ -12,9 +12,9 @@ router.get('/events', ...admin, async (req, res) => {
 
   const where = {
     event: 'crisis_trigger',
-    ...(level ? { meta: { contains: `"level":"${level}"` } } : {}),
-    ...(followed === 'true'  ? { meta: { contains: '"followed":true' } }  : {}),
-    ...(followed === 'false' ? { meta: { not: { contains: '"followed":true' } } } : {}),
+    ...(level ? { data: { contains: `"level":"${level}"` } } : {}),
+    ...(followed === 'true'  ? { data: { contains: '"followed":true' } }  : {}),
+    ...(followed === 'false' ? { data: { not: { contains: '"followed":true' } } } : {}),
   };
 
   const [total, rows] = await Promise.all([
@@ -30,7 +30,7 @@ router.get('/events', ...admin, async (req, res) => {
   // 解析 meta JSON，并附带用户信息
   const data = await Promise.all(rows.map(async r => {
     let meta = {};
-    try { meta = JSON.parse(r.meta || '{}'); } catch (_) {}
+    try { meta = JSON.parse(r.data || '{}'); } catch (_) {}
     let user = null;
     if (r.userId) {
       user = await prisma.user.findUnique({
@@ -50,14 +50,14 @@ router.put('/events/:id/follow', ...admin, async (req, res) => {
   if (!row) return res.status(404).json({ error: '未找到' });
 
   let meta = {};
-  try { meta = JSON.parse(row.meta || '{}'); } catch (_) {}
+  try { meta = JSON.parse(row.data || '{}'); } catch (_) {}
   meta.followed = true;
   meta.followedAt = new Date().toISOString();
   meta.followNote = req.body.note || '';
 
   await prisma.eventLog.update({
     where: { id: row.id },
-    data: { meta: JSON.stringify(meta) },
+    data: { data: JSON.stringify(meta) },
   });
   res.json({ ok: true });
 });

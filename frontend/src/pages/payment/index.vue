@@ -164,12 +164,12 @@
 
     <!-- 底部按钮 -->
     <view class="footer">
-      <button class="pay-btn" :disabled="loading || countdown <= 0" @click="doPay">
+      <button class="pay-btn" :disabled="loading || countdown <= 0" @click="doPay()">
         <template v-if="loading">处理中...</template>
         <template v-else-if="usePackage">使用套餐预约（免支付）</template>
         <template v-else>立即支付 ¥{{ (finalAmount / 100).toFixed(2) }}</template>
       </button>
-      <text class="cancel-link" v-if="!isActivity" @click="cancel">取消预约</text>
+      <text class="cancel-link" v-if="!isActivity" @click="cancel()">取消预约</text>
     </view>
     <!-- 电脑端扫码弹窗 -->
     <view v-if="showQrModal" class="qr-mask" @click.self="closeQrModal">
@@ -177,7 +177,7 @@
         <text class="qr-title">{{ qrTitle }}</text>
         <image class="qr-img" :src="qrDataUrl" mode="aspectFit" />
         <text class="qr-hint">请使用微信扫码完成支付，支付成功后自动跳转</text>
-        <text class="qr-close" @click="closeQrModal">取消</text>
+        <text class="qr-close" @click="closeQrModal()">取消</text>
       </view>
     </view>
   </view>

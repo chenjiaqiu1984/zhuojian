@@ -63,7 +63,7 @@
 
           <!-- 可用时显示使用按钮 -->
           <view v-if="uc.status === 'available'" class="use-btn-wrap">
-            <u-button type="primary" size="mini" @click="goUse">去使用</u-button>
+            <u-button type="primary" size="mini" @click="goUse()">去使用</u-button>
           </view>
         </view>
       </view>
@@ -82,7 +82,7 @@
         <text class="modal-title">输入兑换码</text>
         <u-input v-model="claimCode" placeholder="请输入优惠码" clearable
           style="margin:16rpx 0" />
-        <u-button type="primary" block :loading="claiming" @click="doClaim">
+        <u-button type="primary" block :loading="claiming" @click="doClaim()">
           立即领取
         </u-button>
       </view>

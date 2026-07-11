@@ -2,7 +2,7 @@
   <view class="page">
     <view class="toolbar">
       <text class="hint">点击翻牌 · 拖动排列 · 双击放大</text>
-      <text class="save-btn" @click="save">保存记录</text>
+      <text class="save-btn" @click="save()">保存记录</text>
     </view>
     <view class="guide-strip">
       <text class="guide-text">翻开你感兴趣的卡牌，将它们摆放在你觉得自然的位置——不必思考，让直觉引导你。排列完成后，试着说说：这些图让你想到了什么？</text>
