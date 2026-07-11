@@ -15,6 +15,7 @@
         </template>
         <el-menu-item index="/consultants"><el-icon><Avatar /></el-icon>咨询师</el-menu-item>
         <el-menu-item index="/booking"><el-icon><Calendar /></el-icon>预约管理</el-menu-item>
+        <el-menu-item index="/orders"><el-icon><List /></el-icon>订单管理</el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

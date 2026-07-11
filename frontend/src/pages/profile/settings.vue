@@ -21,6 +21,10 @@
           <text class="label">手机号</text>
           <input class="input" v-model="phoneForm.phone" placeholder="请输入新手机号" type="number" maxlength="11" />
         </view>
+        <view class="captcha-row">
+          <image class="captcha-img" :src="captchaUrl" @click="refreshCaptcha" mode="aspectFit" />
+          <input class="input captcha-input" v-model="captchaAnswer" placeholder="点击图片可刷新" maxlength="4" />
+        </view>
         <view class="row">
           <text class="label">验证码</text>
           <input class="input" v-model="phoneForm.code" placeholder="请输入验证码" type="number" maxlength="6" />
@@ -34,29 +38,6 @@
             {{store.user?.phone ? '确认更换' : '绑定手机'}}
           </view>
         </view>
-      </template>
-    </view>
-
-    <!-- 绑定邮箱 -->
-    <view class="section">
-      <text class="section-title">绑定邮箱</text>
-      <view v-if="store.user?.email" class="bound-row">
-        <text class="bound-val">{{store.user.email}}</text>
-        <text class="bound-tag">已绑定</text>
-      </view>
-      <template v-else>
-        <view class="row">
-          <text class="label">邮箱</text>
-          <input class="input" v-model="emailForm.email" placeholder="请输入邮箱" />
-        </view>
-        <view class="row">
-          <text class="label">验证码</text>
-          <input class="input" v-model="emailForm.code" placeholder="请输入验证码" type="number" maxlength="6" />
-          <text class="btn-code" :class="{disabled: emailCd > 0}" @click="sendEmailCode">
-            {{emailCd > 0 ? `${emailCd}s` : '发送'}}
-          </text>
-        </view>
-        <view class="btn-save" @click="bindEmail">绑定邮箱</view>
       </template>
     </view>
 
@@ -101,17 +82,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
+import { hashPassword } from '../../utils/crypto';
+import { useCaptcha } from '../../composables/useCaptcha';
 
 const store = useUserStore();
 const form = ref({ name: store.user?.name || '' });
 const phoneForm = ref({ phone: '', code: '' });
-const emailForm = ref({ email: '', code: '' });
-const phoneCd = ref(0), emailCd = ref(0);
+const phoneCd = ref(0);
 const pwdForm = ref({ old: '', new1: '', new2: '' });
-const changingPhone = ref(false);   // 是否处于"更换手机"流程
+const changingPhone = ref(false);
+const { captchaUrl, captchaToken, captchaAnswer, refreshCaptcha } = useCaptcha();
+onMounted(() => { if (!store.user?.phone) refreshCaptcha(); });
 
 function startCd(cd) {
   cd.value = 60;
@@ -128,6 +112,7 @@ function startChangePhone() {
   phoneForm.value = { phone: '', code: '' };
   phoneCd.value = 0;
   changingPhone.value = true;
+  refreshCaptcha();
 }
 
 function cancelChangePhone() {
@@ -148,13 +133,14 @@ async function sendPhoneCode() {
   if (phoneCd.value > 0) return;
   if (!/^1[3-9]\d{9}$/.test(phoneForm.value.phone))
     return uni.showToast({ title: '手机号格式错误', icon: 'none' });
+  if (!captchaAnswer.value)
+    return uni.showToast({ title: '请输入图形验证码', icon: 'none' });
   try {
-    // 已绑定 -> 更换接口；未绑定 -> 绑定接口
-    if (store.user?.phone) await authApi.sendChangePhone(phoneForm.value.phone);
-    else await authApi.sendBindSms(phoneForm.value.phone);
+    if (store.user?.phone) await authApi.sendChangePhone(phoneForm.value.phone, captchaToken.value, captchaAnswer.value);
+    else await authApi.sendBindSms(phoneForm.value.phone, captchaToken.value, captchaAnswer.value);
     startCd(phoneCd);
     uni.showToast({ title: '验证码已发送' });
-  } catch (e) { uni.showToast({ title: e?.error || '发送失败', icon: 'none' }); }
+  } catch (e) { refreshCaptcha(); uni.showToast({ title: e?.error || '发送失败', icon: 'none' }); }
 }
 
 async function submitPhone() {
@@ -172,27 +158,12 @@ async function submitPhone() {
   } catch (e) { uni.showToast({ title: e?.error || '操作失败', icon: 'none' }); }
 }
 
-async function sendEmailCode() {
-  if (emailCd.value > 0) return;
-  try { await authApi.sendBindEmail(emailForm.value.email); startCd(emailCd); }
-  catch (e) { uni.showToast({ title: e?.error || '发送失败', icon: 'none' }); }
-}
-
-async function bindEmail() {
-  try {
-    const r = await authApi.bindEmail(emailForm.value.email, emailForm.value.code);
-    Object.assign(store.user, r.user);
-    uni.setStorageSync('user', JSON.stringify(store.user));
-    uni.showToast({ title: '绑定成功' });
-  } catch (e) { uni.showToast({ title: e?.error || '绑定失败', icon: 'none' }); }
-}
-
 async function changePassword() {
   const { old: o, new1, new2 } = pwdForm.value;
   if (new1 !== new2) return uni.showToast({ title: '两次密码不一致', icon: 'none' });
   if (new1.length < 6) return uni.showToast({ title: '新密码至少6位', icon: 'none' });
   try {
-    await authApi.changePassword(o, new1);
+    await authApi.changePassword(await hashPassword(o), await hashPassword(new1));
     pwdForm.value = { old: '', new1: '', new2: '' };
     uni.showToast({ title: '密码已修改' });
   } catch (e) { uni.showToast({ title: e?.error || '修改失败', icon: 'none' }); }
@@ -220,5 +191,7 @@ async function changePassword() {
 .legal-signed { font-size: 20rpx; color: #4A8A7A; }
 .legal-unsigned { font-size: 20rpx; color: #ccc; }
 .legal-arrow { font-size: 36rpx; color: #ccc; }
-.disclaimer { display: block; font-size: 22rpx; color: #aaa; margin-top: 16rpx; line-height: 1.6; }
+.captcha-row { display: flex; align-items: center; gap: 16rpx; margin-bottom: 20rpx; }
+.captcha-img { width: 200rpx; height: 72rpx; border-radius: 8rpx; background: #f5f7f6; flex-shrink: 0; border: 1rpx solid #eee; }
+.captcha-input { flex: 1; font-size: 26rpx; color: #1C2A27; border-bottom: 1rpx solid #eee; padding: 8rpx 0; }
 </style>

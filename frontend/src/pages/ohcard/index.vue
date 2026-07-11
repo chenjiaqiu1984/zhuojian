@@ -10,7 +10,7 @@
       <view class="section">
         <text class="sec-title">🃏 单卡牌组合</text>
         <view class="scene-list">
-          <view class="scene-chip" v-for="d in singleDecks" :key="d.name" @click="nav('/pages/ohcard/classic?deck='+encodeURIComponent(d.name),{cat:'single',name:d.name})" :style="{borderColor:d.color}">
+          <view class="scene-chip" v-for="d in singleDecks" :key="d.name" @click="navDeck(d)" :style="{borderColor:d.color,...chipStyle(singleDecks)}">
             <text class="chip-icon">{{d.icon}}</text>
             <text class="chip-name">{{d.name}}</text>
           </view>
@@ -21,7 +21,7 @@
       <view class="section">
         <text class="sec-title">🔮 跨卡牌组合</text>
         <view class="scene-list">
-          <view class="scene-chip" v-for="c in comboPreviews" :key="c.id" @click="nav('/pages/ohcard/combo?id='+c.id,{cat:'combo',id:c.id,name:c.title})" :style="{borderColor:c.color}">
+          <view class="scene-chip" v-for="c in comboPreviews" :key="c.id" @click="nav('/pages/ohcard/combo?id='+c.id,{cat:'combo',id:c.id,name:c.title})" :style="{borderColor:c.color,...chipStyle(comboPreviews)}">
             <text class="chip-icon">{{c.icon}}</text>
             <text class="chip-name">{{c.title}}</text>
           </view>
@@ -32,7 +32,7 @@
       <view class="section">
         <text class="sec-title">🎯 场景选卡</text>
         <view class="scene-list">
-          <view class="scene-chip" v-for="s in scenePreviews" :key="s.id" @click="nav('/pages/ohcard/scene?id='+s.id,{cat:'scene',id:s.id,name:s.title})" :style="{borderColor:s.color}">
+          <view class="scene-chip" v-for="s in scenePreviews" :key="s.id" @click="nav('/pages/ohcard/scene?id='+s.id,{cat:'scene',id:s.id,name:s.title})" :style="{borderColor:s.color,...chipStyle(scenePreviews)}">
             <text class="chip-icon">{{s.icon}}</text>
             <text class="chip-name">{{s.title}}</text>
           </view>
@@ -43,7 +43,7 @@
       <view class="section">
         <text class="sec-title">🌊 人生困境</text>
         <view class="scene-list">
-          <view class="scene-chip" v-for="d in dilemmas" :key="d.id" @click="nav('/pages/ohcard/dilemma?id='+d.id,{cat:'dilemma',id:d.id,name:d.title})" :style="{borderColor:d.color}">
+          <view class="scene-chip" v-for="d in dilemmas" :key="d.id" @click="nav('/pages/ohcard/dilemma?id='+d.id,{cat:'dilemma',id:d.id,name:d.title})" :style="{borderColor:d.color,...chipStyle(dilemmas)}">
             <text class="chip-icon">{{d.icon}}</text>
             <text class="chip-name">{{d.title}}</text>
           </view>
@@ -63,17 +63,30 @@ import { track } from '../../utils/track';
 import { SERVER } from '../../config';
 import { ohcardApi } from '../../api/index';
 
+function chipStyle(list) {
+  const n = list.length;
+  if (n <= 3) return { width: `calc((100% - ${(n - 1) * 12}rpx) / ${n})` };
+  return {};
+}
+
 function nav(url, trackData) {
   track('ohcard_open', '/pages/ohcard/index', trackData);
   uni.navigateTo({ url });
 }
 
 const singleDecks = ref([
-  { name: '心理图卡',     icon: '🃏', color: '#4A8A7A' },
-  { name: '心理图卡+字卡', icon: '🔤', color: '#3A6E80' },
-  { name: '伴侣卡',       icon: '💑', color: '#C06090' },
-  { name: '孩童卡·人像',   icon: '🧒', color: '#7B68EE' }
+  { name: '心理图卡',     icon: '🃏', color: '#4A8A7A', imgCatId: null, wordCatId: null },
+  { name: '心理图卡+字卡', icon: '🔤', color: '#3A6E80', imgCatId: null, wordCatId: null },
+  { name: '伴侣卡',       icon: '💑', color: '#C06090', imgCatId: null, wordCatId: null },
+  { name: '孩童卡·人像',   icon: '🧒', color: '#7B68EE', imgCatId: null, wordCatId: null }
 ]);
+
+function navDeck(d) {
+  const params = `deck=${encodeURIComponent(d.name)}`
+    + (d.imgCatId  ? `&imgCatId=${d.imgCatId}`  : '')
+    + (d.wordCatId ? `&wordCatId=${d.wordCatId}` : '');
+  nav(`/pages/ohcard/classic?${params}`, { cat: 'single', name: d.name });
+}
 
 const comboPreviews = ref([
   { id:1, icon:'🧒', color:'#7B68EE', title:'内在小孩深度疗愈', for:'悲伤·焦虑·自我价值' },
@@ -111,14 +124,23 @@ onMounted(async () => {
   track('page_view', '/pages/ohcard/index');
   // 从API 获取真实 ID 和顺序（覆盖硬编码的 id）
   try {
-    const [combos, scenes, dils] = await Promise.all([
+    const [combos, scenes, dils, cats] = await Promise.all([
       ohcardApi.presets('combo'),
       ohcardApi.presets('scene'),
-      ohcardApi.presets('dilemma')
+      ohcardApi.presets('dilemma'),
+      ohcardApi.categories()
     ]);
     if (combos?.length) comboPreviews.value = combos.map(p => ({ id:p.id, icon:p.icon, color:p.color, title:p.title, for:p.config?.for }));
     if (scenes?.length) scenePreviews.value = scenes.map(p => ({ id:p.id, icon:p.icon, color:p.color, title:p.title }));
     if (dils?.length) dilemmas.value = dils.map(p => ({ id:p.id, icon:p.icon, color:p.color, title:p.title }));
+    if (cats?.length) {
+      const imgCats = cats.filter(c => c.type === 'image');
+      singleDecks.value = singleDecks.value.map(d => {
+        const cat = imgCats.find(c => c.name === d.name);
+        if (!cat) return d;
+        return { ...d, imgCatId: cat.imgSrcCatId || cat.id, wordCatId: cat.wordCatId || null };
+      });
+    }
   } catch {}
   // 按使用量排序
   uni.request({

@@ -30,10 +30,15 @@ const errorMsg = ref('');
 const orderNo  = ref('');
 
 onMounted(async () => {
-  // 从 URL query 取 orderNo
+  let alipayTradeNo = null;
+  let isAlipayReturn = false;
+
   // #ifdef H5
-  const params = new URLSearchParams(location.search);
+  const search = location.search || location.hash.split('?')[1] || '';
+  const params = new URLSearchParams(search);
   orderNo.value = params.get('orderNo') || '';
+  alipayTradeNo = params.get('trade_no');
+  isAlipayReturn = !!(params.get('method') || alipayTradeNo);
   // #endif
   // #ifndef H5
   const pages = getCurrentPages();
@@ -47,20 +52,28 @@ onMounted(async () => {
     return;
   }
 
-  // 轮询最多 10 次，每次间隔 2s，等待后端回调写库
+  // 支付宝同步回跳时先触发后端同步（验签 + 写库）
+  if (isAlipayReturn) {
+    try {
+      const returnParams = Object.fromEntries(params.entries());
+      const r = await paymentApi.syncAlipayReturn(orderNo.value, { tradeNo: alipayTradeNo, returnParams });
+      if (r.status === 'paid') { status.value = 'paid'; return; }
+    } catch(e) {
+      if (e?.__authRedirect) return; // token 失效已跳转登录，不再轮询
+    }
+  }
+
+  // 轮询最多 10 次，每次间隔 2s，等待后端异步回调写库
   for (let i = 0; i < 10; i++) {
     try {
       const order = await paymentApi.queryOrder(orderNo.value);
-      if (order.status === 'paid') {
-        status.value = 'paid';
-        return;
-      }
+      if (order.status === 'paid') { status.value = 'paid'; return; }
     } catch { /* ignore */ }
     await sleep(2000);
   }
 
   status.value   = 'fail';
-  errorMsg.value = '支付结果未收到，请稍后在"我的预约"中查看状态';
+  errorMsg.value = '支付结果未收到，请稍后在"我的订单"中查看状态';
 });
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }

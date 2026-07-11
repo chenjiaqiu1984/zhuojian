@@ -12,7 +12,7 @@ api.interceptors.request.use(cfg => {
 api.interceptors.response.use(r => r.data, e => {
   if (e.response?.status === 401) {
     useAdminStore().logout();
-    location.href = '/#/login';
+    location.hash = '#/login';
   }
   return Promise.reject(e.response?.data || e);
 });

@@ -12,7 +12,6 @@ function calcDiscount(coupon, amount) {
   if (coupon.type === 'threshold')  return amount >= coupon.threshold ? Math.round(coupon.value) : 0;
   return 0;
 }
-module.exports.calcDiscount = calcDiscount;
 
 // ── 工具：向指定用户发放一张券 ───────────────────────────────────
 async function grantCouponToUser(userId, couponId) {
@@ -33,7 +32,6 @@ async function grantCouponToUser(userId, couponId) {
   });
   return uc;
 }
-module.exports.grantCouponToUser = grantCouponToUser;
 
 // ── 工具：注册赠券（欢迎8折券）────────────────────────────────────
 async function grantWelcomeCoupon(userId) {
@@ -42,7 +40,6 @@ async function grantWelcomeCoupon(userId) {
     if (coupon && coupon.isActive) await grantCouponToUser(userId, coupon.id);
   } catch {}
 }
-module.exports.grantWelcomeCoupon = grantWelcomeCoupon;
 
 // ── 公开：活动券列表（用户可自领）───────────────────────────────
 // GET /api/coupons/activity
@@ -231,4 +228,4 @@ router.get('/:id/users', ...requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-module.exports = router;
+module.exports = Object.assign(router, { calcDiscount, grantCouponToUser, grantWelcomeCoupon });

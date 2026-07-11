@@ -80,6 +80,52 @@
         </el-table>
       </el-tab-pane>
 
+      <el-tab-pane label="数据统计" name="stats">
+        <div style="display:flex;gap:16px;margin-bottom:20px">
+          <el-card shadow="never" style="min-width:160px;text-align:center">
+            <div style="font-size:32px;font-weight:700;color:#409eff">{{stats.totalCompletions||0}}</div>
+            <div style="color:#666;margin-top:4px;font-size:13px">累计完成测评</div>
+          </el-card>
+        </div>
+
+        <div style="font-weight:600;margin-bottom:8px">各量表统计</div>
+        <el-table :data="stats.scaleStats||[]" stripe style="margin-bottom:24px">
+          <el-table-column prop="name" label="量表名称" min-width="140" />
+          <el-table-column prop="views" label="浏览次数" width="90" />
+          <el-table-column prop="starts" label="开始测评" width="90" />
+          <el-table-column prop="completions" label="完成次数" width="90" />
+          <el-table-column label="开始率" width="90">
+            <template #default="{row}">
+              {{row.views ? Math.round(row.starts/row.views*100) : 0}}%
+            </template>
+          </el-table-column>
+          <el-table-column label="完成率" width="90">
+            <template #default="{row}">
+              {{row.starts ? Math.round(row.completions/row.starts*100) : 0}}%
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div style="display:flex;gap:24px">
+          <div style="flex:1">
+            <div style="font-weight:600;margin-bottom:8px">近30天每日完成量</div>
+            <el-table :data="dailyList" stripe size="small" max-height="300">
+              <el-table-column prop="date" label="日期" />
+              <el-table-column prop="count" label="完成数" width="90" />
+            </el-table>
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:600;margin-bottom:8px">结果等级分布</div>
+            <el-table :data="stats.levelCounts||[]" stripe size="small" max-height="300">
+              <el-table-column prop="level" label="等级" />
+              <el-table-column label="次数" width="90">
+                <template #default="{row}">{{row._count.id}}</template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+      </el-tab-pane>
+
       <el-tab-pane label="推送测评" name="push">
         <el-form inline>
           <el-form-item label="手机号查找用户">
@@ -201,7 +247,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '../api/index.js';
 
@@ -220,10 +266,19 @@ const editVisible = ref(false);
 const editTab = ref('info');
 const editForm = ref({});
 
+const stats = ref({});
+const dailyList = computed(() => {
+  if (!stats.value.daily) return [];
+  return Object.entries(stats.value.daily)
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .slice(0, 30).map(([date, count]) => ({ date, count }));
+});
+
 const loadScales = async () => { scales.value = await api.get('/assessment/admin/scales'); };
 const loadVouchers = async () => { vouchers.value = await api.get('/assessment/admin/vouchers'); };
+const loadStats = async () => { stats.value = await api.get('/analytics/assessment-stats'); };
 
-onMounted(() => { loadScales(); loadVouchers(); });
+onMounted(() => { loadScales(); loadVouchers(); loadStats(); });
 
 async function toggleScale(row, val) {
   await api.patch(`/assessment/admin/scales/${row.id}`, { isActive: val });

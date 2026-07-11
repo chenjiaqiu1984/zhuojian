@@ -28,6 +28,7 @@
 <script setup>
 import { ref } from 'vue';
 import { authApi } from '../../api/index';
+import { hashPassword } from '../../utils/crypto';
 
 const form = ref({ username: '', password: '', name: '', phone: '' });
 const loading = ref(false);
@@ -42,7 +43,7 @@ async function doRegister() {
   if (!agreed.value) return uni.showToast({ title: '请先同意用户协议和隐私政策', icon: 'none' });
   loading.value = true;
   try {
-    await authApi.register({ ...form.value, termsAccepted: true });
+    await authApi.register({ ...form.value, password: await hashPassword(form.value.password), termsAccepted: true });
     uni.showToast({ title: '注册成功' });
     setTimeout(() => uni.navigateBack(), 1000);
   } catch (e) { uni.showToast({ title: e.error || '注册失败', icon: 'none' }); }

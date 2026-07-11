@@ -48,6 +48,12 @@ router.post('/', authMiddleware, async (req, res) => {
   const status = needPay ? 'pending_payment'
     : (consultant?.autoConfirm ? 'confirmed' : 'pending');
 
+  // 清除该槽位上已取消/过期的旧预约（slotId 有唯一约束，不清除会导致 P2002）
+  const slotIds = [Number(slot_id), ...(second_slot_id ? [Number(second_slot_id)] : [])];
+  await prisma.booking.deleteMany({
+    where: { slotId: { in: slotIds }, status: { in: ['cancelled'] } }
+  });
+
   const updates = [
     prisma.booking.create({
       data: {

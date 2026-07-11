@@ -1,4 +1,4 @@
-const { AlipaySdk, AlipayFormData } = require('alipay-sdk');
+const { AlipaySdk } = require('alipay-sdk');
 
 let _sdk = null;
 
@@ -20,23 +20,20 @@ function getSdk() {
 
 /**
  * 手机网站支付（WAP）
- * 返回表单 HTML 字符串，前端 document.write 后自动跳转支付宝
  */
 async function createAlipayOrder({ orderNo, amount, desc, returnUrl, notifyUrl }) {
   const sdk = getSdk();
-  const formData = new AlipayFormData();
-  formData.setMethod('get');
-  formData.addField('bizContent', {
-    out_trade_no:  orderNo,
-    total_amount:  (amount / 100).toFixed(2), // 支付宝单位：元
-    subject:       desc,
-    product_code:  'QUICK_WAP_WAY',
+  const payUrl = await sdk.pageExec('alipay.trade.wap.pay', {
+    bizContent: {
+      out_trade_no: orderNo,
+      total_amount: (amount / 100).toFixed(2),
+      subject:      desc,
+      product_code: 'QUICK_WAP_WAY',
+    },
+    returnUrl: returnUrl || process.env.ALIPAY_RETURN_URL || '',
+    notifyUrl,
   });
-  formData.addField('returnUrl',  returnUrl  || process.env.ALIPAY_RETURN_URL || '');
-  formData.addField('notifyUrl',  notifyUrl);
-
-  const result = await sdk.pageExec('alipay.trade.wap.pay', { formData });
-  return { payUrl: result };
+  return { payUrl };
 }
 
 /**
@@ -63,4 +60,28 @@ async function alipayRefund({ tradeNo, refundAmount, outRequestNo, reason }) {
   return result;
 }
 
-module.exports = { createAlipayOrder, verifyAlipayNotify, alipayRefund };
+async function queryAlipayOrder(outTradeNo, tradeNo) {
+  const sdk = getSdk();
+  const bizContent = tradeNo
+    ? { trade_no: tradeNo }
+    : { out_trade_no: outTradeNo };
+  const result = await sdk.exec('alipay.trade.query', { bizContent });
+  return result;
+}
+
+async function createAlipayPcOrder({ orderNo, amount, desc, returnUrl, notifyUrl }) {
+  const sdk = getSdk();
+  const payUrl = await sdk.pageExec('alipay.trade.page.pay', {
+    bizContent: {
+      out_trade_no:  orderNo,
+      total_amount:  (amount / 100).toFixed(2),
+      subject:       desc,
+      product_code:  'FAST_INSTANT_TRADE_PAY',
+    },
+    returnUrl: returnUrl || '',
+    notifyUrl,
+  });
+  return { payUrl };
+}
+
+module.exports = { createAlipayOrder, createAlipayPcOrder, verifyAlipayNotify, alipayRefund, queryAlipayOrder };

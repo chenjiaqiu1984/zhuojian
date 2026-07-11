@@ -97,3 +97,6 @@ desktop.ini
 *.suo
 *.user
 /backendbackup
+/backend/backups/
+/backend/cert414
+*.har

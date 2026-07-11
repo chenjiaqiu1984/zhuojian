@@ -9,11 +9,9 @@ onLaunch(() => {
 </script>
 
 <template>
-  <router-view />
 </template>
 
 <style lang="scss">
 @import 'uview-plus/index.scss';
-* { box-sizing: border-box; margin: 0; padding: 0; }
-page { background: #F5F7FA; font-family: -apple-system, 'PingFang SC', sans-serif; }
+page { box-sizing: border-box; margin: 0; padding: 0; background: #F5F7FA; font-family: -apple-system, 'PingFang SC', sans-serif; }
 </style>

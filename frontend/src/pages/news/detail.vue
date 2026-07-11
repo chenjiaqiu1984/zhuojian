@@ -12,7 +12,7 @@
         <text class="date">{{fmt(news.createdAt)}}</text>
         <text v-if="news.author" class="author">{{news.author}}</text>
       </view>
-      <view class="content" v-html="news.content" />
+      <view class="content" v-html="safeContent" />
     </view>
 
     <view class="action-bar">
@@ -52,7 +52,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import DOMPurify from 'dompurify';
 import { newsApi } from '../../api/index';
 
 const loading = ref(true);
@@ -61,6 +62,10 @@ const notFound = ref(false);
 const comments = ref([]);
 const commentText = ref('');
 let newsId = null;
+
+const safeContent = computed(() =>
+  news.value?.content ? DOMPurify.sanitize(news.value.content, { USE_PROFILES: { html: true } }) : ''
+);
 
 onMounted(async () => {
   const pages = getCurrentPages();
@@ -104,9 +109,11 @@ function share() {
 }
 
 async function submitComment() {
-  if (!commentText.value.trim()) return;
+  const text = commentText.value.trim();
+  if (!text) return;
+  if (text.length > 500) return uni.showToast({ title: '留言不超过500字', icon: 'none' });
   try {
-    await newsApi.addComment(newsId, commentText.value.trim());
+    await newsApi.addComment(newsId, text);
     commentText.value = '';
     loadComments();
   } catch { uni.showToast({ title: '请先登录', icon: 'none' }); }

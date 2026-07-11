@@ -102,8 +102,16 @@
       <text class="footer-quote">创造，即疗愈</text>
       <text class="footer-sub">每一次心灵的探索，都值得被珍视</text>
       <text class="footer-sub">相信每个人都有自我疗愈的智慧</text>
+      <view class="contact-row">
+        <text class="contact-item">客服邮箱：345958875@qq.com</text>
+        <text class="contact-item">小程序开发联系：553997877@qq.com</text>
+      </view>
       <view class="icp-row">
         <text class="icp-text" @click="openIcp">苏ICP备2026043098号</text>
+        <view class="beian-row" @click="openBeian">
+          <image class="beian-icon" src="/static/beian.png" mode="aspectFit" />
+          <text class="icp-text">苏公网安备32010402002563号</text>
+        </view>
       </view>
     </view>
   </view>
@@ -154,6 +162,16 @@ function openIcp() {
   // #endif
   // #ifndef H5
   uni.navigateTo({ url: '/pages/webview/index?url=' + encodeURIComponent('https://beian.miit.gov.cn/') });
+  // #endif
+}
+
+function openBeian() {
+  const url = 'https://beian.mps.gov.cn/portal/registerSystemInfo?recordcode=32010402002563';
+  // #ifdef H5
+  window.open(url, '_blank');
+  // #endif
+  // #ifndef H5
+  uni.navigateTo({ url: '/pages/webview/index?url=' + encodeURIComponent(url) });
   // #endif
 }
 </script>
@@ -221,4 +239,8 @@ function openIcp() {
 .footer-sub { font-size: 26rpx; color: rgba(255,255,255,.7); display: block; margin-bottom: 8rpx; line-height: 1.8; }
 .icp-row { margin-top: 24rpx; padding-top: 16rpx; border-top: 1rpx solid rgba(255,255,255,.15); }
 .icp-text { font-size: 22rpx; color: rgba(255,255,255,.5); }
+.contact-row { margin-top: 24rpx; display: flex; flex-direction: column; gap: 10rpx; }
+.contact-item { font-size: 22rpx; color: rgba(255,255,255,.6); }
+.beian-row { display: flex; align-items: center; justify-content: center; gap: 8rpx; margin-top: 12rpx; }
+.beian-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; }
 </style>

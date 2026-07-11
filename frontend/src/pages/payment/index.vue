@@ -171,11 +171,21 @@
       </button>
       <text class="cancel-link" v-if="!isActivity" @click="cancel">取消预约</text>
     </view>
+    <!-- 电脑端扫码弹窗 -->
+    <view v-if="showQrModal" class="qr-mask" @click.self="closeQrModal">
+      <view class="qr-box">
+        <text class="qr-title">{{ qrTitle }}</text>
+        <image class="qr-img" :src="qrDataUrl" mode="aspectFit" />
+        <text class="qr-hint">请使用微信扫码完成支付，支付成功后自动跳转</text>
+        <text class="qr-close" @click="closeQrModal">取消</text>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import QRCode from 'qrcode';
 import { paymentApi, bookingApi, packageApi, couponApi } from '../../api/index';
 
 // uni-app 路由页面通过 URL query 传参，不能用 defineProps 接收
@@ -199,6 +209,20 @@ const selectedPackageId = ref(null);
 const availableCoupons  = ref([]);      // { id, coupon, discount, applicable }
 const selectedCouponId  = ref(null);    // 选中的 UserCoupon.id（null=不用券）
 let timer = null;
+let pollTimer = null;
+
+// 是否手机浏览器（Windows/Mac/Linux 桌面端明确排除）
+function isMobile() {
+  const ua = navigator.userAgent;
+  if (/Windows NT|Macintosh|X11; Linux x86_64/i.test(ua)) return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+}
+
+// QR 码弹窗状态
+const showQrModal   = ref(false);
+const qrDataUrl     = ref('');
+const qrTitle       = ref('');
+const qrOrderNo     = ref('');
 
 // 判断当前运行环境
 // #ifdef H5
@@ -303,7 +327,7 @@ onMounted(async () => {
   } catch {}
 });
 
-onUnmounted(() => clearInterval(timer));
+onUnmounted(() => { clearInterval(timer); clearInterval(pollTimer); });
 
 function startCountdown() {
   timer = setInterval(() => {
@@ -330,14 +354,30 @@ async function doPay() {
   loading.value = true;
   try {
     if (isActivity.value) {
-      isH5 ? (payMethod.value === 'alipay' ? await doActivityAlipay() : await doActivityWechatH5()) : await doActivityWechatMiniApp();
+      if (!isH5) {
+        await doActivityWechatMiniApp();
+      } else if (!isMobile()) {
+        payMethod.value === 'alipay' ? await doAlipayDesktop() : await doActivityWechatDesktop();
+      } else {
+        payMethod.value === 'alipay' ? await doActivityAlipay() : await doActivityWechatH5();
+      }
     } else if (usePackage.value && selectedPackageId.value) {
       await doUsePackage();
     } else if (isH5) {
-      payMethod.value === 'alipay' ? await doAlipayH5() : await doWechatH5();
+      if (!isMobile()) {
+        // 电脑浏览器：微信扫码 / 支付宝 PC
+        payMethod.value === 'alipay' ? await doAlipayDesktop() : await doWechatDesktop();
+      } else {
+        payMethod.value === 'alipay' ? await doAlipayH5() : await doWechatH5();
+      }
     } else {
       await doWechatMiniApp();
     }
+  } catch (e) {
+    if (e?.__authRedirect) return;
+    const msg = e?.error || e?.message || '支付失败，请重试';
+    console.error('[doPay error]', e);
+    uni.showModal({ title: '支付失败', content: msg, showCancel: false });
   } finally {
     loading.value = false;
   }
@@ -349,7 +389,43 @@ async function doUsePackage() {
   onPaySuccess();
 }
 
-// ── 活动支付 ──────────────────────────────────────────────────────
+// ── 桌面端微信扫码支付 ────────────────────────────────────────────
+async function doWechatDesktop() {
+  const data = await paymentApi.createNativeOrder(bookingId.value, { userCouponId: selectedCouponId.value });
+  orderNo.value = data.orderNo;
+  qrDataUrl.value = await QRCode.toDataURL(data.codeUrl, { width: 220, margin: 1 });
+  qrTitle.value = '微信扫码支付';
+  qrOrderNo.value = data.orderNo;
+  showQrModal.value = true;
+  startQrPoll(data.orderNo);
+}
+
+// ── 桌面端支付宝 PC 支付 ──────────────────────────────────────────
+async function doAlipayDesktop() {
+  const data = await paymentApi.createAlipayPcOrder(bookingId.value, { userCouponId: selectedCouponId.value });
+  orderNo.value = data.orderNo;
+  document.write(data.payUrl);
+}
+
+// ── 轮询支付结果（扫码支付用）────────────────────────────────────
+function startQrPoll(no) {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const r = await paymentApi.queryOrder(no);
+      if (r.status === 'paid') {
+        clearInterval(pollTimer);
+        showQrModal.value = false;
+        onPaySuccess();
+      }
+    } catch {}
+  }, 2000);
+}
+
+function closeQrModal() {
+  showQrModal.value = false;
+  clearInterval(pollTimer);
+}
 async function doActivityWechatMiniApp() {
   const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'wxpay' });
   orderNo.value = data.orderNo;
@@ -360,15 +436,25 @@ async function doActivityWechatMiniApp() {
   onPaySuccess();
 }
 async function doActivityWechatH5() {
-  const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'h5' });
+  const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'native' });
   orderNo.value = data.orderNo;
-  const redirectUrl = encodeURIComponent(`${location.origin}/payment/result?orderNo=${data.orderNo}`);
-  location.href = `${data.mwebUrl}&redirect_url=${redirectUrl}`;
+  qrOrderNo.value = data.orderNo;
+  location.href = data.codeUrl;
+  startQrPoll(data.orderNo);
 }
 async function doActivityAlipay() {
   const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'alipay' });
   orderNo.value = data.orderNo;
-  location.href = data.payUrl;
+  document.write(data.payUrl);
+}
+async function doActivityWechatDesktop() {
+  const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'native' });
+  orderNo.value = data.orderNo;
+  qrDataUrl.value = await QRCode.toDataURL(data.codeUrl, { width: 220, margin: 1 });
+  qrTitle.value = '微信扫码支付';
+  qrOrderNo.value = data.orderNo;
+  showQrModal.value = true;
+  startQrPoll(data.orderNo);
 }
 
 // ── 小程序微信 JSAPI ──────────────────────────────────────────────
@@ -391,24 +477,23 @@ async function doWechatMiniApp() {
   onPaySuccess();
 }
 
-// ── 微信 H5 支付（手机浏览器跳转微信 App）────────────────────────
+// ── 微信支付（手机浏览器，扫码支付）─────────────────────────────
 async function doWechatH5() {
-  const data = await paymentApi.createH5Order(bookingId.value, { userCouponId: selectedCouponId.value });
+  const data = await paymentApi.createNativeOrder(bookingId.value, { userCouponId: selectedCouponId.value });
   orderNo.value = data.orderNo;
-  // redirect_url：支付完成后微信跳回的页面
-  const redirectUrl = encodeURIComponent(
-    `${location.origin}/payment/result?orderNo=${data.orderNo}`
-  );
-  // 跳转到微信收银台，完成后回跳
-  location.href = `${data.mwebUrl}&redirect_url=${redirectUrl}`;
-  // 页面跳走了，不再执行后续逻辑；回跳后由 result 页查单确认状态
+  qrOrderNo.value = data.orderNo;
+  qrDataUrl.value = await QRCode.toDataURL(data.codeUrl, { width: 220, margin: 1 });
+  qrTitle.value = '微信扫码支付';
+  showQrModal.value = true;
+  startQrPoll(data.orderNo);
 }
 
 // ── 支付宝 WAP 支付（跳转支付宝 App / 网页）──────────────────────
 async function doAlipayH5() {
   const data = await paymentApi.createAlipayOrder(bookingId.value, { userCouponId: selectedCouponId.value });
   orderNo.value = data.orderNo;
-  location.href = data.payUrl;
+  // payUrl 是含自动提交 <script> 的 HTML 表单，document.write 才能执行内嵌脚本跳转支付宝
+  document.write(data.payUrl);
 }
 
 function onPaySuccess() {
@@ -526,6 +611,20 @@ async function cancel() {
 
 .order-card .savings-row { padding: 6rpx 0; }
 .order-card .savings { font-size: 26rpx; font-weight: 600; color: #E05A4A; }
+
+.qr-mask {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center; z-index: 999;
+}
+.qr-box {
+  background: #fff; border-radius: 20rpx; padding: 48rpx 56rpx;
+  display: flex; flex-direction: column; align-items: center; gap: 24rpx;
+  min-width: 380rpx;
+}
+.qr-title { font-size: 32rpx; font-weight: 700; color: #1C2A27; }
+.qr-img   { width: 220px; height: 220px; }
+.qr-hint  { font-size: 22rpx; color: #8A9E97; text-align: center; line-height: 1.6; }
+.qr-close { font-size: 26rpx; color: #C83232; margin-top: 8rpx; cursor: pointer; }
 
 .footer {
   position: fixed; bottom: 0; left: 0; right: 0;

@@ -2,7 +2,7 @@ const WxPay = require('wechatpay-node-v3');
 const path = require('path');
 const fs = require('fs');
 
-const certsDir = path.join(__dirname, '../certs');
+const certsDir = path.join(__dirname, '../cert414');
 
 function loadFile(filename) {
   const p = path.join(certsDir, filename);
@@ -86,4 +86,34 @@ async function refund({ transactionId, refundNo, refundAmount, totalAmount, reas
   return result.data;
 }
 
-module.exports = { createJsapiOrder, createH5Order, parseNotify, refund };
+async function queryWechatOrder(outTradeNo) {
+  const pay = getPay();
+  const result = await pay.query({ out_trade_no: outTradeNo });
+  return result.data;
+}
+
+/** Native 扫码支付（电脑浏览器），返回 code_url */
+async function createNativeOrder({ orderNo, amount, desc, notifyUrl }) {
+  const pay = getPay();
+  let result;
+  try {
+    result = await pay.transactions_native({
+      description: desc,
+      out_trade_no: orderNo,
+      notify_url: notifyUrl,
+      amount: { total: amount, currency: 'CNY' },
+    });
+  } catch (err) {
+    // axios 抛出 HTTP 错误时，错误详情在 err.response.data
+    const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+    console.error('[wechatpay] native error:', detail);
+    throw new Error(`Native下单失败: ${detail}`);
+  }
+  console.log('[wechatpay] native result:', JSON.stringify(result));
+  // 兼容库直接返回 body 或包在 .data 中两种格式
+  const codeUrl = result?.data?.code_url ?? result?.code_url;
+  if (!codeUrl) throw new Error(`Native下单失败: ${JSON.stringify(result?.data ?? result)}`);
+  return { codeUrl };
+}
+
+module.exports = { createJsapiOrder, createH5Order, createNativeOrder, parseNotify, refund, queryWechatOrder };

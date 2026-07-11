@@ -109,6 +109,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { consultantApi, bookingApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { SERVER } from '../../config';
@@ -174,12 +175,16 @@ const gridCells = computed(() => {
       let n = 0;
       while (n < 8 && idx + n < 32 && gray(idx + n)) n++;
       if (n > 0) {
-        const hasPending = Array.from({length: n}, (_,i) => {
+        const slotStatuses = Array.from({length: n}, (_,i) => {
           const si = map[d.key]?.[idx+i];
-          return si?.booking?.status === 'pending' || si?.secondBookings?.some?.(b => b.status === 'pending');
-        }).some(Boolean);
-        cells.push({ id: id++, type: 'cell', col: ci+2, row: idx+1, span: n,
-          label: hasPending ? '待确认' : '已预约', cls: hasPending ? 'wg-cell-pending' : 'wg-cell-booked' });
+          const st = si?.booking?.status || si?.secondBookings?.find?.(b => b.status)?.status;
+          return st;
+        });
+        const hasPendingPayment = slotStatuses.some(s => s === 'pending_payment');
+        const hasPending = !hasPendingPayment && slotStatuses.some(s => s === 'pending');
+        const label = hasPendingPayment ? '待付款' : hasPending ? '待确认' : '已预约';
+        const cls   = hasPendingPayment ? 'wg-cell-pay' : hasPending ? 'wg-cell-pending' : 'wg-cell-booked';
+        cells.push({ id: id++, type: 'cell', col: ci+2, row: idx+1, span: n, label, cls });
         idx += n; continue;
       }
       const s = map[d.key]?.[idx];
@@ -213,11 +218,21 @@ function fullUrl(url) {
   return url.startsWith('http') ? url : BASE + url;
 }
 
+let consultantId = null;
+
 onMounted(async () => {
   const pages = getCurrentPages();
   const opts = pages[pages.length - 1].options;
   rescheduleId.value = opts.reschedule ? Number(opts.reschedule) : null;
+  consultantId = opts.id;
   try { consultant.value = await consultantApi.get(opts.id); } finally { loading.value = false; }
+});
+
+// 从支付页返回时刷新时间槽状态
+onShow(async () => {
+  if (consultantId && consultant.value) {
+    try { consultant.value = await consultantApi.get(consultantId); } catch {}
+  }
 });
 
 function formatHM(t) {
@@ -308,11 +323,13 @@ async function book() {
 .wg-cell { border-left: 1rpx solid #F0F0F0; border-bottom: 1rpx solid #F0F0F0; display: flex; align-items: center; justify-content: center; }
 .wg-cell-avail { background: #EDF4F0; }
 .wg-cell-active { background: #4A8A7A; }
+.wg-cell-pay { background: #FFF0F0; }
 .wg-cell-pending { background: #FFF3E0; }
 .wg-cell-booked { background: #F5F5F5; }
 .wg-cell-txt { font-size: 18rpx; color: #4A8A7A; }
 .wg-cell-booked .wg-cell-txt { color: #bbb; }
 .wg-cell-pending .wg-cell-txt { color: #E8943A; }
+.wg-cell-pay .wg-cell-txt { color: #C83232; }
 .wg-cell-active .wg-cell-txt { color: #fff; font-weight: 600; }
 .empty-text { font-size: 26rpx; color: #9BBCB4; }
 .loading { text-align: center; padding: 100rpx; color: #9BBCB4; }

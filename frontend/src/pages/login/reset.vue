@@ -2,7 +2,13 @@
   <view class="page">
     <view class="form-card">
       <text class="title">找回密码</text>
-      <view class="input-wrap"><input class="ipt" v-model="form.target" placeholder="手机号或邮箱" /></view>
+      <view class="input-wrap"><input class="ipt" v-model="form.target" placeholder="请输入手机号" type="number" maxlength="11" /></view>
+      <view class="captcha-row" style="margin-bottom:24rpx">
+        <image class="captcha-img" :src="captchaUrl" @click="refreshCaptcha" mode="aspectFit" />
+        <view class="input-wrap" style="flex:1;margin-bottom:0">
+          <input class="ipt" v-model="captchaAnswer" placeholder="点击图片可刷新" maxlength="4" />
+        </view>
+      </view>
       <view class="code-row" style="margin-bottom:24rpx">
         <view class="input-wrap" style="flex:1;margin-bottom:0">
           <input class="ipt" v-model="form.code" placeholder="验证码" type="number" maxlength="6" />
@@ -18,11 +24,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { authApi } from '../../api/index';
+import { hashPassword } from '../../utils/crypto';
+import { useCaptcha } from '../../composables/useCaptcha';
 
 const form = ref({ target: '', code: '', newPwd: '', countdown: 0 });
 const loading = ref(false);
+const { captchaUrl, captchaToken, captchaAnswer, refreshCaptcha } = useCaptcha();
+onMounted(() => refreshCaptcha());
 
 function startCountdown() {
   form.value.countdown = 60;
@@ -30,16 +40,20 @@ function startCountdown() {
 }
 
 async function sendCode() {
-  if (!form.value.target) return uni.showToast({ title: '请输入手机号或邮箱', icon: 'none' });
-  try { await authApi.sendReset(form.value.target); startCountdown(); uni.showToast({ title: '验证码已发送' }); }
-  catch (e) { uni.showToast({ title: e.error || '发送失败', icon: 'none' }); }
+  if (!/^1[3-9]\d{9}$/.test(form.value.target)) return uni.showToast({ title: '手机号格式错误', icon: 'none' });
+  if (!captchaAnswer.value) return uni.showToast({ title: '请输入图形验证码', icon: 'none' });
+  try {
+    await authApi.sendReset(form.value.target, captchaToken.value, captchaAnswer.value);
+    startCountdown(); uni.showToast({ title: '验证码已发送' });
+  }
+  catch (e) { refreshCaptcha(); uni.showToast({ title: e.error || '发送失败', icon: 'none' }); }
 }
 
 async function doReset() {
   if (!form.value.code || !form.value.newPwd) return uni.showToast({ title: '请填写完整', icon: 'none' });
   loading.value = true;
   try {
-    await authApi.resetPassword(form.value.target, form.value.code, form.value.newPwd);
+    await authApi.resetPassword(form.value.target, form.value.code, await hashPassword(form.value.newPwd));
     uni.showToast({ title: '密码已重置，请重新登录' });
     setTimeout(() => uni.navigateBack(), 1000);
   } catch (e) { uni.showToast({ title: e.error || '重置失败', icon: 'none' }); }
@@ -53,5 +67,6 @@ async function doReset() {
 .title { font-size: 36rpx; font-weight: bold; color: #333; display: block; margin-bottom: 32rpx; }
 .input-wrap { background: #f5f6f8; border-radius: 16rpx; border: 2rpx solid #e8e8e8; padding: 0 24rpx; height: 96rpx; display: flex; align-items: center; margin-bottom: 24rpx; }
 .ipt { flex: 1; height: 96rpx; font-size: 28rpx; color: #333; background: transparent; }
-.code-row { display: flex; align-items: center; }
+.captcha-row { display: flex; align-items: center; gap: 16rpx; margin-bottom: 24rpx; }
+.captcha-img { width: 200rpx; height: 80rpx; border-radius: 8rpx; background: #f5f6f8; flex-shrink: 0; border: 2rpx solid #e8e8e8; }
 </style>

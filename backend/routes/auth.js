@@ -1,11 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const prisma = require('../db/database');
 const { JWT_SECRET } = require('../middleware/auth');
 const { sendSms } = require('../services/sms');
-const { sendEmail } = require('../services/email');
 const { grantWelcomeCoupon } = require('./coupons');
+const smsRateLimit = require('../middleware/smsRateLimit');
+const captchaCheck = require('../middleware/captchaCheck');
+const { create: createCaptcha } = require('../services/captcha');
 
 const router = express.Router();
 
@@ -25,24 +28,28 @@ async function verifyCode(target, code, type) {
   return true;
 }
 
-function makeToken(u) {
-  return jwt.sign({ id: u.id, username: u.username, role: u.role, name: u.name }, JWT_SECRET, { expiresIn: '7d' });
+function makeToken(u, rememberMe = false) {
+  return jwt.sign({ id: u.id, username: u.username, role: u.role, name: u.name }, JWT_SECRET, { expiresIn: rememberMe ? '30d' : '7d' });
 }
 
 function safeUser(u) {
-  return { id: u.id, username: u.username, phone: u.phone, email: u.email, role: u.role, name: u.name, avatar: u.avatar, termsAcceptedAt: u.termsAcceptedAt };
+  return { id: u.id, username: u.username, phone: u.phone, email: u.email, role: u.role, name: u.name, avatar: u.avatar, termsAcceptedAt: u.termsAcceptedAt, hasPassword: !!u.password };
 }
+
+router.get('/captcha', (req, res) => {
+  res.json(createCaptcha());
+});
 
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, rememberMe } = req.body;
     const isPhone = /^1[3-9]\d{9}$/.test(username);
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username);
     const where = isPhone ? { phone: username } : isEmail ? { email: username } : { username };
     const user = await prisma.user.findUnique({ where });
     if (!user || !user.password || !bcrypt.compareSync(password, user.password))
       return res.status(401).json({ error: '用户名或密码错误' });
-    res.json({ token: makeToken(user), user: safeUser(user) });
+    res.json({ token: makeToken(user, !!rememberMe), user: safeUser(user) });
   } catch { res.status(500).json({ error: '服务器错误' }); }
 });
 
@@ -60,16 +67,16 @@ router.post('/register', async (req, res) => {
   } catch { res.status(409).json({ error: '用户名已存在' }); }
 });
 
-router.post('/send-sms', async (req, res) => {
+router.post('/send-sms', smsRateLimit, captchaCheck, async (req, res) => {
   const { phone } = req.body;
   if (!/^1[3-9]\d{9}$/.test(phone)) return res.status(400).json({ error: '手机号格式错误' });
   const code = await saveCode(phone, 'sms');
-  try { await sendSms(phone, code); res.json({ ok: true }); }
+  try { await sendSms(phone, code, 'login'); res.json({ ok: true }); }
   catch (e) { res.status(500).json({ error: e.message || '发送失败' }); }
 });
 
 router.post('/login-phone', async (req, res) => {
-  const { phone, code, termsAccepted } = req.body;
+  const { phone, code, termsAccepted, rememberMe } = req.body;
   if (!await verifyCode(phone, code, 'sms')) return res.status(400).json({ error: '验证码错误或已过期' });
   let user = await prisma.user.findUnique({ where: { phone } });
   if (!user) {
@@ -78,28 +85,7 @@ router.post('/login-phone', async (req, res) => {
   } else if (termsAccepted && !user.termsAcceptedAt) {
     user = await prisma.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date() } });
   }
-  res.json({ token: makeToken(user), user: safeUser(user) });
-});
-
-router.post('/send-email', async (req, res) => {
-  const { email } = req.body;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: '邮箱格式错误' });
-  const code = await saveCode(email, 'email');
-  try { await sendEmail(email, code); res.json({ ok: true }); }
-  catch (e) { res.status(500).json({ error: e.message || '发送失败' }); }
-});
-
-router.post('/login-email', async (req, res) => {
-  const { email, code, termsAccepted } = req.body;
-  if (!await verifyCode(email, code, 'email')) return res.status(400).json({ error: '验证码错误或已过期' });
-  let user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    user = await prisma.user.create({ data: { email, ...(termsAccepted ? { termsAcceptedAt: new Date() } : {}) } });
-    grantWelcomeCoupon(user.id); // 邮箱新用户注册送券
-  } else if (termsAccepted && !user.termsAcceptedAt) {
-    user = await prisma.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date() } });
-  }
-  res.json({ token: makeToken(user), user: safeUser(user) });
+  res.json({ token: makeToken(user, !!rememberMe), user: safeUser(user) });
 });
 
 router.post('/login-wechat', async (req, res) => {
@@ -144,28 +130,27 @@ router.put('/profile', require('../middleware/auth').authMiddleware, async (req,
   res.json({ user: safeUser(user) });
 });
 
-router.post('/send-bind-sms', require('../middleware/auth').authMiddleware, async (req, res) => {
+router.post('/send-bind-sms', smsRateLimit, captchaCheck, require('../middleware/auth').authMiddleware, async (req, res) => {
   const { phone } = req.body;
   if (!/^1[3-9]\d{9}$/.test(phone)) return res.status(400).json({ error: '手机号格式错误' });
   const existing = await prisma.user.findUnique({ where: { phone } });
   if (existing) return res.status(400).json({ error: '该手机号已被绑定' });
   const code = await saveCode(phone, 'bind-sms');
-  try { await sendSms(phone, code); res.json({ ok: true }); }
+  try { await sendSms(phone, code, 'login'); res.json({ ok: true }); }
   catch (e) { res.status(500).json({ error: e.message || '发送失败' }); }
 });
 
 // 更换手机号：向新手机号发送验证码（需已登录）
-router.post('/send-change-phone', require('../middleware/auth').authMiddleware, async (req, res) => {
+router.post('/send-change-phone', smsRateLimit, captchaCheck, require('../middleware/auth').authMiddleware, async (req, res) => {
   const { phone } = req.body;
   if (!/^1[3-9]\d{9}$/.test(phone)) return res.status(400).json({ error: '手机号格式错误' });
   const existing = await prisma.user.findUnique({ where: { phone } });
   if (existing && existing.id !== req.user.id) return res.status(400).json({ error: '该手机号已被其他账号绑定' });
   const code = await saveCode(phone, 'change-phone');
-  try { await sendSms(phone, code); res.json({ ok: true }); }
+  try { await sendSms(phone, code, 'changePhone'); res.json({ ok: true }); }
   catch (e) { res.status(500).json({ error: e.message || '发送失败' }); }
 });
 
-// 更换手机号：验证验证码并更新（需已登录）
 router.post('/change-phone', require('../middleware/auth').authMiddleware, async (req, res) => {
   const { phone, code } = req.body;
   if (!await verifyCode(phone, code, 'change-phone')) return res.status(400).json({ error: '验证码错误或已过期' });
@@ -184,49 +169,22 @@ router.post('/bind-phone', require('../middleware/auth').authMiddleware, async (
   res.json({ user: safeUser(user) });
 });
 
-router.post('/send-bind-email', require('../middleware/auth').authMiddleware, async (req, res) => {
-  const { email } = req.body;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: '邮箱格式错误' });
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return res.status(400).json({ error: '该邮箱已被绑定' });
-  const code = await saveCode(email, 'bind-email');
-  try { await sendEmail(email, code); res.json({ ok: true }); }
-  catch (e) { res.status(500).json({ error: e.message || '发送失败' }); }
-});
-
-router.post('/bind-email', require('../middleware/auth').authMiddleware, async (req, res) => {
-  const { email, code } = req.body;
-  if (!await verifyCode(email, code, 'bind-email')) return res.status(400).json({ error: '验证码错误或已过期' });
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return res.status(400).json({ error: '该邮箱已被绑定' });
-  const user = await prisma.user.update({ where: { id: req.user.id }, data: { email } });
-  res.json({ user: safeUser(user) });
-});
-
-router.post('/send-reset', async (req, res) => {
+router.post('/send-reset', smsRateLimit, captchaCheck, async (req, res) => {
   const { target } = req.body;
-  const isPhone = /^1[3-9]\d{9}$/.test(target);
-  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target);
-  if (!isPhone && !isEmail) return res.status(400).json({ error: '请输入手机号或邮箱' });
-  const user = isPhone
-    ? await prisma.user.findUnique({ where: { phone: target } })
-    : await prisma.user.findUnique({ where: { email: target } });
-  if (!user) return res.status(404).json({ error: '该账号不存在' });
+  if (!/^1[3-9]\d{9}$/.test(target)) return res.status(400).json({ error: '请输入手机号' });
+  const user = await prisma.user.findUnique({ where: { phone: target } });
+  if (!user) return res.status(404).json({ error: '该手机号未注册' });
   const code = await saveCode(target, 'reset');
-  try {
-    if (isPhone) await sendSms(target, code);
-    else await sendEmail(target, code);
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message || '发送失败' }); }
+  try { await sendSms(target, code, 'reset'); res.json({ ok: true }); }
+  catch (e) { res.status(500).json({ error: e.message || '发送失败' }); }
 });
 
 router.post('/reset-password', async (req, res) => {
   const { target, code, newPassword } = req.body;
   if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: '新密码至少6位' });
   if (!await verifyCode(target, code, 'reset')) return res.status(400).json({ error: '验证码错误或已过期' });
-  const isPhone = /^1[3-9]\d{9}$/.test(target);
-  const where = isPhone ? { phone: target } : { email: target };
-  await prisma.user.update({ where, data: { password: bcrypt.hashSync(newPassword, 10) } });
+  if (!/^1[3-9]\d{9}$/.test(target)) return res.status(400).json({ error: '手机号格式错误' });
+  await prisma.user.update({ where: { phone: target }, data: { password: bcrypt.hashSync(newPassword, 10) } });
   res.json({ ok: true });
 });
 

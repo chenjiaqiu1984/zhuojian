@@ -23,10 +23,15 @@ const router = useRouter();
 const loading = ref(false);
 const form = ref({ username: '', password: '' });
 
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function login() {
   loading.value = true;
   try {
-    const res = await api.post('/auth/login', form.value);
+    const res = await api.post('/auth/login', { username: form.value.username, password: await sha256(form.value.password) });
     if (!['admin', 'consultant'].includes(res.user.role)) return ElMessage.error('无管理权限');
     store.setAuth(res.token, res.user);
     router.push('/');

@@ -15,9 +15,9 @@
         <!-- Image card (left) -->
         <view class="card-col">
           <text class="card-label">图卡</text>
-          <view class="card img-card" :class="{flipped: imgFlipped}" @click="flipImg">
-            <view class="card-back"><text class="back-text">点击翻转</text></view>
-            <view class="card-front" @click.stop="showFullscreen=true">
+          <view class="card img-card" @click="handleImgClick">
+            <view v-if="!imgFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
+            <view v-else class="card-front">
               <image :src="fullUrl(imgCard?.imageUrl)" mode="aspectFill" class="card-img" />
             </view>
           </view>
@@ -29,9 +29,9 @@
         <!-- Word card (right, larger) -->
         <view v-if="selDeck?.wordCatId" class="card-col">
           <text class="card-label">{{wordCard?.imageUrl ? '情况卡' : '字卡'}}</text>
-          <view class="card word-card" :class="{flipped: wordFlipped}" @click="flipWord">
-            <view class="card-back"><text class="back-text">点击翻转</text></view>
-            <view class="card-front" :class="wordCard?.imageUrl ? '' : 'word-front'">
+          <view class="card word-card" @click="flipWord">
+            <view v-if="!wordFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
+            <view v-else class="card-front" :class="wordCard?.imageUrl ? '' : 'word-front'">
               <image v-if="wordCard?.imageUrl" :src="fullUrl(wordCard.imageUrl)" mode="aspectFill" class="card-img" />
               <view v-else class="word-frame">
                 <text class="word-char">{{wordCard?.word}}</text>
@@ -79,8 +79,14 @@ const BASE_IMG = SERVER;
 const store = useUserStore();
 const selDeck = ref(null);
 const deckParam = ref('');
+const imgCatIdParam = ref(null);
+const wordCatIdParam = ref(null);
 
-onLoad((opts) => { deckParam.value = decodeURIComponent(opts?.deck || ''); });
+onLoad((opts) => {
+  deckParam.value = decodeURIComponent(opts?.deck || '');
+  if (opts?.imgCatId) imgCatIdParam.value = Number(opts.imgCatId);
+  if (opts?.wordCatId) wordCatIdParam.value = Number(opts.wordCatId);
+});
 const imgCard = ref(null);
 const wordCard = ref(null);
 const imgFlipped = ref(false);
@@ -101,11 +107,15 @@ onBackPress(() => { if (saving.value) return true; return false; });
 
 onMounted(async () => {
   track('page_view', '/pages/ohcard/classic');
-  // H5直接访问时注入 index 历史，确保 navigateBack() 有目标
   if (typeof window !== 'undefined' && getCurrentPages().length <= 1) {
     const current = location.href;
     history.replaceState(null, '', location.origin + location.pathname + '#/pages/ohcard/index');
     history.pushState(null, '', current);
+  }
+  // 如果 URL 已携带分类 ID（从 ohcard/index 导航而来），直接使用，不需要请求分类列表
+  if (imgCatIdParam.value) {
+    startDraw({ name: deckParam.value, imgCatId: imgCatIdParam.value, wordCatId: wordCatIdParam.value });
+    return;
   }
   try {
     const cats = await ohcardApi.categories();
@@ -174,7 +184,10 @@ async function redrawWord() {
   } catch {} finally { wordLoading.value = false; }
 }
 
-function flipImg() { if (!imgFlipped.value) imgFlipped.value = true; }
+function handleImgClick() {
+  if (!imgFlipped.value) imgFlipped.value = true;
+  else showFullscreen.value = true;
+}
 function flipWord() { if (!wordFlipped.value) wordFlipped.value = true; }
 
 async function saveRecord() {
@@ -229,20 +242,15 @@ function reset() {
 
 /* Cards row */
 .cards-row { display: flex; gap: 24rpx; justify-content: center; margin-bottom: 32rpx; }
-.card-col { display: flex; flex-direction: column; align-items: center; flex: 1; perspective: 1000px; }
+.card-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
 .card-label { font-size: 24rpx; color: #888; margin-bottom: 12rpx; }
 
 /* Card flip */
-.card { transform-style: preserve-3d; transition: transform 0.6s; position: relative; border-radius: 16rpx; }
-.card.flipped { transform: rotateY(180deg); }
-
-.card-back, .card-front {
-  position: absolute; inset: 0; backface-visibility: hidden;
-  border-radius: 16rpx; display: flex; align-items: center; justify-content: center;
-}
+.card { position: relative; border-radius: 16rpx; overflow: hidden; }
+.card-back, .card-front { width: 100%; height: 100%; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; }
 .card-back { background: linear-gradient(135deg, #4A7BBA, #7B68EE); }
 .back-text { color: #fff; font-size: 24rpx; }
-.card-front { background: #fff; box-shadow: 0 8rpx 32rpx rgba(0,0,0,.15); transform: rotateY(180deg); overflow: hidden; }
+.card-front { background: #fff; box-shadow: 0 8rpx 32rpx rgba(0,0,0,.15); overflow: hidden; }
 
 /* Image card */
 .img-card { width: 220rpx; height: 310rpx; }

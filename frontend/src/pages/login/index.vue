@@ -19,12 +19,50 @@
         </view>
       </view>
 
-      <!-- 手机验证码 -->
+      <!-- 密码登录 -->
       <view v-if="activeTab===0" class="tab-body">
+        <view class="field-group">
+          <text class="field-label">用户名</text>
+          <view class="input-wrap">
+            <input class="ipt" v-model="pwd.username" placeholder="请输入用户名" />
+          </view>
+        </view>
+        <view class="field-group">
+          <text class="field-label">密码</text>
+          <view class="input-wrap">
+            <input class="ipt" v-model="pwd.password" placeholder="请输入密码" password />
+          </view>
+        </view>
+        <view class="submit-btn" @click="loginPwd">
+          <text>{{loading ? '登录中...' : '登录'}}</text>
+        </view>
+        <!-- #ifdef H5 -->
+        <view class="remember-row" @click="rememberMe=!rememberMe">
+          <view :class="['checkbox', rememberMe && 'checked']" />
+          <text class="remember-txt">记住登录状态（30天）</text>
+        </view>
+        <!-- #endif -->
+        <view class="aux-row">
+          <text class="aux-link" @click="uni.navigateTo({url:'/pages/login/register'})">注册新账号</text>
+          <text class="aux-link" @click="uni.navigateTo({url:'/pages/login/reset'})">忘记密码</text>
+        </view>
+      </view>
+
+      <!-- 手机验证码 -->
+      <view v-if="activeTab===1" class="tab-body">
         <view class="field-group">
           <text class="field-label">手机号</text>
           <view class="input-wrap">
             <input class="ipt" v-model="phone.num" placeholder="请输入手机号" type="number" maxlength="11" />
+          </view>
+        </view>
+        <view class="field-group">
+          <text class="field-label">图形码</text>
+          <view class="captcha-row">
+            <image class="captcha-img" :src="captchaUrl" @click="refreshCaptcha" mode="aspectFit" />
+            <view class="input-wrap" style="flex:1">
+              <input class="ipt" v-model="captchaAnswer" placeholder="点击图片可刷新" maxlength="4" />
+            </view>
           </view>
         </view>
         <view class="field-group">
@@ -41,54 +79,14 @@
         <view class="submit-btn" @click="loginPhone">
           <text>{{loading ? '登录中...' : '登录 / 注册'}}</text>
         </view>
+        <!-- #ifdef H5 -->
+        <view class="remember-row" @click="rememberMe=!rememberMe">
+          <view :class="['checkbox', rememberMe && 'checked']" />
+          <text class="remember-txt">记住登录状态（30天）</text>
+        </view>
+        <!-- #endif -->
       </view>
 
-      <!-- 邮箱验证码 -->
-      <view v-if="activeTab===1" class="tab-body">
-        <view class="field-group">
-          <text class="field-label">邮箱</text>
-          <view class="input-wrap">
-            <input class="ipt" v-model="email.addr" placeholder="请输入邮箱地址" />
-          </view>
-        </view>
-        <view class="field-group">
-          <text class="field-label">验证码</text>
-          <view class="code-row">
-            <view class="input-wrap" style="flex:1">
-              <input class="ipt" v-model="email.code" placeholder="6位验证码" type="number" maxlength="6" />
-            </view>
-            <view :class="['send-btn', email.countdown>0 && 'send-btn-disabled']" @click="sendEmail">
-              <text>{{email.countdown>0 ? `${email.countdown}s` : '获取验证码'}}</text>
-            </view>
-          </view>
-        </view>
-        <view class="submit-btn" @click="loginEmail">
-          <text>{{loading ? '登录中...' : '登录 / 注册'}}</text>
-        </view>
-      </view>
-
-      <!-- 密码登录 -->
-      <view v-if="activeTab===2" class="tab-body">
-        <view class="field-group">
-          <text class="field-label">用户名</text>
-          <view class="input-wrap">
-            <input class="ipt" v-model="pwd.username" placeholder="请输入用户名" />
-          </view>
-        </view>
-        <view class="field-group">
-          <text class="field-label">密码</text>
-          <view class="input-wrap">
-            <input class="ipt" v-model="pwd.password" placeholder="请输入密码" password />
-          </view>
-        </view>
-        <view class="submit-btn" @click="loginPwd">
-          <text>{{loading ? '登录中...' : '登录'}}</text>
-        </view>
-        <view class="aux-row">
-          <text class="aux-link" @click="uni.navigateTo({url:'/pages/login/register'})">注册新账号</text>
-          <text class="aux-link" @click="uni.navigateTo({url:'/pages/login/reset'})">忘记密码</text>
-        </view>
-      </view>
 
       <!-- 第三方登录 -->
       <view class="third-login">
@@ -114,19 +112,28 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { track } from '../../utils/track';
+import { useCaptcha } from '../../composables/useCaptcha';
 
 const store = useUserStore();
 const activeTab = ref(0);
 const loading = ref(false);
-const tabs = ['手机登录', '邮箱登录', '密码登录'];
+const tabs = ['密码登录', '手机登录'];
 
 const phone = ref({ num: '', code: '', countdown: 0 });
-const email = ref({ addr: '', code: '', countdown: 0 });
 const pwd = ref({ username: '', password: '' });
+// #ifdef H5
+const rememberMe = ref(true);
+// #endif
+// #ifndef H5
+const rememberMe = ref(false);
+// #endif
+
+const { captchaUrl, captchaToken, captchaAnswer, refreshCaptcha } = useCaptcha();
+onMounted(() => refreshCaptcha());
 
 function startCountdown(target) {
   target.countdown = 60;
@@ -135,28 +142,34 @@ function startCountdown(target) {
 
 async function sendSms() {
   if (!/^1[3-9]\d{9}$/.test(phone.value.num)) return uni.showToast({ title: '手机号格式错误', icon: 'none' });
-  try { await authApi.sendSms(phone.value.num); startCountdown(phone.value); uni.showToast({ title: '验证码已发送' }); }
-  catch (e) { uni.showToast({ title: e.error || '发送失败', icon: 'none' }); }
-}
-
-async function sendEmail() {
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.addr)) return uni.showToast({ title: '邮箱格式错误', icon: 'none' });
-  try { await authApi.sendEmail(email.value.addr); startCountdown(email.value); uni.showToast({ title: '验证码已发送至邮箱' }); }
-  catch (e) { uni.showToast({ title: e.error || '发送失败', icon: 'none' }); }
+  if (!captchaAnswer.value) return uni.showToast({ title: '请输入图形验证码', icon: 'none' });
+  try {
+    await authApi.sendSms(phone.value.num, captchaToken.value, captchaAnswer.value);
+    startCountdown(phone.value); uni.showToast({ title: '验证码已发送' });
+  }
+  catch (e) {
+    refreshCaptcha();
+    if (e.resetAt) {
+      const mins = Math.ceil((e.resetAt - Date.now()) / 60000);
+      const wait = mins <= 1 ? '请稍后再试' : `请在 ${mins} 分钟后重试`;
+      uni.showToast({ title: `${e.error}，${wait}`, icon: 'none', duration: 4000 });
+    } else {
+      uni.showToast({ title: e.error || '发送失败', icon: 'none' });
+    }
+  }
 }
 
 async function loginPhone() {
   if (!phone.value.num || !phone.value.code) return uni.showToast({ title: '请填写完整', icon: 'none' });
   loading.value = true;
-  try { await store.loginPhone(phone.value.num, phone.value.code, true); success(); }
-  catch (e) { uni.showToast({ title: e.error || '验证码错误', icon: 'none' }); }
-  finally { loading.value = false; }
-}
-
-async function loginEmail() {
-  if (!email.value.addr || !email.value.code) return uni.showToast({ title: '请填写完整', icon: 'none' });
-  loading.value = true;
-  try { await store.loginEmail(email.value.addr, email.value.code, true); success(); }
+  try {
+    await store.loginPhone(phone.value.num, phone.value.code, true, rememberMe.value);
+    if (!store.user.name || !store.user.hasPassword) {
+      uni.redirectTo({ url: '/pages/login/complete' });
+    } else {
+      success();
+    }
+  }
   catch (e) { uni.showToast({ title: e.error || '验证码错误', icon: 'none' }); }
   finally { loading.value = false; }
 }
@@ -164,7 +177,7 @@ async function loginEmail() {
 async function loginPwd() {
   if (!pwd.value.username || !pwd.value.password) return uni.showToast({ title: '请填写完整', icon: 'none' });
   loading.value = true;
-  try { await store.login(pwd.value.username, pwd.value.password); success(); }
+  try { await store.login(pwd.value.username, pwd.value.password, rememberMe.value); success(); }
   catch (e) { uni.showToast({ title: e.error || '登录失败', icon: 'none' }); }
   finally { loading.value = false; }
 }
@@ -188,7 +201,15 @@ async function loginQQ() {
   }, fail: () => uni.showToast({ title: '请在QQ内使用', icon: 'none' }) });
 }
 
-function success() { track('login_success', '/pages/login/index'); uni.showToast({ title: '登录成功' }); setTimeout(() => uni.navigateBack(), 1000); }
+function success() {
+  track('login_success', '/pages/login/index');
+  uni.showToast({ title: '登录成功' });
+  setTimeout(() => {
+    const pages = getCurrentPages();
+    if (pages.length > 1) uni.navigateBack();
+    else uni.reLaunch({ url: '/pages/index/index' });
+  }, 1000);
+}
 </script>
 
 <style scoped lang="scss">
@@ -287,5 +308,14 @@ function success() { track('login_success', '/pages/login/index'); uni.showToast
   display: flex; align-items: center; justify-content: center;
 }
 .wechat { background: #07C160; }
-.qq { background: #1296DB; }
+/* 记住我 */
+.remember-row { display: flex; align-items: center; gap: 12rpx; margin-top: 20rpx; cursor: pointer; }
+.checkbox { width: 36rpx; height: 36rpx; border: 2rpx solid #C0CCC8; border-radius: 8rpx; background: #fff; flex-shrink: 0; transition: all 0.2s; }
+.checkbox.checked { background: #4A8A7A; border-color: #4A8A7A; position: relative; }
+.checkbox.checked::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; font-size: 22rpx; line-height: 1; }
+.remember-txt { font-size: 24rpx; color: #617870; }
+
+/* 图形验证码 */
+.captcha-row { display: flex; align-items: center; gap: 16rpx; }
+.captcha-img { width: 200rpx; height: 80rpx; border-radius: 8rpx; background: #F7F9F8; flex-shrink: 0; border: 2rpx solid #E8EDEB; }
 </style>

@@ -22,9 +22,9 @@
       <view class="cards-wrap">
         <view class="card-item" v-for="(c,i) in cards" :key="i">
           <text class="card-label">{{c.label}}</text>
-          <view class="flip-card" :class="{flipped:c.flipped}" @click="flip(i)">
-            <view class="card-back" :style="{background:catStyle(c.cat)}"><text class="back-txt">{{c.cat}}</text></view>
-            <view class="card-front" :class="c.word ? 'word-front' : ''">
+          <view class="flip-card" @click="flip(i)">
+            <view v-if="!c.flipped" class="card-back" :style="{background:catStyle(c.cat)}"><text class="back-txt">{{c.cat}}</text></view>
+            <view v-else class="card-front" :class="c.word ? 'word-front' : ''">
               <image v-if="c.imageUrl" :src="fullUrl(c.imageUrl)" mode="aspectFill" class="card-img" @click.stop="fsUrl=c.imageUrl" />
               <view v-else class="word-frame"><text class="word-char">{{c.word}}</text></view>
             </view>
@@ -166,17 +166,15 @@ function reset() { step.value = 0; sel.value = null; cards.value = []; note.valu
 .draw-head { text-align:center; margin-bottom:24rpx; }
 .draw-title { font-size:32rpx; font-weight:700; color:#1C2A27; display:block; }
 .draw-tip { font-size:22rpx; color:#999; display:block; margin-top:8rpx; }
-.cards-wrap { display:flex; flex-wrap:nowrap; gap:16rpx; overflow-x:auto; padding:0 8rpx 16rpx; margin-bottom:12rpx; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-.cards-wrap::-webkit-scrollbar { display:none; }
+.cards-wrap { display:flex; flex-wrap:wrap; gap:16rpx; padding:0 8rpx 16rpx; margin-bottom:12rpx; }
 
-.card-item { display:flex; flex-direction:column; align-items:center; width:190rpx; }
+.card-item { display:flex; flex-direction:column; align-items:center; width:calc((100% - 32rpx) / 3); }
 .card-label { font-size:20rpx; color:#666; margin-bottom:8rpx; text-align:center; line-height:1.4; height:56rpx; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-.flip-card { width:190rpx; height:260rpx; transform-style:preserve-3d; transition:transform .6s; position:relative; border-radius:14rpx; }
-.flip-card.flipped { transform:rotateY(180deg); }
-.card-back, .card-front { position:absolute; inset:0; backface-visibility:hidden; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
+.flip-card { width:100%; height:260rpx; position:relative; border-radius:14rpx; }
+.card-back, .card-front { width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
 .card-back { background:linear-gradient(135deg,#4A7BBA,#7B68EE); }
 .back-txt { color:rgba(255,255,255,.8); font-size:20rpx; }
-.card-front { background:#fff; box-shadow:0 4rpx 16rpx rgba(0,0,0,.12); transform:rotateY(180deg); overflow:hidden; }
+.card-front { background:#fff; box-shadow:0 4rpx 16rpx rgba(0,0,0,.12); overflow:hidden; }
 .word-front { background:linear-gradient(160deg,#0f2044,#1a3a6b) !important; }
 .card-img { width:100%; height:100%; }
 .word-frame { width:80%; height:80%; border:3rpx solid #c8a84b; border-radius:10rpx; display:flex; align-items:center; justify-content:center; }

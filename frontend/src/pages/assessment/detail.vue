@@ -10,7 +10,7 @@
         <text>{{questions.length}} 题</text>
         <text>约 {{scale.estimatedMinutes}} 分钟</text>
       </view>
-      <button class="btn-start" @click="showInstruction=false">开始测评</button>
+      <button class="btn-start" @click="startTest">开始测评</button>
     </view>
     <view v-else-if="scale">
       <view class="progress-bar">
@@ -101,7 +101,6 @@ const isFlow = computed(() => {
 const flowHistory = ref([]);
 
 onMounted(async () => {
-  track('page_view', '/pages/assessment/detail');
   const pages = getCurrentPages();
   const page = pages[pages.length - 1];
   const id = page?.options?.id;
@@ -109,11 +108,21 @@ onMounted(async () => {
     const data = await assessmentApi.getScale(id);
     scale.value = data;
     questions.value = data.questions;
-    if (data.instruction) showInstruction.value = true;
+    track('scale_view', '/pages/assessment/detail', { scaleId: Number(id), scaleName: data.name });
+    if (data.instruction) {
+      showInstruction.value = true;
+    } else {
+      track('assessment_start', '/pages/assessment/detail', { scaleId: Number(id), scaleName: data.name });
+    }
   } catch {}
   if (!store.isLoggedIn()) showLoginPrompt.value = true;
   loading.value = false;
 });
+
+function startTest() {
+  track('assessment_start', '/pages/assessment/detail', { scaleId: scale.value.id, scaleName: scale.value.name });
+  showInstruction.value = false;
+}
 
 function goLogin() { uni.navigateTo({ url: '/pages/login/index' }); }
 function goRegister() { uni.navigateTo({ url: '/pages/register/index' }); }
@@ -160,7 +169,6 @@ async function doSubmit(voucher = '') {
   submitting.value = true;
   try {
     const res = await assessmentApi.submit({ scaleId: scale.value.id, answers: answers.value, voucherCode: voucher || undefined });
-    track('assessment_submit', '/pages/assessment/detail', { scaleId: scale.value.id });
     if (res.requirePayment) {
       payInfo.value = res;
       showPayModal.value = true;
@@ -169,6 +177,7 @@ async function doSubmit(voucher = '') {
     }
     const params = res.resultId ? `resultId=${res.resultId}` : `score=${res.score}&level=${encodeURIComponent(res.level)}&scaleId=${scale.value.id}`;
     const crisisParam = res.crisis ? '&crisis=1' : '';
+    track('assessment_submit', '/pages/assessment/detail', { scaleId: scale.value.id, scaleName: scale.value.name, level: res.level });
     assessmentApi.trackScale(scale.value.id).catch(() => {});
     uni.redirectTo({ url: `/pages/assessment/result?${params}${crisisParam}` });
   } catch (e) {

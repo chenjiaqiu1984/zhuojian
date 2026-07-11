@@ -1,26 +1,57 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
-});
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ── 安全头 ─────────────────────────────────────────────────────────
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+// ── CORS（仅允许已知前端域名）────────────────────────────────────
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:5174,https://www.joyineyes.xyz,https://joyineyes.xyz')
+  .split(',').map(s => s.trim()).filter(Boolean);
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
+
+// ── 全局限流（每IP每15分钟最多300次请求）────────────────────────
+app.use('/api', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '请求过于频繁，请稍后再试' },
+}));
+
+// ── 请求体大小限制，防止超大负载攻击 ─────────────────────────────
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+const io = new Server(server, {
+  cors: { origin: ALLOWED_ORIGINS, methods: ['GET', 'POST'] }
+});
 
 // Ensure uploads dir exists
 const uploadsDir = path.join(__dirname, '../uploads/ohcards');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
-  maxAge: '30d',   // 浏览器缓存30天，同一张图片只下载一次
-  immutable: true  // 告诉浏览器文件不会变，跳过304协商请求
+  maxAge: '30d',
+  immutable: true
+}));
+app.use('/static', express.static(path.join(__dirname, 'static'), {
+  maxAge: '30d',
+  immutable: true
 }));
 
 app.use('/api/upload', require('./routes/upload'));
@@ -45,6 +76,10 @@ require('./socket/rooms')(io);
 // 启动订单超时取消定时任务
 const { startExpireJob } = require('./jobs/expireOrders');
 startExpireJob();
+
+// 启动数据库自动备份（每4小时）
+const { startBackupJob } = require('./jobs/backup');
+startBackupJob();
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

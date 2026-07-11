@@ -21,6 +21,10 @@
         </view>
       </view>
       <view class="logout" @click="logout">退出登录</view>
+      <view class="footer-info">
+        <text class="footer-item">客服邮箱：345958875@qq.com</text>
+        <text class="footer-item">© 小程序开发：553997877@qq.com</text>
+      </view>
     </view>
   </view>
 </template>
@@ -46,6 +50,7 @@ function menuClick(m) {
 const menus = computed(() => {
   const base = [
     { label: '我的预约',   icon: '📅',  action: () => uni.navigateTo({ url: '/pages/booking/index' }) },
+    { label: '我的订单',   icon: '🧾',  action: () => uni.navigateTo({ url: '/pages/orders/index' }) },
     { label: '心理测评',   icon: '📝',  action: () => uni.navigateTo({ url: '/pages/assessment/my' }) },
     { label: '测评记录',   icon: '📋',  action: () => uni.navigateTo({ url: '/pages/assessment/results' }) },
     { label: '抽卡记录',   icon: '🃏',  action: () => uni.navigateTo({ url: '/pages/ohcard/record' }) },
@@ -103,4 +108,10 @@ function logout() {
 .menu-arrow { font-size: 32rpx; color: #ccc; }
 
 .logout { text-align: center; color: #9BBCB4; font-size: 28rpx; margin: 24rpx; background: #fff; padding: 30rpx; border-radius: 16rpx; }
+
+.footer-info {
+  display: flex; flex-direction: column; align-items: center; gap: 12rpx;
+  padding: 24rpx 32rpx 60rpx;
+}
+.footer-item { font-size: 22rpx; color: #B0B8B5; }
 </style>

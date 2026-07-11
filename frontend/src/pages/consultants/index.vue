@@ -23,7 +23,7 @@
           </view>
           <view class="price-wrap">
             <text class="price-sym">¥</text>
-            <text class="price-num">{{c.price}}</text>
+            <text class="price-num">{{ (c.price / 100).toFixed(2) }}</text>
             <text class="price-unit">/ 次</text>
           </view>
         </view>

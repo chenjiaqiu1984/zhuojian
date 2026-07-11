@@ -3,7 +3,6 @@
 
     <!-- Hero Banner -->
     <view class="hero">
-      <image class="hero-img" src="/static/banner.jpg" mode="aspectFill" />
       <view class="hero-overlay">
         <view class="hero-badge">专业心理服务</view>
         <text class="hero-title">走进内心，<text class="hero-title-em">找到答案</text></text>
@@ -56,7 +55,7 @@
           </view>
           <text class="c-name">{{c.name}}</text>
           <text class="c-title">{{c.title}}</text>
-          <text class="c-price">¥{{c.price || 1000}} <text class="c-price-unit">/ 次</text></text>
+          <text class="c-price">¥{{ ((c.price || 1000) / 100).toFixed(2) }} <text class="c-price-unit">/ 次</text></text>
           <view :class="['c-btn', !c.hasAvailableSlots && 'c-btn-full']">
             <text>{{c.hasAvailableSlots ? '立即预约' : '已约满'}}</text>
           </view>
@@ -81,6 +80,10 @@
 
     <view class="icp-footer">
       <text class="icp-text" @click="openIcp">苏ICP备2026043098号</text>
+      <view class="beian-row" @click="openBeian">
+        <image class="beian-icon" src="/static/beian.png" mode="aspectFit" />
+        <text class="icp-text">苏公网安备32010402002563号</text>
+      </view>
     </view>
 
     <!-- 协议更新确认弹窗（App启动时自动检查） -->
@@ -156,13 +159,23 @@ function openIcp() {
   uni.navigateTo({ url: '/pages/webview/index?url=' + encodeURIComponent('https://beian.miit.gov.cn/') });
   // #endif
 }
+
+function openBeian() {
+  const url = 'https://beian.mps.gov.cn/portal/registerSystemInfo?recordcode=32010402002563';
+  // #ifdef H5
+  window.open(url, '_blank');
+  // #endif
+  // #ifndef H5
+  uni.navigateTo({ url: '/pages/webview/index?url=' + encodeURIComponent(url) });
+  // #endif
+}
 </script>
 
 <style scoped lang="scss">
 .home { min-height: 100vh; background: #F2F4F3; }
 
 /* ── Hero ── */
-.hero { position: relative; height: 440rpx; }
+.hero { position: relative; height: 440rpx; background: linear-gradient(160deg, #1C4A3E 0%, #2d7a65 60%, #7DCFB6 100%); }
 .hero-img { width: 100%; height: 100%; }
 .hero-overlay {
   position: absolute; inset: 0;
@@ -266,4 +279,6 @@ function openIcp() {
 /* ── Footer ── */
 .icp-footer { padding: 40rpx 0 60rpx; text-align: center; }
 .icp-text { font-size: 22rpx; color: #B0BEB8; }
+.beian-row { display: flex; align-items: center; justify-content: center; gap: 8rpx; margin-top: 12rpx; }
+.beian-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; }
 </style>

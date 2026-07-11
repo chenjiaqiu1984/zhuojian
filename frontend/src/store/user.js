@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { authApi } from '../api/index';
+import { hashPassword } from '../utils/crypto';
 
 export const useUserStore = defineStore('user', () => {
   const token = ref('');
@@ -8,8 +9,10 @@ export const useUserStore = defineStore('user', () => {
 
   function init() {
     token.value = uni.getStorageSync('token') || '';
-    const u = uni.getStorageSync('user');
-    user.value = u ? JSON.parse(u) : null;
+    try {
+      const u = uni.getStorageSync('user');
+      user.value = u ? JSON.parse(u) : null;
+    } catch { user.value = null; uni.removeStorageSync('user'); }
   }
 
   function _save(res) {
@@ -19,9 +22,8 @@ export const useUserStore = defineStore('user', () => {
     uni.setStorageSync('user', JSON.stringify(res.user));
   }
 
-  async function login(username, password) { _save(await authApi.login({ username, password })); }
-  async function loginPhone(phone, code, termsAccepted) { _save(await authApi.loginPhone(phone, code, termsAccepted)); }
-  async function loginEmail(email, code, termsAccepted) { _save(await authApi.loginEmail(email, code, termsAccepted)); }
+  async function login(username, password, rememberMe = false) { _save(await authApi.login({ username, password: await hashPassword(password), rememberMe })); }
+  async function loginPhone(phone, code, termsAccepted, rememberMe = false) { _save(await authApi.loginPhone(phone, code, termsAccepted, rememberMe)); }
   async function loginWechat(code) { _save(await authApi.loginWechat(code)); }
 
   function logout() {
@@ -31,5 +33,5 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const isLoggedIn = () => !!token.value;
-  return { token, user, init, login, loginPhone, loginEmail, loginWechat, logout, isLoggedIn };
+  return { token, user, init, login, loginPhone, loginWechat, logout, isLoggedIn };
 });

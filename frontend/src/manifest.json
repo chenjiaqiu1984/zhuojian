@@ -6,12 +6,9 @@
   "versionCode": 1,
   "transformPx": false,
   "mp-weixin": {
-    "appid": "YOUR_APPID",
+    "appid": "wxd7c62acc12b303dc",
     "setting": { "urlCheck": false },
-    "usingComponents": true,
-    "permission": {
-      "scope.record": { "desc": "用于录制您对心理图卡的感想" }
-    }
+    "usingComponents": true
   },
   "h5": {
     "title": "卓见心理",

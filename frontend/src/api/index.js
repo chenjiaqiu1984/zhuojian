@@ -29,21 +29,18 @@ const del = (p) => request('DELETE', p);
 export const authApi = {
   login: d => post('/auth/login', d),
   register: d => post('/auth/register', d),
-  sendSms: phone => post('/auth/send-sms', { phone }),
-  loginPhone: (phone, code, termsAccepted) => post('/auth/login-phone', { phone, code, termsAccepted }),
-  sendEmail: email => post('/auth/send-email', { email }),
-  loginEmail: (email, code, termsAccepted) => post('/auth/login-email', { email, code, termsAccepted }),
+  getCaptcha: () => get('/auth/captcha'),
+  sendSms: (phone, captchaToken, captchaAnswer) => post('/auth/send-sms', { phone, captchaToken, captchaAnswer }),
+  loginPhone: (phone, code, termsAccepted, rememberMe) => post('/auth/login-phone', { phone, code, termsAccepted, rememberMe }),
   loginWechat: code => post('/auth/login-wechat', { code }),
   loginQQ: access_token => post('/auth/login-qq', { access_token }),
   updateProfile: d => put('/auth/profile', d),
-  sendBindSms: phone => post('/auth/send-bind-sms', { phone }),
+  sendBindSms: (phone, captchaToken, captchaAnswer) => post('/auth/send-bind-sms', { phone, captchaToken, captchaAnswer }),
   bindPhone: (phone, code) => post('/auth/bind-phone', { phone, code }),
-  sendChangePhone: phone => post('/auth/send-change-phone', { phone }),
+  sendChangePhone: (phone, captchaToken, captchaAnswer) => post('/auth/send-change-phone', { phone, captchaToken, captchaAnswer }),
   changePhone: (phone, code) => post('/auth/change-phone', { phone, code }),
-  sendBindEmail: email => post('/auth/send-bind-email', { email }),
-  bindEmail: (email, code) => post('/auth/bind-email', { email, code }),
   changePassword: (oldPassword, newPassword) => put('/auth/password', { oldPassword, newPassword }),
-  sendReset: target => post('/auth/send-reset', { target }),
+  sendReset: (target, captchaToken, captchaAnswer) => post('/auth/send-reset', { target, captchaToken, captchaAnswer }),
   resetPassword: (target, code, newPassword) => post('/auth/reset-password', { target, code, newPassword })
 };
 
@@ -92,8 +89,13 @@ export const paymentApi = {
   createBookingOrder:    (bookingId, d) => post(`/payment/booking/${bookingId}`, d),
   createH5Order:         (bookingId, d) => post(`/payment/h5/${bookingId}`, d),
   createAlipayOrder:     (bookingId, d) => post(`/payment/alipay/${bookingId}`, d),
+  createNativeOrder:     (bookingId, d) => post(`/payment/native/${bookingId}`, d),
+  createAlipayPcOrder:   (bookingId, d) => post(`/payment/alipay-pc/${bookingId}`, d),
   createActivityOrder:   (newsId, d)    => post(`/payment/activity/${newsId}`, d),
   queryOrder:            orderNo        => get(`/payment/order/${orderNo}`),
+  syncAlipayReturn:      (orderNo, d)   => post(`/payment/sync-return/${orderNo}`, d),
+  listOrders:            ()             => get(`/payment/orders`),
+  deleteOrder:           orderNo        => del(`/payment/order/${orderNo}`),
   refund:                (orderNo, d)   => post(`/payment/refund/${orderNo}`, d),
 };
 
