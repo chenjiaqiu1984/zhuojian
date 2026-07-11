@@ -58,7 +58,7 @@
         <view class="field-group">
           <text class="field-label">图形码</text>
           <view class="captcha-row">
-            <image class="captcha-img" :src="captchaUrl" @click="tapHandler = refreshCaptcha" mode="aspectFit" />
+            <image class="captcha-img" :src="captchaUrl" @click="refreshCaptcha()" mode="aspectFit" />
             <view class="input-wrap" style="flex:1">
               <input class="ipt" v-model="captchaAnswer" placeholder="点击图片可刷新" maxlength="4" />
             </view>
@@ -70,7 +70,7 @@
             <view class="input-wrap" style="flex:1">
               <input class="ipt" v-model="phone.code" placeholder="6位验证码" type="number" maxlength="6" />
             </view>
-            <view :class="['send-btn', phone.countdown>0 && 'send-btn-disabled']" @click="tapHandler = sendSms">
+            <view :class="['send-btn', phone.countdown>0 && 'send-btn-disabled']" @click="sendSms()">
               <text>{{phone.countdown>0 ? `${phone.countdown}s` : '获取验证码'}}</text>
             </view>
           </view>
@@ -88,21 +88,30 @@
       <!-- 第三方登录 -->
       <view class="third-login">
         <view class="divider"><text class="divider-txt">其他方式登录</text></view>
-        <view class="third-btns">
-          <!-- #ifdef MP-WEIXIN -->
-          <view class="third-btn wechat" @click="tapHandler = loginWechat">
+        <!-- #ifdef MP-WEIXIN -->
+        <!-- 手机号快速验证：无需手动输入，微信授权后直接登录 / 注册 -->
+        <button
+          class="phone-wechat-btn"
+          open-type="getPhoneNumber"
+          :disabled="loading"
+          @getphonenumber="onGetPhoneNumber"
+        >
+          <text class="phone-wechat-icon">📱</text>
+          <text>{{ loading ? '登录中...' : '微信手机号一键登录' }}</text>
+        </button>
+        <view class="third-btns wechat-alt">
+          <view class="third-btn wechat" @click="loginWechat()">
             <u-icon name="weixin-circle-fill" color="#fff" size="36" />
           </view>
-          <!-- #endif -->
-          <!-- #ifndef MP-WEIXIN -->
-          <view class="third-btn wechat" @click="tapHandler = loginWechat">
-            <u-icon name="weixin-circle-fill" color="#fff" size="36" />
-          </view>
-          <view class="third-btn qq" @click="tapHandler = loginQQ">
-            <u-icon name="qq-circle-fill" color="#fff" size="36" />
-          </view>
-          <!-- #endif -->
         </view>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
+        <view class="third-btns">
+          <view class="third-btn wechat" @click="loginWechat()">
+            <u-icon name="weixin-circle-fill" color="#fff" size="36" />
+          </view>
+        </view>
+        <!-- #endif -->
       </view>
     </view>
   </view>
@@ -115,10 +124,6 @@ import { authApi } from '../../api/index';
 import { track } from '../../utils/track';
 import { useCaptcha } from '../../composables/useCaptcha';
 
-// #ifndef H5
-const tapHandler = ref(null);
-watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
-// #endif
 
 const store = useUserStore();
 const activeTab = ref(0);
@@ -210,12 +215,26 @@ async function loginWechat() {
   // #endif
 }
 
-async function loginQQ() {
-  uni.login({ provider: 'qq', success: async ({ code }) => {
-    try { await store.loginWechat(code); success(); }
-    catch (e) { uni.showToast({ title: e.error || 'QQ登录失败', icon: 'none' }); }
-  }, fail: () => uni.showToast({ title: '请在QQ内使用', icon: 'none' }) });
+// #ifdef MP-WEIXIN
+// 手机号快速验证回调（open-type="getPhoneNumber"）
+async function onGetPhoneNumber(e) {
+  // errno 非零或无 code 表示用户拒绝授权，静默处理
+  if (e.detail.errno || !e.detail.code) return;
+  loading.value = true;
+  try {
+    await store.loginPhoneWechat(e.detail.code);
+    if (!store.user?.name || !store.user?.hasPassword) {
+      uni.redirectTo({ url: '/pages/login/complete' });
+    } else {
+      success();
+    }
+  } catch (err) {
+    uni.showToast({ title: err.error || '登录失败，请重试', icon: 'none' });
+  } finally {
+    loading.value = false;
+  }
 }
+// #endif
 
 function success() {
   track('login_success', '/pages/login/index');
@@ -325,6 +344,16 @@ function success() {
   display: flex; align-items: center; justify-content: center;
 }
 .wechat { background: #07C160; }
+/* 微信手机号一键登录按钮 */
+.phone-wechat-btn {
+  width: 100%; background: #07C160; color: #fff;
+  font-size: 30rpx; font-weight: 600; border-radius: 16rpx; height: 96rpx;
+  display: flex; align-items: center; justify-content: center; gap: 14rpx;
+  border: none; line-height: 1;
+  &[disabled] { background: #a8dbbf; }
+  .phone-wechat-icon { font-size: 36rpx; }
+}
+.wechat-alt { margin-top: 24rpx; }
 /* 记住我 */
 .remember-row { display: flex; align-items: center; gap: 12rpx; margin-top: 20rpx; cursor: pointer; }
 .checkbox { width: 36rpx; height: 36rpx; border: 2rpx solid #C0CCC8; border-radius: 8rpx; background: #fff; flex-shrink: 0; transition: all 0.2s; }

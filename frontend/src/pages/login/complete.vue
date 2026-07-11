@@ -25,7 +25,7 @@
         </view>
       </view>
 
-      <view class="submit-btn" @click="tapHandler = submit">
+      <view class="submit-btn" @click="submit()">
         <text>{{loading ? '保存中...' : '完成'}}</text>
       </view>
 
@@ -40,10 +40,6 @@ import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { hashPassword } from '../../utils/crypto';
 
-// #ifndef H5
-const tapHandler = ref(null);
-watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
-// #endif
 
 const store = useUserStore();
 const loading = ref(false);

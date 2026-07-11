@@ -33,6 +33,7 @@ export const authApi = {
   sendSms: (phone, captchaToken, captchaAnswer) => post('/auth/send-sms', { phone, captchaToken, captchaAnswer }),
   loginPhone: (phone, code, termsAccepted, rememberMe) => post('/auth/login-phone', { phone, code, termsAccepted, rememberMe }),
   loginWechat: code => post('/auth/login-wechat', { code }),
+  loginPhoneWechat: code => post('/auth/login-phone-wechat', { code, termsAccepted: true }),
   loginQQ: access_token => post('/auth/login-qq', { access_token }),
   updateProfile: d => put('/auth/profile', d),
   sendBindSms: (phone, captchaToken, captchaAnswer) => post('/auth/send-bind-sms', { phone, captchaToken, captchaAnswer }),

@@ -80,7 +80,7 @@
 
     <view class="icp-footer">
       <text class="icp-text" @click="openIcp()">苏ICP备2026043098号</text>
-      <view class="beian-row" @click="tapHandler = openBeian">
+      <view class="beian-row" @click="openBeian()">
         <image class="beian-icon" src="/static/beian.png" mode="aspectFit" />
         <text class="icp-text">苏公网安备32010402002563号</text>
       </view>
@@ -97,10 +97,6 @@ import { consultantApi, newsApi, aboutApi } from '../../api/index';
 import { SERVER } from '../../config';
 import TermsConfirmModal from '../../components/TermsConfirmModal.vue';
 
-// #ifndef H5
-const tapHandler = ref(null);
-watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
-// #endif
 
 const consultants = ref([]);
 const news = ref([]);

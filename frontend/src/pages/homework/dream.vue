@@ -13,7 +13,7 @@
         <text class="label">治疗师解释</text>
         <textarea class="input" v-model="form.interpretation" placeholder="治疗师对梦境的分析与解释..." />
       </view>
-      <view class="save-btn" @click="tapHandler = save">保存记录</view>
+      <text class="save-btn" @click="save()">保存记录</text>
     </view>
 
     <view v-if="list.length" class="history-section">
@@ -54,7 +54,7 @@
             </view>
             <view class="note-input-row">
               <textarea class="note-input" v-model="noteInput" placeholder="写下新的思考..." />
-              <view class="note-add-btn" @click="tapHandler = appendNote">追加</view>
+              <text class="note-add-btn" @click="appendNote()">追加</text>
             </view>
           </view>
         </view>
@@ -70,10 +70,6 @@ import { homeworkApi } from '../../api/index';
 import { track } from '../../utils/track';
 import CrisisAlert from '../../components/CrisisAlert.vue';
 
-// #ifndef H5
-const tapHandler = ref(null);
-watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
-// #endif
 
 const list = ref([]);
 const form = ref({});

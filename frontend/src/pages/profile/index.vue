@@ -20,7 +20,7 @@
           <text class="menu-arrow">›</text>
         </view>
       </view>
-      <view class="logout" @click="tapHandler = logout">退出登录</view>
+      <text class="logout" @click="logout()">退出登录</text>
       <view class="footer-info">
         <text class="footer-item">客服邮箱：345958875@qq.com</text>
         <text class="footer-item">© 小程序开发：553997877@qq.com</text>
@@ -30,16 +30,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { SERVER } from '../../config';
 import { track } from '../../utils/track';
-
-// #ifndef H5
-const tapHandler = ref(null);
-watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
-// #endif
 
 const BASE_URL = SERVER;
 const store = useUserStore();
@@ -112,7 +107,7 @@ function logout() {
 .menu-label { flex: 1; font-size: 28rpx; color: #1C2A27; }
 .menu-arrow { font-size: 32rpx; color: #ccc; }
 
-.logout { text-align: center; color: #9BBCB4; font-size: 28rpx; margin: 24rpx; background: #fff; padding: 30rpx; border-radius: 16rpx; }
+.logout { display: block; text-align: center; color: #9BBCB4; font-size: 28rpx; margin: 24rpx; background: #fff; padding: 30rpx; border-radius: 16rpx; }
 
 .footer-info {
   display: flex; flex-direction: column; align-items: center; gap: 12rpx;

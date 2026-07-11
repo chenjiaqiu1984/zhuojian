@@ -19,7 +19,7 @@
     <view v-if="step === 1" class="step">
       <text class="reflect-hint">保持问题在心中，翻开卡牌</text>
       <view class="card-wrap">
-        <view class="card" :class="{flipped}" @click="tapHandler = flip">
+        <view class="card" :class="{flipped}" @click="flip()">
           <view class="card-back"><text class="back-text">点击翻转</text></view>
           <view class="card-front" @click.stop="showFs=true">
             <image :src="fullUrl(card?.imageUrl)" mode="aspectFill" class="card-img" />
@@ -50,10 +50,6 @@ import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
 import { SERVER } from '../../config';
 
-// #ifndef H5
-const tapHandler = ref(null);
-watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
-// #endif
 
 const store = useUserStore();
 const step = ref(0);

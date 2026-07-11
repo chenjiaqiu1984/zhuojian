@@ -6,6 +6,7 @@ const prisma = require('../db/database');
 const { JWT_SECRET } = require('../middleware/auth');
 const ROLE_MAP = { '超级管理员': 'super_admin', '管理员': 'admin', '咨询师': 'consultant', '普通用户': 'user' };
 const { sendSms } = require('../services/sms');
+const { getPhoneByCode } = require('../services/wechat');
 const { grantWelcomeCoupon } = require('./coupons');
 const smsRateLimit = require('../middleware/smsRateLimit');
 const captchaCheck = require('../middleware/captchaCheck');
@@ -90,6 +91,28 @@ router.post('/login-phone', async (req, res) => {
   res.json({ token: makeToken(user, !!rememberMe), user: safeUser(user) });
 });
 
+// 微信手机号快速验证登录（小程序 getPhoneNumber 组件）
+router.post('/login-phone-wechat', async (req, res) => {
+  const { code, termsAccepted } = req.body;
+  if (!code) return res.status(400).json({ error: '缺少 code 参数' });
+  try {
+    const phone = await getPhoneByCode(code);
+    let user = await prisma.user.findUnique({ where: { phone } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: { phone, ...(termsAccepted ? { termsAcceptedAt: new Date() } : {}) }
+      });
+      grantWelcomeCoupon(user.id);
+    } else if (termsAccepted && !user.termsAcceptedAt) {
+      user = await prisma.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date() } });
+    }
+    res.json({ token: makeToken(user), user: safeUser(user) });
+  } catch (e) {
+    console.error('[login-phone-wechat]', e.message);
+    res.status(400).json({ error: e.message || '获取手机号失败，请重试' });
+  }
+});
+
 router.post('/login-wechat', async (req, res) => {
   const { code } = req.body;
   const appid = process.env.WX_APPID, secret = process.env.WX_SECRET;
@@ -97,7 +120,10 @@ router.post('/login-wechat', async (req, res) => {
   try {
     const r = await fetch(`https://api.weixin.qq.com/sns/jscode2session?appid=${appid}&secret=${secret}&js_code=${code}&grant_type=authorization_code`);
     const data = await r.json();
-    if (data.errcode) return res.status(400).json({ error: data.errmsg });
+    if (data.errcode) {
+      console.error('[wx-login] jscode2session error:', data.errcode, data.errmsg, '| code prefix:', code?.slice(0, 8));
+      return res.status(400).json({ error: data.errmsg, errcode: data.errcode });
+    }
     let user = await prisma.user.findUnique({ where: { wechatOpenid: data.openid } });
     if (!user) {
       user = await prisma.user.create({ data: { wechatOpenid: data.openid } });

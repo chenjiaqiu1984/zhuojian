@@ -81,6 +81,7 @@
         <text class="pay-check" v-if="payMethod === 'wechat'">✓</text>
       </view>
       <view
+        v-if="isH5"
         class="pay-item"
         :class="{ active: payMethod === 'alipay' }"
         @click="payMethod = 'alipay'"

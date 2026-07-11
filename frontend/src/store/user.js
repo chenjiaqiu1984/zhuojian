@@ -25,6 +25,7 @@ export const useUserStore = defineStore('user', () => {
   async function login(username, password, rememberMe = false) { _save(await authApi.login({ username, password: await hashPassword(password), rememberMe })); }
   async function loginPhone(phone, code, termsAccepted, rememberMe = false) { _save(await authApi.loginPhone(phone, code, termsAccepted, rememberMe)); }
   async function loginWechat(code) { _save(await authApi.loginWechat(code)); }
+  async function loginPhoneWechat(code) { _save(await authApi.loginPhoneWechat(code)); }
 
   function logout() {
     token.value = ''; user.value = null;

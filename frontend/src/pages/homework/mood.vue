@@ -9,7 +9,7 @@
         </view>
       </view>
       <textarea class="note-input" v-model="form.note" placeholder="写下此刻的感受（可选）" />
-      <view class="save-btn" @click="tapHandler = save">记录</view>
+      <text class="save-btn" @click="save()">记录</text>
     </view>
 
     <text class="section-title">历史记录</text>
@@ -34,10 +34,6 @@ import { homeworkApi } from '../../api/index';
 import { track } from '../../utils/track';
 import CrisisAlert from '../../components/CrisisAlert.vue';
 
-// #ifndef H5
-const tapHandler = ref(null);
-watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
-// #endif
 
 const EMOJIS = ['😔','😕','😐','🙂','😊'];
 const LABELS = ['很差','较差','一般','不错','很好'];

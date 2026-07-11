@@ -16,7 +16,7 @@
         <view class="card-col">
           <text class="card-label">图卡</text>
           <!-- 去掉外层 overflow:hidden，避免微信小程序吞掉点击事件 -->
-          <view class="card img-card" :style="{transform: imgRotate, transition: 'transform 0.21s ease-in-out'}" @click="tapHandler = handleImgClick">
+          <view class="card img-card" :style="{transform: imgRotate, transition: 'transform 0.21s ease-in-out'}" @click="handleImgClick()">
             <view v-if="!imgFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
             <view v-else class="card-front">
               <image :src="fullUrl(imgCard?.imageUrl)" mode="aspectFill" class="card-img" />
@@ -24,14 +24,14 @@
           </view>
           <view class="swap-row">
             <!-- 用 view 替换 text，微信小程序 text 不支持 @click -->
-            <view class="swap-btn" :class="{disabled: imgLoading}" @click="tapHandler = redrawImg">{{imgLoading ? '加载中…' : '换一个'}}</view>
+            <text class="swap-btn" :class="{disabled: imgLoading}" @click="redrawImg()">{{imgLoading ? '加载中…' : '换一个'}}</text>
           </view>
         </view>
 
         <!-- Word card (right, larger) -->
         <view v-if="selDeck?.wordCatId" class="card-col">
           <text class="card-label">{{wordCard?.imageUrl ? '情况卡' : '字卡'}}</text>
-          <view class="card word-card" :style="{transform: wordRotate, transition: 'transform 0.21s ease-in-out'}" @click="tapHandler = flipWord">
+          <view class="card word-card" :style="{transform: wordRotate, transition: 'transform 0.21s ease-in-out'}" @click="flipWord()">
             <view v-if="!wordFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
             <view v-else class="card-front" :class="wordCard?.imageUrl ? '' : 'word-front'">
               <image v-if="wordCard?.imageUrl" :src="fullUrl(wordCard.imageUrl)" mode="aspectFill" class="card-img" />
@@ -41,7 +41,7 @@
             </view>
           </view>
           <view class="swap-row">
-            <view class="swap-btn" :class="{disabled: wordLoading}" @click="tapHandler = redrawWord">{{wordLoading ? '加载中…' : '换一个'}}</view>
+            <text class="swap-btn" :class="{disabled: wordLoading}" @click="redrawWord()">{{wordLoading ? '加载中…' : '换一个'}}</text>
           </view>
         </view>
       </view>
@@ -77,10 +77,6 @@ import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
 import { SERVER } from '../../config';
 
-// #ifndef H5
-const tapHandler = ref(null);
-watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
-// #endif
 
 const BASE_IMG = SERVER;
 const store = useUserStore();

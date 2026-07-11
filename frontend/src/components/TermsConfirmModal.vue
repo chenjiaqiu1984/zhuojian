@@ -13,10 +13,10 @@
 
       <view class="footer">
         <text class="hint">继续使用前，请阅读并同意新版协议</text>
-        <view class="btn-accept" @click="tapHandler = accept">
+        <view class="btn-accept" @click="accept()">
           <text class="btn-text">{{ loading ? '处理中...' : '我已阅读并同意' }}</text>
         </view>
-        <view class="btn-decline" @click="tapHandler = decline">
+        <view class="btn-decline" @click="decline()">
           <text class="btn-decline-text">不同意（将退出登录）</text>
         </view>
       </view>
@@ -29,10 +29,6 @@ import {ref, watch } from 'vue';
 import { useUserStore } from '../store/user';
 import { SERVER } from '../config';
 
-// #ifndef H5
-const tapHandler = ref(null);
-watch(tapHandler, () => { if (tapHandler.value) { const fn = tapHandler.value; tapHandler.value = null; fn(); } });
-// #endif
 
 const visible = ref(false);
 const loading = ref(false);
