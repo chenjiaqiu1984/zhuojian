@@ -5,18 +5,25 @@ const { requireRole, optionalAuth } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', optionalAuth, async (req, res) => {
-  const { type, page = 1, limit = 10 } = req.query;
+  const { type, page = 1, limit = 10, q } = req.query;
   const showDraft = (req.user?.role === 'admin' || req.user?.role === 'super_admin') && req.query.includeDraft === '1';
-  const where = { ...(showDraft ? {} : { isPublished: 1 }), ...(type ? { type } : {}) };
-  const list = await prisma.news.findMany({ where, orderBy: { createdAt: 'desc' }, take: Number(limit), skip: (Number(page) - 1) * Number(limit) });
-  const withCounts = await Promise.all(list.map(async n => {
+  const where = {
+    ...(showDraft ? {} : { isPublished: 1 }),
+    ...(type ? { type } : {}),
+    ...(q ? { title: { contains: q } } : {}),
+  };
+  const [total, list] = await Promise.all([
+    prisma.news.count({ where }),
+    prisma.news.findMany({ where, orderBy: { createdAt: 'desc' }, take: Number(limit), skip: (Number(page) - 1) * Number(limit) }),
+  ]);
+  const items = await Promise.all(list.map(async n => {
     const [likeCount, favoriteCount] = await Promise.all([
       prisma.newsLike.count({ where: { newsId: n.id } }),
       prisma.newsFavorite.count({ where: { newsId: n.id } }),
     ]);
     return { ...n, likeCount, favoriteCount };
   }));
-  res.json(withCounts);
+  res.json({ total, items });
 });
 
 router.get('/favorites', ...requireRole('user', 'admin', 'consultant'), async (req, res) => {

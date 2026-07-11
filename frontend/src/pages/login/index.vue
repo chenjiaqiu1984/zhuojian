@@ -1,9 +1,55 @@
 <template>
+  <!-- ══ 微信小程序：沉浸式全屏设计 ══ -->
+  <!-- #ifdef MP-WEIXIN -->
+  <view class="mp-root">
+    <!-- 柔和背景光晕 -->
+    <view class="glow glow-1" />
+    <view class="glow glow-2" />
+
+    <!-- 品牌区 -->
+    <view class="mp-brand">
+      <view class="mp-logo-wrap">
+        <view class="mp-logo-frame">
+          <image class="mp-logo-img" src="/static/logo.jpg" mode="aspectFit" />
+        </view>
+      </view>
+      <text class="mp-name">卓见心理</text>
+      <text class="mp-tagline">专业心理咨询服务平台</text>
+    </view>
+
+    <!-- 登录卡片 -->
+    <view class="mp-card">
+      <text class="mp-card-title">你好，欢迎</text>
+      <text class="mp-card-desc">授权后手机号将加密保护，用于登录或快速注册</text>
+
+      <button
+        class="mp-tap-btn"
+        open-type="getPhoneNumber"
+        :disabled="loading"
+        @getphonenumber="onGetPhoneNumber"
+      >{{ loading ? '登录中...' : '微信一键登录' }}</button>
+
+      <view class="mp-terms">
+        <text class="mp-terms-text">登录即代表同意</text>
+        <view class="mp-terms-link" @click="goTerms()">
+          <text class="mp-terms-link-text">《用户协议》</text>
+        </view>
+        <text class="mp-terms-text">与</text>
+        <view class="mp-terms-link" @click="goPrivacy()">
+          <text class="mp-terms-link-text">《隐私政策》</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <!-- #endif -->
+
+  <!-- ══ H5 / 其他平台：完整表单 ══ -->
+  <!-- #ifndef MP-WEIXIN -->
   <view class="page">
     <!-- 顶部品牌区 -->
     <view class="brand-area">
-      <view class="brand-circle">
-        <text class="brand-initial">卓</text>
+      <view class="brand-logo-frame">
+        <image class="brand-logo-img" src="/static/logo.jpg" mode="aspectFit" />
       </view>
       <text class="brand-name">卓见心理</text>
       <text class="brand-sub">专业心理服务平台</text>
@@ -33,16 +79,13 @@
             <input class="ipt" :value="pwd.password" @input="pwd.password = $event.detail?.value ?? ''" placeholder="请输入密码" type="password" />
           </view>
         </view>
-        <!-- 内联调用而非方法引用，避免 uni-app 编译为 e=>_ 的间接模式 -->
-        <text class="submit-btn" @click="loginTrigger++">{{loading ? '登录中...' : '登录'}}</text>
-        <!-- #ifdef H5 -->
+        <text class="submit-btn" @click="loginPwd()">{{loading ? '登录中...' : '登录'}}</text>
         <view class="remember-row" @click="rememberMe=!rememberMe">
           <view :class="['checkbox', rememberMe && 'checked']" />
           <text class="remember-txt">记住登录状态（30天）</text>
         </view>
-        <!-- #endif -->
         <view class="aux-row">
-          <text class="aux-link" @click="uni.navigateTo({url:'/pages/login/register'})">注册新账号</text>
+          <text class="aux-link" @click="activeTab=1">注册新账号</text>
           <text class="aux-link" @click="uni.navigateTo({url:'/pages/login/reset'})">忘记密码</text>
         </view>
       </view>
@@ -75,86 +118,45 @@
             </view>
           </view>
         </view>
-        <text class="submit-btn" @click="phoneTrigger++">{{loading ? '登录中...' : '登录 / 注册'}}</text>
-        <!-- #ifdef H5 -->
+        <text class="submit-btn" @click="loginPhone()">{{loading ? '登录中...' : '登录 / 注册'}}</text>
         <view class="remember-row" @click="rememberMe=!rememberMe">
           <view :class="['checkbox', rememberMe && 'checked']" />
           <text class="remember-txt">记住登录状态（30天）</text>
         </view>
-        <!-- #endif -->
       </view>
-
 
       <!-- 第三方登录 -->
       <view class="third-login">
         <view class="divider"><text class="divider-txt">其他方式登录</text></view>
-        <!-- #ifdef MP-WEIXIN -->
-        <!-- 手机号快速验证：无需手动输入，微信授权后直接登录 / 注册 -->
-        <button
-          class="phone-wechat-btn"
-          open-type="getPhoneNumber"
-          :disabled="loading"
-          @getphonenumber="onGetPhoneNumber"
-        >
-          <text class="phone-wechat-icon">📱</text>
-          <text>{{ loading ? '登录中...' : '微信手机号一键登录' }}</text>
-        </button>
-        <view class="third-btns wechat-alt">
-          <view class="third-btn wechat" @click="loginWechat()">
-            <u-icon name="weixin-circle-fill" color="#fff" size="36" />
-          </view>
-        </view>
-        <!-- #endif -->
-        <!-- #ifndef MP-WEIXIN -->
         <view class="third-btns">
           <view class="third-btn wechat" @click="loginWechat()">
             <u-icon name="weixin-circle-fill" color="#fff" size="36" />
           </view>
         </view>
-        <!-- #endif -->
       </view>
     </view>
   </view>
+  <!-- #endif -->
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { track } from '../../utils/track';
 import { useCaptcha } from '../../composables/useCaptcha';
-
 
 const store = useUserStore();
 const activeTab = ref(0);
 const loading = ref(false);
 const tabs = ['密码登录', '手机登录'];
 
-// 用响应式触发器替代直接方法绑定——微信小程序对方法引用有兼容问题
-// @click="loginTrigger++" 是内联赋值，和 tab 切换一样可靠
-const loginTrigger = ref(0);
-const phoneTrigger = ref(0);
-// #ifndef H5
-watch(loginTrigger, () => { if (loginTrigger.value > 0) loginPwd(); });
-watch(phoneTrigger, () => { if (phoneTrigger.value > 0) loginPhone(); });
-// #endif
-
 const phone = ref({ num: '', code: '', countdown: 0 });
 const pwd = ref({ username: '', password: '' });
-// #ifdef H5
 const rememberMe = ref(true);
-// #endif
-// #ifndef H5
-const rememberMe = ref(false);
-// #endif
 
 const { captchaUrl, captchaToken, captchaAnswer, refreshCaptcha } = useCaptcha();
 onMounted(() => refreshCaptcha());
-
-// 显式 input handler，避免微信小程序中内联赋值不更新 ref
-function onUsernameInput(e) { pwd.value.username = e.detail?.value ?? ''; }
-function onPasswordInput(e) { pwd.value.password = e.detail?.value ?? ''; }
-function onPhoneInput(e)    { phone.value.num    = e.detail?.value ?? ''; }
 
 function startCountdown(target) {
   target.countdown = 60;
@@ -167,13 +169,11 @@ async function sendSms() {
   try {
     await authApi.sendSms(phone.value.num, captchaToken.value, captchaAnswer.value);
     startCountdown(phone.value); uni.showToast({ title: '验证码已发送' });
-  }
-  catch (e) {
+  } catch (e) {
     refreshCaptcha();
     if (e.resetAt) {
       const mins = Math.ceil((e.resetAt - Date.now()) / 60000);
-      const wait = mins <= 1 ? '请稍后再试' : `请在 ${mins} 分钟后重试`;
-      uni.showToast({ title: `${e.error}，${wait}`, icon: 'none', duration: 4000 });
+      uni.showToast({ title: `${e.error}，${mins <= 1 ? '请稍后再试' : `请在 ${mins} 分钟后重试`}`, icon: 'none', duration: 4000 });
     } else {
       uni.showToast({ title: e.error || '发送失败', icon: 'none' });
     }
@@ -184,14 +184,10 @@ async function loginPhone() {
   if (!phone.value.num || !phone.value.code) return uni.showToast({ title: '请填写完整', icon: 'none' });
   loading.value = true;
   try {
-    await store.loginPhone(phone.value.num, phone.value.code, true, rememberMe.value);
-    if (!store.user.name || !store.user.hasPassword) {
-      uni.redirectTo({ url: '/pages/login/complete' });
-    } else {
-      success();
-    }
-  }
-  catch (e) { uni.showToast({ title: e.error || '验证码错误', icon: 'none' }); }
+    await store.loginPhone(phone.value.num, phone.value.code, rememberMe.value);
+    if (store.isPending) uni.redirectTo({ url: '/pages/login/complete' });
+    else success();
+  } catch (e) { uni.showToast({ title: e.error || '验证码错误', icon: 'none' }); }
   finally { loading.value = false; }
 }
 
@@ -204,30 +200,30 @@ async function loginPwd() {
 }
 
 async function loginWechat() {
-  // #ifdef MP-WEIXIN
-  uni.login({ provider: 'weixin', success: async ({ code }) => {
-    try { await store.loginWechat(code); success(); }
-    catch (e) { uni.showToast({ title: e.error || '微信登录失败', icon: 'none' }); }
-  }});
-  // #endif
-  // #ifndef MP-WEIXIN
   uni.showToast({ title: '请在微信内使用', icon: 'none' });
-  // #endif
 }
 
 // #ifdef MP-WEIXIN
-// 手机号快速验证回调（open-type="getPhoneNumber"）
+function goTerms() { uni.navigateTo({ url: '/pages/legal/terms' }); }
+function goPrivacy() { uni.navigateTo({ url: '/pages/legal/privacy' }); }
+// #endif
+
+// #ifdef MP-WEIXIN
+// 一键登录：同时获取手机号 + openid，实现 30 天免登录
 async function onGetPhoneNumber(e) {
-  // errno 非零或无 code 表示用户拒绝授权，静默处理
   if (e.detail.errno || !e.detail.code) return;
   loading.value = true;
   try {
-    await store.loginPhoneWechat(e.detail.code);
-    if (!store.user?.name || !store.user?.hasPassword) {
-      uni.redirectTo({ url: '/pages/login/complete' });
-    } else {
-      success();
-    }
+    // 静默调用 wx.login 获取 loginCode（用于后端绑定 openid）
+    const loginCode = await new Promise((resolve) => {
+      uni.login({ provider: 'weixin',
+        success: (r) => resolve(r.code),
+        fail: () => resolve(null)
+      });
+    });
+    await store.loginPhoneWechat(e.detail.code, loginCode);
+    if (store.isPending) uni.redirectTo({ url: '/pages/login/complete' });
+    else success();
   } catch (err) {
     uni.showToast({ title: err.error || '登录失败，请重试', icon: 'none' });
   } finally {
@@ -248,6 +244,190 @@ function success() {
 </script>
 
 <style scoped lang="scss">
+/* ═══════════════════════════════════════════
+   微信小程序：沉浸式登录页
+   ─ 全屏渐变 · 浮动卡片 · 品牌感
+═══════════════════════════════════════════ */
+
+.mp-root {
+  min-height: 100vh;
+  /* 深森林绿 → 明亮茶绿 → 浅sage — 无硬切 */
+  background: linear-gradient(168deg, #163831 0%, #1F5448 22%, #2E7262 45%, #4A8A7A 68%, #7DBFB0 88%, #D6EDE8 100%);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 背景柔光 —— pointer-events:none 固定伪元素，不影响 GPU 卷轴性能 */
+.glow {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.glow-1 {
+  width: 560rpx; height: 560rpx;
+  top: -120rpx; right: -120rpx;
+  background: radial-gradient(circle, rgba(255,255,255,.10) 0%, transparent 65%);
+}
+.glow-2 {
+  width: 420rpx; height: 420rpx;
+  top: 38%; left: -140rpx;
+  background: radial-gradient(circle, rgba(255,255,255,.07) 0%, transparent 65%);
+}
+
+/* ── 品牌区 ── */
+.mp-brand {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 40rpx 80rpx;
+}
+
+/* Logo：真实品牌图片 — iOS app icon 风格圆角正方形 */
+.mp-logo-wrap {
+  margin-bottom: 40rpx;
+  position: relative;
+}
+/* 外层 view 负责圆角裁剪 — 小程序中 image 直接设 border-radius 不可靠 */
+.mp-logo-frame {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 36rpx;
+  overflow: hidden;
+  /* translateZ(0) 强制独立合成层，使 overflow:hidden 正确裁剪圆角 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  background: #fff;
+  box-shadow:
+    0 8rpx 40rpx rgba(22,56,49,.40),
+    0 0 0 3rpx rgba(255,255,255,.20),
+    0 0 0 10rpx rgba(255,255,255,.07);
+}
+.mp-logo-img {
+  width: 160rpx;
+  height: 160rpx;
+  display: block;
+}
+
+.mp-name {
+  display: block;
+  font-size: 52rpx;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 6rpx;
+  margin-bottom: 16rpx;
+}
+.mp-tagline {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255,255,255,.58);
+  letter-spacing: 2rpx;
+}
+
+/* ── 浮动登录卡片 ── */
+.mp-card {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  border-radius: 48rpx 48rpx 0 0;
+  padding: 64rpx 52rpx 80rpx;
+  /* 柔和顶部阴影融入渐变 */
+  box-shadow: 0 -8rpx 80rpx rgba(22,56,49,.18);
+}
+
+.mp-card-title {
+  display: block;
+  font-size: 52rpx;
+  font-weight: 800;
+  color: #142721;
+  letter-spacing: -0.5rpx;
+  margin-bottom: 14rpx;
+}
+.mp-card-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #80A89E;
+  line-height: 1.65;
+  margin-bottom: 52rpx;
+}
+
+/* 一键登录按钮
+   ─ 品牌渐变底色，白色文字，深色阴影
+   ─ :active 微下压感 */
+.mp-tap-btn {
+  display: block;
+  width: 100%;
+  height: 108rpx;
+  line-height: 108rpx;
+  text-align: center;
+  background: linear-gradient(135deg, #1F5448 0%, #2E7262 40%, #4A8A7A 100%);
+  border-radius: 28rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1rpx;
+  border: none;
+  box-shadow: 0 16rpx 48rpx rgba(30,84,72,.35), inset 0 1rpx 0 rgba(255,255,255,.15);
+  margin-bottom: 44rpx;
+  /* 消除微信默认边框 */
+  &::after { border: none !important; }
+  &[disabled] {
+    opacity: 0.55;
+    box-shadow: none;
+  }
+}
+
+/* 分隔线 */
+.mp-divider {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 36rpx;
+}
+.mp-divider-line {
+  flex: 1;
+  height: 1rpx;
+  background: #EAF0EE;
+}
+.mp-divider-text {
+  font-size: 22rpx;
+  color: #B8CEC9;
+  letter-spacing: 1rpx;
+  white-space: nowrap;
+}
+
+/* 协议行 */
+.mp-terms {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2rpx;
+}
+.mp-terms-text {
+  font-size: 24rpx;
+  color: #A0BAB5;
+}
+.mp-terms-link {
+  padding: 6rpx 10rpx;
+}
+.mp-terms-link-text {
+  font-size: 24rpx;
+  color: #4A8A7A;
+  font-weight: 600;
+}
+
+
+/* ═══════════════════════════════════════════
+   H5 / 其他平台：保持原有设计
+═══════════════════════════════════════════ */
+
 .page {
   min-height: 100vh;
   background: linear-gradient(170deg, #3A6E80 0%, #4A8A7A 55%, #F2F4F3 55%);
@@ -259,14 +439,23 @@ function success() {
   padding: 72rpx 48rpx 48rpx;
   display: flex; flex-direction: column; align-items: center;
 }
-.brand-circle {
-  width: 100rpx; height: 100rpx; border-radius: 50%;
-  background: rgba(255,255,255,.22);
-  border: 2rpx solid rgba(255,255,255,.4);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 20rpx;
+.brand-logo-frame {
+  width: 120rpx; height: 120rpx;
+  border-radius: 28rpx;
+  overflow: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  background: #fff;
+  box-shadow:
+    0 6rpx 32rpx rgba(22,56,49,.35),
+    0 0 0 2rpx rgba(255,255,255,.25),
+    0 0 0 8rpx rgba(255,255,255,.08);
+  margin-bottom: 24rpx;
 }
-.brand-initial { font-size: 44rpx; font-weight: 800; color: #fff; }
+.brand-logo-img {
+  width: 120rpx; height: 120rpx;
+  display: block;
+}
 .brand-name { font-size: 48rpx; font-weight: 800; color: #fff; letter-spacing: -1rpx; }
 .brand-sub { font-size: 22rpx; color: rgba(255,255,255,.7); margin-top: 8rpx; letter-spacing: 1rpx; }
 
@@ -317,7 +506,7 @@ function success() {
 .send-btn-disabled { background: #F2F4F3; }
 .send-btn-disabled text { color: #B0BEB8; }
 
-/* 提交按钮 — text 元素避免 view 的动态 bindtap 在微信小程序某些版本失效的问题 */
+/* 提交按钮 */
 .submit-btn {
   background: linear-gradient(135deg, #4A8A7A, #3A6E80);
   border-radius: 16rpx; padding: 28rpx 24rpx;
@@ -344,16 +533,7 @@ function success() {
   display: flex; align-items: center; justify-content: center;
 }
 .wechat { background: #07C160; }
-/* 微信手机号一键登录按钮 */
-.phone-wechat-btn {
-  width: 100%; background: #07C160; color: #fff;
-  font-size: 30rpx; font-weight: 600; border-radius: 16rpx; height: 96rpx;
-  display: flex; align-items: center; justify-content: center; gap: 14rpx;
-  border: none; line-height: 1;
-  &[disabled] { background: #a8dbbf; }
-  .phone-wechat-icon { font-size: 36rpx; }
-}
-.wechat-alt { margin-top: 24rpx; }
+
 /* 记住我 */
 .remember-row { display: flex; align-items: center; gap: 12rpx; margin-top: 20rpx; cursor: pointer; }
 .checkbox { width: 36rpx; height: 36rpx; border: 2rpx solid #C0CCC8; border-radius: 8rpx; background: #fff; flex-shrink: 0; transition: all 0.2s; }

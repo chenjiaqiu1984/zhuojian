@@ -22,6 +22,7 @@ import {ref, onMounted, watch } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { consultantApi, homeworkApi } from '../../api/index';
 import { SERVER } from '../../config';
+import { requireActive } from '../../utils/requireActive';
 
 
 const consultants = ref([]);
@@ -30,6 +31,7 @@ let type = '', recordId = 0;
 
 onLoad((opts) => { type = opts.type; recordId = Number(opts.recordId); });
 onMounted(() => {
+  if (!requireActive()) return;
   consultantApi.list().then(list => { consultants.value = list.filter(c => c.isActive !== 0); }).catch(() => {});
 });
 

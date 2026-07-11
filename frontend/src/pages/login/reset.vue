@@ -17,7 +17,8 @@
           {{form.countdown>0 ? `${form.countdown}s` : '获取验证码'}}
         </u-button>
       </view>
-      <view class="input-wrap"><input class="ipt" v-model="form.newPwd" placeholder="新密码（6位以上）" password /></view>
+      <view class="input-wrap"><input class="ipt" v-model="form.newPwd" placeholder="新密码（含字母和数字，至少6位）" password /></view>
+      <view class="input-wrap" style="margin-top:16rpx"><input class="ipt" v-model="form.confirmPwd" placeholder="再次输入新密码" password /></view>
       <u-button type="primary" @click="doReset()" :loading="loading" style="margin-top:32rpx">确认重置</u-button>
     </view>
   </view>
@@ -29,10 +30,18 @@ import { authApi } from '../../api/index';
 import { hashPassword } from '../../utils/crypto';
 import { useCaptcha } from '../../composables/useCaptcha';
 
-const form = ref({ target: '', code: '', newPwd: '', countdown: 0 });
+const form = ref({ target: '', code: '', newPwd: '', confirmPwd: '', countdown: 0 });
 const loading = ref(false);
 const { captchaUrl, captchaToken, captchaAnswer, refreshCaptcha } = useCaptcha();
 onMounted(() => refreshCaptcha());
+
+// 密码强度：至少6位，且同时包含字母和数字
+function checkPwd(p) {
+  if (p.length < 6) return '密码至少6位';
+  if (!/[A-Za-z]/.test(p)) return '密码必须包含字母';
+  if (!/[0-9]/.test(p)) return '密码必须包含数字';
+  return '';
+}
 
 function startCountdown() {
   form.value.countdown = 60;
@@ -51,6 +60,9 @@ async function sendCode() {
 
 async function doReset() {
   if (!form.value.code || !form.value.newPwd) return uni.showToast({ title: '请填写完整', icon: 'none' });
+  const pwdErr = checkPwd(form.value.newPwd);
+  if (pwdErr) return uni.showToast({ title: pwdErr, icon: 'none' });
+  if (form.value.newPwd !== form.value.confirmPwd) return uni.showToast({ title: '两次密码不一致', icon: 'none' });
   loading.value = true;
   try {
     await authApi.resetPassword(form.value.target, form.value.code, await hashPassword(form.value.newPwd));
@@ -69,4 +81,5 @@ async function doReset() {
 .ipt { flex: 1; height: 96rpx; font-size: 28rpx; color: #333; background: transparent; }
 .captcha-row { display: flex; align-items: center; gap: 16rpx; margin-bottom: 24rpx; }
 .captcha-img { width: 200rpx; height: 80rpx; border-radius: 8rpx; background: #f5f6f8; flex-shrink: 0; border: 2rpx solid #e8e8e8; }
+.code-row { display: flex; align-items: center; gap: 16rpx; }
 </style>

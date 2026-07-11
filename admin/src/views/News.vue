@@ -8,6 +8,26 @@
       </div>
     </div>
 
+    <!-- 搜索栏 -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <el-input v-model="q" placeholder="搜索标题关键词" clearable style="width:240px" @keyup.enter="load(1)" />
+      <el-select v-model="typeFilter" placeholder="按类型筛选" clearable style="width:150px" @change="load(1)">
+        <el-option label="新闻" value="news" />
+        <el-option label="活动" value="activity" />
+        <el-option label="心理科普" value="psychology" />
+        <el-option label="考级报名" value="exam" />
+        <el-option label="培训课程" value="training" />
+      </el-select>
+      <el-select v-model="statusFilter" placeholder="发布状态" clearable style="width:130px" @change="load(1)">
+        <el-option label="全部" value="" />
+        <el-option label="已发布" value="published" />
+        <el-option label="草稿" value="draft" />
+      </el-select>
+      <el-button type="primary" @click="load(1)">搜索</el-button>
+      <span style="margin-left:auto;color:#666;font-size:13px">共 {{ total }} 条</span>
+    </div>
+
+    <!-- 导入HTML对话框 -->
     <el-dialog v-model="importDlg" title="导入HTML" width="680px">
       <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
         <el-button size="small" @click="$refs.htmlFile.click()">选择HTML文件</el-button>
@@ -20,10 +40,11 @@
         <el-button type="primary" @click="parseAndImport" :disabled="!importHtml.trim()">解析并预览</el-button>
       </template>
     </el-dialog>
+
     <el-table :data="list" border v-loading="loading">
       <el-table-column prop="id" label="ID" width="70" />
       <el-table-column prop="title" label="标题" />
-      <el-table-column label="类型" width="100">
+      <el-table-column label="类型" width="110">
         <template #default="{row}">
           <el-tag :type="row.type==='activity'?'success':row.type==='psychology'?'warning':row.type==='exam'?'danger':row.type==='training'?'info':'primary'">
             {{row.type==='activity'?'活动':row.type==='psychology'?'心理科普':row.type==='exam'?'考级报名':row.type==='training'?'培训课程':'新闻'}}
@@ -38,7 +59,9 @@
         </template>
       </el-table-column>
       <el-table-column label="状态" width="90">
-        <template #default="{row}"><el-tag :type="row.is_published?'success':'info'">{{row.is_published?'已发布':'草稿'}}</el-tag></template>
+        <template #default="{row}">
+          <el-tag :type="row.is_published?'success':'info'">{{row.is_published?'已发布':'草稿'}}</el-tag>
+        </template>
       </el-table-column>
       <el-table-column prop="created_at" label="时间" width="160" />
       <el-table-column label="操作" width="160" fixed="right">
@@ -52,6 +75,17 @@
       </el-table-column>
     </el-table>
 
+    <!-- 分页 -->
+    <el-pagination
+      v-model:current-page="page"
+      :page-size="pageSize"
+      :total="total"
+      layout="prev, pager, next, total"
+      style="margin-top:16px;justify-content:flex-end"
+      @current-change="load"
+    />
+
+    <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dlg" :title="form.id?'编辑':'新增'" width="860px">
       <el-form :model="form" label-width="80px">
         <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
@@ -98,7 +132,7 @@
         </el-form-item>
         <el-form-item label="价格（元）" v-if="form.is_paid">
           <el-input-number v-model="form.price" :min="0.01" :step="0.01" :precision="2" style="width:200px" />
-          <span style="margin-left:8px;color:#999;font-size:13px">元（如 0.01 用于测试）</span>
+          <span style="margin-left:8px;color:#999;font-size:13px">元（如0.01 用于测试）</span>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -107,6 +141,7 @@
       </template>
     </el-dialog>
 
+    <!-- 封面图片选择器 -->
     <el-dialog v-model="pickerDlg" title="从文章中选择封面图" width="700px">
       <div v-if="pickerImages.length" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
         <div v-for="img in pickerImages" :key="img" @click="selectCover(img)"
@@ -118,8 +153,11 @@
       <el-empty v-else description="文章中未找到图片" />
     </el-dialog>
 
+    <!-- 留言管理对话框 -->
     <el-dialog v-model="commentDlg" title="留言管理" width="640px">
-      <div v-for="c in commentList" :key="c.id" :style="c.parentId?'margin-left:24px;background:#f0f7f5;':''" style="border:1px solid #eee;border-radius:6px;padding:12px;margin-bottom:10px">
+      <div v-for="c in commentList" :key="c.id"
+        :style="c.parentId?'margin-left:24px;background:#f0f7f5;':''"
+        style="border:1px solid #eee;border-radius:6px;padding:12px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:12px;color:#4A8A7A;font-weight:600">{{c.parentId?'管理员回复':'用户留言 #'+c.userId}}</span>
           <span style="font-size:12px;color:#999">{{new Date(c.createdAt).toLocaleString('zh-CN')}}</span>
@@ -145,55 +183,104 @@ import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import api from '../api/index';
 
+// 列表与分页
 const list = ref([]);
-const loading = ref(true);
+const loading = ref(false);
+const total = ref(0);
+const page = ref(1);
+const pageSize = 15;
+
+// 搜索/筛选
+const q = ref('');
+const typeFilter = ref('');
+const statusFilter = ref('');
+
+// 表单相关
 const dlg = ref(false);
 const saving = ref(false);
 const form = ref({});
 const lastUrl = ref('');
 const uploadingCover = ref(false);
 const uploadingInline = ref(false);
+
+// 导入HTML
 const importDlg = ref(false);
 const importHtml = ref('');
 
 function normalize(n) {
-  return { ...n,
+  return {
+    ...n,
     is_published: n.isPublished ?? n.is_published ?? 0,
     cover_image: n.coverImage ?? n.cover_image ?? '',
     video_url: n.videoUrl ?? n.video_url ?? '',
     created_at: n.createdAt ?? n.created_at ?? '',
   };
 }
-async function load() { try { list.value = (await api.get('/news', { params: { includeDraft: '1' } })).map(normalize); } finally { loading.value = false; } }
-onMounted(load);
+
+async function load(p) {
+  if (p) page.value = p;
+  loading.value = true;
+  try {
+    const params = {
+      includeDraft: '1',
+      page: page.value,
+      pageSize,
+    };
+    if (q.value.trim()) params.q = q.value.trim();
+    if (typeFilter.value) params.type = typeFilter.value;
+    if (statusFilter.value) params.status = statusFilter.value;
+    const { total: t, items } = await api.get('/news', { params });
+    total.value = t;
+    list.value = items.map(normalize);
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => load(1));
 
 function openDialog(row = {}) {
   form.value = {
     type: 'news', is_published: 1, is_paid: 0, price: 0,
     ...row,
-    price: row.price ? row.price / 100 : 0  // 分→元
+    price: row.price ? row.price / 100 : 0,  // 分→元
   };
-  lastUrl.value = ''; dlg.value = true;
+  lastUrl.value = '';
+  dlg.value = true;
 }
 
 async function uploadCover(e) {
-  const file = e.target.files[0]; if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
   uploadingCover.value = true;
   try {
-    const fd = new FormData(); fd.append('file', file);
+    const fd = new FormData();
+    fd.append('file', file);
     const { url } = await api.post('/upload', fd);
     form.value.cover_image = url;
-  } catch { ElMessage.error('上传失败'); } finally { uploadingCover.value = false; e.target.value = ''; }
+  } catch {
+    ElMessage.error('上传失败');
+  } finally {
+    uploadingCover.value = false;
+    e.target.value = '';
+  }
 }
 
 async function uploadInline(e) {
-  const file = e.target.files[0]; if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
   uploadingInline.value = true;
   try {
-    const fd = new FormData(); fd.append('file', file);
+    const fd = new FormData();
+    fd.append('file', file);
     const { url } = await api.post('/upload', fd);
     lastUrl.value = url;
-  } catch { ElMessage.error('上传失败'); } finally { uploadingInline.value = false; e.target.value = ''; }
+  } catch {
+    ElMessage.error('上传失败');
+  } finally {
+    uploadingInline.value = false;
+    e.target.value = '';
+  }
 }
 
 function copy(url) {
@@ -205,22 +292,36 @@ async function save() {
   try {
     if (form.value.id) await api.put(`/news/${form.value.id}`, form.value);
     else await api.post('/news', form.value);
-    ElMessage.success('保存成功'); dlg.value = false; await load();
-  } catch { ElMessage.error('保存失败'); } finally { saving.value = false; }
+    ElMessage.success('保存成功');
+    dlg.value = false;
+    await load();
+  } catch {
+    ElMessage.error('保存失败');
+  } finally {
+    saving.value = false;
+  }
 }
 
 async function togglePublish(row, val) {
   try {
     await api.put(`/news/${row.id}`, { ...row, is_published: val });
-    ElMessage.success(val ? '已发布' : '已下线'); await load();
-  } catch { ElMessage.error('操作失败'); }
+    ElMessage.success(val ? '已发布' : '已下线');
+    await load();
+  } catch {
+    ElMessage.error('操作失败');
+  }
 }
 
 async function del(row) {
   await ElMessageBox.confirm(`确认删除「${row.title}」？`);
-  try { await api.delete(`/news/${row.id}`); ElMessage.success('已删除'); await load(); } catch {}
+  try {
+    await api.delete(`/news/${row.id}`);
+    ElMessage.success('已删除');
+    await load();
+  } catch {}
 }
 
+// 留言
 const commentDlg = ref(false);
 const commentList = ref([]);
 const replyTarget = ref(null);
@@ -242,9 +343,13 @@ async function submitReply(parentId) {
 
 async function adminDelComment(id) {
   await ElMessageBox.confirm('确认删除该留言？');
-  try { await api.delete(`/news/comments/${id}`); commentList.value = await api.get(`/news/${currentNewsId}/comments`); } catch {}
+  try {
+    await api.delete(`/news/comments/${id}`);
+    commentList.value = await api.get(`/news/${currentNewsId}/comments`);
+  } catch {}
 }
 
+// 封面选图
 const pickerDlg = ref(false);
 const pickerImages = ref([]);
 
@@ -259,8 +364,10 @@ function selectCover(url) {
   pickerDlg.value = false;
 }
 
+// 导入HTML
 function onHtmlFile(e) {
-  const file = e.target.files[0]; if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => { importHtml.value = ev.target.result; };
   reader.readAsText(file, 'utf-8');

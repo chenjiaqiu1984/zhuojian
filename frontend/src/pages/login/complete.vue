@@ -2,12 +2,12 @@
   <view class="page">
     <view class="form-card">
       <text class="title">完善账户信息</text>
-      <text class="sub">请设置你的名字和登录密码，以便下次直接使用密码登录</text>
+      <text class="sub">请阅读并同意用户协议，设置昵称和登录密码，以便正常使用全部功能</text>
 
       <view class="field-group">
         <text class="field-label">昵称 <text class="required">*</text></text>
         <view class="input-wrap">
-          <input class="ipt" v-model="form.name" placeholder="请输入你的名字" maxlength="20" />
+          <input class="ipt" v-model="form.name" placeholder="请输入你的昵称" maxlength="20" />
         </view>
       </view>
 
@@ -25,39 +25,44 @@
         </view>
       </view>
 
-      <view class="submit-btn" @click="submit()">
-        <text>{{loading ? '保存中...' : '完成'}}</text>
+      <!-- 用户协议 -->
+      <view class="terms-row" @click="form.agreed = !form.agreed">
+        <view :class="['checkbox', form.agreed && 'checked']" />
+        <text class="terms-txt">
+          我已阅读并同意
+          <text class="terms-link" @click.stop="uni.navigateTo({ url: '/pages/legal/terms' })">《用户服务协议》</text>
+          和
+          <text class="terms-link" @click.stop="uni.navigateTo({ url: '/pages/legal/privacy' })">《隐私政策》</text>
+        </text>
       </view>
 
-      <text class="skip-link" @click="skip()">暂时跳过，稍后在设置中完善</text>
+      <view class="submit-btn" @click="submit()">
+        <text>{{loading ? '保存中...' : '完成设置'}}</text>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import {ref, watch } from 'vue';
+import { ref } from 'vue';
 import { useUserStore } from '../../store/user';
-import { authApi } from '../../api/index';
-import { hashPassword } from '../../utils/crypto';
-
 
 const store = useUserStore();
 const loading = ref(false);
-const form = ref({ name: '', password: '', confirm: '' });
+const form = ref({ name: '', password: '', confirm: '', agreed: false });
 
 async function submit() {
-  if (!form.value.name.trim()) return uni.showToast({ title: '请输入名字', icon: 'none' });
-  if (form.value.password.length < 6) return uni.showToast({ title: '密码至少6位', icon: 'none' });
-  if (form.value.password !== form.value.confirm) return uni.showToast({ title: '两次密码不一致', icon: 'none' });
+  if (!form.value.name.trim()) return uni.showToast({ title: '请输入昵称', icon: 'none' });
+  const p = form.value.password;
+  if (p.length < 6) return uni.showToast({ title: '密码至少6位', icon: 'none' });
+  if (!/[A-Za-z]/.test(p)) return uni.showToast({ title: '密码必须包含字母', icon: 'none' });
+  if (!/[0-9]/.test(p)) return uni.showToast({ title: '密码必须包含数字', icon: 'none' });
+  if (p !== form.value.confirm) return uni.showToast({ title: '两次密码不一致', icon: 'none' });
+  if (!form.value.agreed) return uni.showToast({ title: '请先同意用户协议和隐私政策', icon: 'none' });
 
   loading.value = true;
   try {
-    const [profileRes] = await Promise.all([
-      authApi.updateProfile({ name: form.value.name.trim() }),
-      authApi.changePassword(null, await hashPassword(form.value.password)),
-    ]);
-    Object.assign(store.user, profileRes.user);
-    uni.setStorageSync('user', JSON.stringify(store.user));
+    await store.completeSetup(form.value.name.trim(), form.value.password, true);
     uni.showToast({ title: '设置完成' });
     setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 1000);
   } catch (e) {
@@ -65,10 +70,6 @@ async function submit() {
   } finally {
     loading.value = false;
   }
-}
-
-function skip() {
-  uni.reLaunch({ url: '/pages/index/index' });
 }
 </script>
 
@@ -96,14 +97,29 @@ function skip() {
 }
 .input-wrap:focus-within { border-color: #4A8A7A; }
 .ipt { flex: 1; height: 96rpx; font-size: 28rpx; color: #1C2A27; background: transparent; }
+
+/* 协议勾选 */
+.terms-row {
+  display: flex; align-items: flex-start; gap: 16rpx;
+  margin: 8rpx 0 40rpx; cursor: pointer;
+}
+.checkbox {
+  width: 40rpx; height: 40rpx; flex-shrink: 0; margin-top: 2rpx;
+  border: 2rpx solid #C0CCC8; border-radius: 8rpx; background: #fff;
+  transition: all 0.2s;
+}
+.checkbox.checked { background: #4A8A7A; border-color: #4A8A7A; position: relative; }
+.checkbox.checked::after {
+  content: '✓'; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); color: #fff; font-size: 24rpx; line-height: 1;
+}
+.terms-txt { font-size: 24rpx; color: #617870; line-height: 1.7; flex: 1; }
+.terms-link { color: #4A8A7A; font-weight: 600; }
+
 .submit-btn {
   background: linear-gradient(135deg, #4A8A7A, #3A6E80);
   border-radius: 16rpx; padding: 28rpx 0;
-  text-align: center; margin-top: 16rpx;
+  text-align: center;
 }
 .submit-btn text { color: #fff; font-size: 30rpx; font-weight: 700; letter-spacing: 1rpx; }
-.skip-link {
-  text-align: center; font-size: 24rpx; color: #B0BEB8;
-  margin-top: 32rpx; display: block;
-}
 </style>

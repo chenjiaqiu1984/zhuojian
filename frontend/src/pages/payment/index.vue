@@ -188,6 +188,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import QRCode from 'qrcode';
 import { paymentApi, bookingApi, packageApi, couponApi } from '../../api/index';
+import { requireActive } from '../../utils/requireActive';
 
 // uni-app 路由页面通过 URL query 传参，不能用 defineProps 接收
 // 改为本地 ref，在 onMounted 里从 query 读取
@@ -292,6 +293,7 @@ const refundDeadline24h = computed(() => {
 });
 
 onMounted(async () => {
+  if (!requireActive()) return;
   // 从页面 query 读取参数（uni-app H5 / 小程序均兼容）
   const pages = getCurrentPages();
   const cur   = pages[pages.length - 1];

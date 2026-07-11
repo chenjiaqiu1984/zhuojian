@@ -417,11 +417,30 @@ router.post('/admin/scales', ...requireRole('admin'), async (req, res) => {
 
 // GET /api/assessment/admin/vouchers
 router.get('/admin/vouchers', ...requireRole('admin'), async (req, res) => {
-  const vouchers = await prisma.assessmentVoucher.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: { scale: { select: { name: true } } }
-  });
-  res.json(vouchers);
+  const { q, page = 1, pageSize = 20, status } = req.query;
+  const now = new Date();
+  const where = {};
+  if (q) where.code = { contains: q };
+  if (status === 'unused') {
+    where.usedBy = null;
+    where.OR = [{ expiresAt: null }, { expiresAt: { gt: now } }];
+  } else if (status === 'used') {
+    where.usedBy = { not: null };
+  } else if (status === 'expired') {
+    where.usedBy = null;
+    where.AND = [{ expiresAt: { not: null } }, { expiresAt: { lte: now } }];
+  }
+  const [total, items] = await Promise.all([
+    prisma.assessmentVoucher.count({ where }),
+    prisma.assessmentVoucher.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: { scale: { select: { name: true } } },
+      skip: (Number(page) - 1) * Number(pageSize),
+      take: Number(pageSize)
+    })
+  ]);
+  res.json({ total, items });
 });
 
 // POST /api/assessment/admin/vouchers
@@ -439,8 +458,18 @@ router.post('/admin/vouchers', ...requireRole('admin'), async (req, res) => {
 
 // GET /api/assessment/admin/scales
 router.get('/admin/scales', ...requireRole('admin'), async (req, res) => {
-  const scales = await prisma.assessmentScale.findMany({ orderBy: { id: 'asc' } });
-  res.json(scales);
+  const { q, page = 1, pageSize = 20 } = req.query;
+  const where = q ? { name: { contains: q } } : {};
+  const [total, items] = await Promise.all([
+    prisma.assessmentScale.count({ where }),
+    prisma.assessmentScale.findMany({
+      where,
+      orderBy: { id: 'asc' },
+      skip: (Number(page) - 1) * Number(pageSize),
+      take: Number(pageSize)
+    })
+  ]);
+  res.json({ total, items });
 });
 
 // GET /api/assessment/admin/scales/:id/interpretations

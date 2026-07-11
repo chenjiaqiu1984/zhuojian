@@ -9,8 +9,11 @@
       <view class="header">
         <image class="avatar" :src="store.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" @click="changeAvatar()" />
         <view class="header-info">
-          <text class="name">{{store.user?.name || store.user?.username}}</text>
-          <view class="role-badge">{{roleLabel[store.user?.role] || '用户'}}</view>
+          <text class="name">{{store.user?.name || store.user?.username || '未设置昵称'}}</text>
+          <view class="badges-row">
+            <view class="role-badge">{{roleLabel[store.user?.role] || '用户'}}</view>
+            <view v-if="store.isPending" class="pending-badge" @click="uni.navigateTo({url:'/pages/login/complete'})">待完善 →</view>
+          </view>
         </view>
       </view>
       <view class="menus">
@@ -100,6 +103,8 @@ function logout() {
 .header-info { display: flex; flex-direction: column; gap: 12rpx; }
 .name { font-size: 34rpx; font-weight: bold; color: #fff; }
 .role-badge { background: rgba(255,255,255,.2); color: #fff; font-size: 22rpx; padding: 4rpx 16rpx; border-radius: 20rpx; align-self: flex-start; }
+.badges-row { display: flex; align-items: center; gap: 12rpx; flex-wrap: wrap; }
+.pending-badge { background: #FFF3E0; color: #F57C00; font-size: 22rpx; padding: 4rpx 16rpx; border-radius: 20rpx; }
 
 .menus { background: #fff; margin: 24rpx; border-radius: 16rpx; overflow: hidden; }
 .menu-item { display: flex; align-items: center; gap: 20rpx; padding: 32rpx 24rpx; border-bottom: 1rpx solid #f0f2f1; }

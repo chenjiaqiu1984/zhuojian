@@ -5,10 +5,11 @@ const { requireRole, authMiddleware } = require('../middleware/auth');
 const router = express.Router();
 const admin = requireRole('admin');
 
-// GET /api/terms/current — 获取当前已发布的最新版本（公开）
+// GET /api/terms/current?type=terms|privacy — 获取当前已发布的最新版本（公开）
 router.get('/current', async (req, res) => {
+  const type = req.query.type || 'terms';
   const row = await prisma.termsVersion.findFirst({
-    where: { isDraft: 0 },
+    where: { isDraft: 0, type },
     orderBy: { publishedAt: 'desc' },
   });
   res.json(row || null);
@@ -17,7 +18,7 @@ router.get('/current', async (req, res) => {
 // POST /api/terms/accept — 用户接受当前版本
 router.post('/accept', authMiddleware, async (req, res) => {
   const current = await prisma.termsVersion.findFirst({
-    where: { isDraft: 0 },
+    where: { isDraft: 0, type: 'terms' },
     orderBy: { publishedAt: 'desc' },
   });
   if (!current) return res.status(404).json({ error: '暂无已发布协议' });
@@ -31,11 +32,13 @@ router.post('/accept', authMiddleware, async (req, res) => {
 
 // ── Admin 接口 ────────────────────────────────────────────────────
 
-// GET /api/terms/all — 所有版本列表（admin）
+// GET /api/terms/all?type=terms|privacy — 版本列表（admin）
 router.get('/all', ...admin, async (req, res) => {
+  const where = req.query.type ? { type: req.query.type } : {};
   const rows = await prisma.termsVersion.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
-    select: { id: true, version: true, title: true, isDraft: true, publishedAt: true, createdAt: true },
+    select: { id: true, type: true, version: true, title: true, isDraft: true, publishedAt: true, createdAt: true },
   });
   res.json(rows);
 });
@@ -49,10 +52,11 @@ router.get('/:id', ...admin, async (req, res) => {
 
 // POST /api/terms — 新建草稿（admin）
 router.post('/', ...admin, async (req, res) => {
-  const { version, title, content } = req.body;
+  const { type = 'terms', version, title, content } = req.body;
   if (!version || !content) return res.status(400).json({ error: '版本号和内容必填' });
+  const defaultTitle = type === 'privacy' ? '隐私政策' : '用户服务协议';
   const row = await prisma.termsVersion.create({
-    data: { version, title: title || '用户服务协议', content, isDraft: 1 },
+    data: { type, version, title: title || defaultTitle, content, isDraft: 1 },
   });
   res.json({ id: row.id });
 });

@@ -1,11 +1,25 @@
 <template>
   <div>
     <el-tabs v-model="tab">
+      <!-- 量表管理 -->
       <el-tab-pane label="量表管理" name="scales">
-        <div style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
           <el-button type="primary" @click="openEdit(null)">新增量表</el-button>
+          <el-input
+            v-model="scaleQ"
+            placeholder="搜索量表名称"
+            clearable
+            style="width:200px"
+          />
+          <el-select v-model="scaleCat" placeholder="全部类型" clearable style="width:150px">
+            <el-option label="诊断" value="diagnostic" />
+            <el-option label="人格" value="personality" />
+            <el-option label="专业" value="professional" />
+          </el-select>
+          <span style="color:#999;font-size:13px">共 {{filteredScales.length}} 条</span>
         </div>
-        <el-table :data="scales" stripe>
+
+        <el-table :data="pagedScales" stripe>
           <el-table-column prop="name" label="量表名称" />
           <el-table-column prop="category" label="类型" width="100">
             <template #default="{row}">
@@ -39,8 +53,20 @@
             </template>
           </el-table-column>
         </el-table>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:16px">
+          <el-pagination
+            v-model:current-page="scalePage"
+            :page-size="scalePageSize"
+            :total="filteredScales.length"
+            layout="total, prev, pager, next"
+            background
+            @current-change="scalePage=$event"
+          />
+        </div>
       </el-tab-pane>
 
+      <!-- 兑换券管理 -->
       <el-tab-pane label="兑换券管理" name="vouchers">
         <el-form inline class="gen-form">
           <el-form-item label="适用量表">
@@ -64,12 +90,28 @@
           <el-tag v-for="c in lastCodes" :key="c" style="margin:4px">{{c}}</el-tag>
         </div>
 
-        <el-table :data="vouchers" stripe style="margin-top:16px">
-          <el-table-column prop="code" label="兑换码" width="120" />
+        <!-- 搜索 & 状态筛选 -->
+        <div style="display:flex;align-items:center;gap:12px;margin:16px 0 12px;flex-wrap:wrap">
+          <el-input
+            v-model="voucherQ"
+            placeholder="搜索兑换码"
+            clearable
+            style="width:200px"
+          />
+          <el-select v-model="voucherStatus" placeholder="全部状态" style="width:130px">
+            <el-option label="全部" value="all" />
+            <el-option label="未使用" value="unused" />
+            <el-option label="已使用" value="used" />
+          </el-select>
+          <span style="color:#999;font-size:13px">共 {{filteredVouchers.length}} 条</span>
+        </div>
+
+        <el-table :data="pagedVouchers" stripe>
+          <el-table-column prop="code" label="兑换码" width="140" />
           <el-table-column label="适用量表">
             <template #default="{row}">{{row.scale?.name||'通用'}}</template>
           </el-table-column>
-          <el-table-column label="状态" width="80">
+          <el-table-column label="状态" width="90">
             <template #default="{row}">
               <el-tag :type="row.usedBy?'info':'success'" size="small">{{row.usedBy?'已使用':'未使用'}}</el-tag>
             </template>
@@ -78,8 +120,20 @@
             <template #default="{row}">{{row.expiresAt?new Date(row.expiresAt).toLocaleDateString('zh-CN'):'无限期'}}</template>
           </el-table-column>
         </el-table>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:16px">
+          <el-pagination
+            v-model:current-page="voucherPage"
+            :page-size="voucherPageSize"
+            :total="filteredVouchers.length"
+            layout="total, prev, pager, next"
+            background
+            @current-change="voucherPage=$event"
+          />
+        </div>
       </el-tab-pane>
 
+      <!-- 数据统计（不变） -->
       <el-tab-pane label="数据统计" name="stats">
         <div style="display:flex;gap:16px;margin-bottom:20px">
           <el-card shadow="never" style="min-width:160px;text-align:center">
@@ -126,6 +180,7 @@
         </div>
       </el-tab-pane>
 
+      <!-- 推送测评（不变） -->
       <el-tab-pane label="推送测评" name="push">
         <el-form inline>
           <el-form-item label="手机号查找用户">
@@ -247,7 +302,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '../api/index.js';
 
@@ -274,6 +329,60 @@ const dailyList = computed(() => {
     .slice(0, 30).map(([date, count]) => ({ date, count }));
 });
 
+// 量表搜索 & 分页
+const scaleQ = ref('');
+const scaleCat = ref('');
+const scalePage = ref(1);
+const scalePageSize = 10;
+
+const filteredScales = computed(() => {
+  let list = scales.value;
+  if (scaleQ.value.trim()) {
+    const q = scaleQ.value.trim().toLowerCase();
+    list = list.filter(s => s.name.toLowerCase().includes(q));
+  }
+  if (scaleCat.value) {
+    list = list.filter(s => s.category === scaleCat.value);
+  }
+  return list;
+});
+
+const pagedScales = computed(() => {
+  const start = (scalePage.value - 1) * scalePageSize;
+  return filteredScales.value.slice(start, start + scalePageSize);
+});
+
+// 过滤条件变化时重置到第1页
+watch([scaleQ, scaleCat], () => { scalePage.value = 1; });
+
+// 兑换券搜索 & 分页
+const voucherQ = ref('');
+const voucherStatus = ref('all');
+const voucherPage = ref(1);
+const voucherPageSize = 15;
+
+const filteredVouchers = computed(() => {
+  let list = vouchers.value;
+  if (voucherQ.value.trim()) {
+    const q = voucherQ.value.trim().toLowerCase();
+    list = list.filter(v => v.code.toLowerCase().includes(q));
+  }
+  if (voucherStatus.value === 'unused') {
+    list = list.filter(v => !v.usedBy);
+  } else if (voucherStatus.value === 'used') {
+    list = list.filter(v => !!v.usedBy);
+  }
+  return list;
+});
+
+const pagedVouchers = computed(() => {
+  const start = (voucherPage.value - 1) * voucherPageSize;
+  return filteredVouchers.value.slice(start, start + voucherPageSize);
+});
+
+watch([voucherQ, voucherStatus], () => { voucherPage.value = 1; });
+
+// 数据加载
 const loadScales = async () => { scales.value = await api.get('/assessment/admin/scales'); };
 const loadVouchers = async () => { vouchers.value = await api.get('/assessment/admin/vouchers'); };
 const loadStats = async () => { stats.value = await api.get('/analytics/assessment-stats'); };

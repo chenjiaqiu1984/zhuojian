@@ -33,6 +33,7 @@ import {ref, onMounted, watch } from 'vue';
 import { homeworkApi } from '../../api/index';
 import { track } from '../../utils/track';
 import CrisisAlert from '../../components/CrisisAlert.vue';
+import { requireActive } from '../../utils/requireActive';
 
 
 const EMOJIS = ['😔','😕','😐','🙂','😊'];
@@ -45,7 +46,10 @@ const crisisRef = ref(null);
 async function load() {
   try { list.value = await homeworkApi.moodList(); } catch {}
 }
-onMounted(load);
+onMounted(() => {
+  if (!requireActive()) return;
+  load();
+});
 
 async function save() {
   try {

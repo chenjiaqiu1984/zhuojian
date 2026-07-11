@@ -54,6 +54,7 @@ import {ref, computed, onMounted, watch } from 'vue';
 import { homeworkApi } from '../../api/index';
 import { track } from '../../utils/track';
 import CrisisAlert from '../../components/CrisisAlert.vue';
+import { requireActive } from '../../utils/requireActive';
 
 
 const fields = [
@@ -80,7 +81,10 @@ const parsedNotes = computed(() => {
 async function load() {
   try { list.value = await homeworkApi.cbtList(); } catch {}
 }
-onMounted(load);
+onMounted(() => {
+  if (!requireActive()) return;
+  load();
+});
 
 async function save() {
   if (!form.value.situation || !form.value.autoThought || !form.value.emotion) {

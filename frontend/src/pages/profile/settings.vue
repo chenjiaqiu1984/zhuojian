@@ -161,8 +161,11 @@ async function submitPhone() {
 
 async function changePassword() {
   const { old: o, new1, new2 } = pwdForm.value;
-  if (new1 !== new2) return uni.showToast({ title: '两次密码不一致', icon: 'none' });
+  if (!new1) return uni.showToast({ title: '请输入新密码', icon: 'none' });
   if (new1.length < 6) return uni.showToast({ title: '新密码至少6位', icon: 'none' });
+  if (!/[A-Za-z]/.test(new1)) return uni.showToast({ title: '密码必须包含字母', icon: 'none' });
+  if (!/[0-9]/.test(new1)) return uni.showToast({ title: '密码必须包含数字', icon: 'none' });
+  if (new1 !== new2) return uni.showToast({ title: '两次密码不一致', icon: 'none' });
   try {
     await authApi.changePassword(await hashPassword(o), await hashPassword(new1));
     pwdForm.value = { old: '', new1: '', new2: '' };

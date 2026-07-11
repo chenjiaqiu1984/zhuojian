@@ -4,6 +4,23 @@
       <h2>咨询师管理</h2>
       <el-button type="primary" @click="openDialog()">新增咨询师</el-button>
     </div>
+
+    <!-- 搜索栏 -->
+    <div style="margin-bottom:16px">
+      <el-input
+        v-model="searchQ"
+        placeholder="搜索咨询师姓名"
+        clearable
+        style="width:300px"
+        @keyup.enter="handleSearch"
+        @clear="handleSearch"
+      >
+        <template #append>
+          <el-button @click="handleSearch">搜索</el-button>
+        </template>
+      </el-input>
+    </div>
+
     <el-table :data="list" border v-loading="loading">
       <el-table-column prop="name" label="姓名" width="120" />
       <el-table-column prop="title" label="职称" width="150" />
@@ -22,6 +39,17 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 分页 -->
+    <div style="margin-top:16px;display:flex;justify-content:flex-end">
+      <el-pagination
+        v-model:current-page="page"
+        :page-size="pageSize"
+        :total="total"
+        layout="total, prev, pager, next"
+        @current-change="load"
+      />
+    </div>
 
     <el-dialog v-model="dlg" :title="form.id ? '编辑咨询师' : '新增咨询师'" width="600px">
       <el-form :model="form" label-width="80px">
@@ -54,12 +82,33 @@ import api from '../api/index';
 
 const router = useRouter();
 const list = ref([]);
+const total = ref(0);
+const page = ref(1);
+const pageSize = 20;
+const searchQ = ref('');
 const loading = ref(true);
 const dlg = ref(false);
 const saving = ref(false);
 const form = ref({});
 
-async function load() { try { list.value = await api.get('/consultants'); } finally { loading.value = false; } }
+async function load() {
+  loading.value = true;
+  try {
+    const { total: t, items } = await api.get('/consultants', {
+      params: { q: searchQ.value || undefined, page: page.value, pageSize }
+    });
+    total.value = t;
+    list.value = items;
+  } finally {
+    loading.value = false;
+  }
+}
+
+function handleSearch() {
+  page.value = 1;
+  load();
+}
+
 onMounted(load);
 
 function openDialog(row = {}) {
@@ -77,13 +126,23 @@ async function save() {
     const payload = { ...form.value, price: Math.round((form.value.price || 0) * 100) }; // 元→分
     if (payload.id) await api.put(`/consultants/${payload.id}`, payload);
     else await api.post('/consultants', payload);
-    ElMessage.success('保存成功'); dlg.value = false; await load();
-  } catch { ElMessage.error('保存失败'); } finally { saving.value = false; }
+    ElMessage.success('保存成功');
+    dlg.value = false;
+    await load();
+  } catch {
+    ElMessage.error('保存失败');
+  } finally {
+    saving.value = false;
+  }
 }
 
 async function del(row) {
   await ElMessageBox.confirm(`确认删除 ${row.name}？`);
-  try { await api.delete(`/consultants/${row.id}`); ElMessage.success('已删除'); await load(); } catch {}
+  try {
+    await api.delete(`/consultants/${row.id}`);
+    ElMessage.success('已删除');
+    await load();
+  } catch {}
 }
 
 function manageSlots(row) { router.push(`/consultants/${row.id}/slots`); }

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- 订单号查询面板 -->
+    <!-- 查询支付状态面板 -->
     <el-card style="margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <span style="font-weight:600;white-space:nowrap">查询支付状态</span>
@@ -35,16 +35,52 @@
       </div>
     </el-card>
 
+    <!-- 筛选栏 -->
+    <el-card style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <el-input
+          v-model="filters.q"
+          placeholder="订单号 / 用户名 / 手机"
+          clearable
+          style="width:240px"
+          @keyup.enter="onSearch"
+          @clear="onSearch"
+        />
+        <el-select v-model="filters.status" placeholder="全部状态" clearable style="width:140px" @change="onSearch">
+          <el-option label="待支付" value="pending" />
+          <el-option label="已支付" value="paid" />
+          <el-option label="已取消" value="cancelled" />
+          <el-option label="已退款" value="refunded" />
+        </el-select>
+        <el-date-picker
+          v-model="filters.dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="YYYY-MM-DD"
+          style="width:260px"
+          @change="onSearch"
+          @clear="onSearch"
+        />
+        <el-button type="primary" @click="onSearch">搜索</el-button>
+        <el-button @click="resetFilters">重置</el-button>
+      </div>
+    </el-card>
+
     <!-- 订单列表 -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <h2 style="margin:0">全部订单</h2>
-      <el-input v-model="search" placeholder="搜索订单号 / 用户名 / 咨询师" clearable style="width:300px" />
+      <span style="color:#909399;font-size:13px">共 {{ total }} 条</span>
     </div>
 
-    <el-table :data="filtered" border v-loading="loading">
+    <el-table :data="list" border v-loading="loading" row-key="_id">
       <el-table-column prop="orderNo" label="订单号" min-width="180" show-overflow-tooltip />
       <el-table-column label="用户" width="120">
         <template #default="{row}">{{ row.user?.name || row.user?.username || '-' }}</template>
+      </el-table-column>
+      <el-table-column label="手机" width="130">
+        <template #default="{row}">{{ row.user?.phone || '-' }}</template>
       </el-table-column>
       <el-table-column label="咨询师" width="120">
         <template #default="{row}">{{ row.booking?.consultant?.name || '-' }}</template>
@@ -74,6 +110,20 @@
       </el-table-column>
     </el-table>
 
+    <!-- 分页 -->
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <el-pagination
+        v-model:current-page="page"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        background
+        @current-change="load"
+        @size-change="onSizeChange"
+      />
+    </div>
+
     <!-- 退款弹窗 -->
     <el-dialog v-model="dlg" title="操作退款" width="420px">
       <el-descriptions :column="1" border>
@@ -101,18 +151,32 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '../api/index';
 
-const list        = ref([]);
-const loading     = ref(true);
-const search      = ref('');
+// 列表状态
+const list     = ref([]);
+const loading  = ref(false);
+const total    = ref(0);
+const page     = ref(1);
+const pageSize = ref(20);
+
+// 筛选条件
+const filters = reactive({
+  q:         '',
+  status:    '',
+  dateRange: null,
+});
+
+// 退款弹窗
 const dlg         = ref(false);
 const submitting  = ref(false);
 const cur         = ref(null);
 const refundRatio = ref(1);
 const reason      = ref('');
+
+// 查询支付状态
 const queryNo     = ref('');
 const querying    = ref(false);
 const queryResult = ref(null);
@@ -121,30 +185,61 @@ const label   = { pending: '待支付', paid: '已支付', refunded: '已退款'
 const tagType = { pending: 'info', paid: 'success', refunded: 'warning', cancelled: 'danger' };
 
 async function load() {
-  try { list.value = await api.get('/payment/orders'); }
-  finally { loading.value = false; }
+  loading.value = true;
+  try {
+    const params = { page: page.value, pageSize: pageSize.value };
+    if (filters.q)            params.q         = filters.q.trim();
+    if (filters.status)       params.status     = filters.status;
+    if (filters.dateRange?.[0]) params.startDate = filters.dateRange[0];
+    if (filters.dateRange?.[1]) params.endDate   = filters.dateRange[1];
+
+    const res = await api.get('/payment/admin/orders', { params });
+    // 兼容 { list, total } / { orders, total } / 直接数组 三种响应格式
+    if (Array.isArray(res)) {
+      list.value  = res;
+      total.value = res.length;
+    } else {
+      list.value  = res.list ?? res.orders ?? [];
+      total.value = res.total ?? list.value.length;
+    }
+  } catch (e) {
+    ElMessage.error(e?.error || '加载订单失败');
+  } finally {
+    loading.value = false;
+  }
 }
+
 onMounted(load);
 
-const filtered = computed(() => {
-  const q = search.value.trim().toLowerCase();
-  if (!q) return list.value;
-  return list.value.filter(o =>
-    o.orderNo?.toLowerCase().includes(q) ||
-    (o.user?.name || o.user?.username || '').toLowerCase().includes(q) ||
-    (o.booking?.consultant?.name || '').toLowerCase().includes(q)
-  );
-});
+function onSearch() {
+  page.value = 1;
+  load();
+}
+
+function onSizeChange() {
+  page.value = 1;
+  load();
+}
+
+function resetFilters() {
+  filters.q         = '';
+  filters.status    = '';
+  filters.dateRange = null;
+  onSearch();
+}
 
 function fmt(t) {
   if (!t) return '-';
-  return new Date(t).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return new Date(t).toLocaleString('zh-CN', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
 }
 
 async function doQuery() {
   const no = queryNo.value.trim();
   if (!no) return ElMessage.warning('请输入订单号');
-  querying.value = true;
+  querying.value    = true;
   queryResult.value = null;
   try {
     queryResult.value = await api.get(`/payment/query/${no}`);
@@ -162,18 +257,21 @@ function queryFromRow(row) {
 }
 
 function openRefund(row) {
-  cur.value = row;
+  cur.value         = row;
   refundRatio.value = 1;
-  reason.value = '';
-  dlg.value = true;
+  reason.value      = '';
+  dlg.value         = true;
 }
 
 async function doRefund() {
   submitting.value = true;
   try {
-    await api.post(`/payment/refund/${cur.value.orderNo}`, { refundRatio: refundRatio.value, reason: reason.value || '管理员退款' });
+    await api.post(`/payment/refund/${cur.value.orderNo}`, {
+      refundRatio: refundRatio.value,
+      reason:      reason.value || '管理员退款',
+    });
     ElMessage.success('退款成功');
-    dlg.value = false;
+    dlg.value         = false;
     queryResult.value = null;
     await load();
   } catch (e) {

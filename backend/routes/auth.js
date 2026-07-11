@@ -36,7 +36,7 @@ function makeToken(u, rememberMe = false) {
 
 function safeUser(u) {
   const role = ROLE_MAP[u.role] || u.role;
-  return { id: u.id, username: u.username, phone: u.phone, email: u.email, role, name: u.name, avatar: u.avatar, termsAcceptedAt: u.termsAcceptedAt, hasPassword: !!u.password };
+  return { id: u.id, username: u.username, phone: u.phone, email: u.email, role, status: u.status || 'active', name: u.name, avatar: u.avatar, termsAcceptedAt: u.termsAcceptedAt, hasPassword: !!u.password };
 }
 
 router.get('/captcha', (req, res) => {
@@ -52,6 +52,7 @@ router.post('/login', async (req, res) => {
     const user = await prisma.user.findUnique({ where });
     if (!user || !user.password || !bcrypt.compareSync(password, user.password))
       return res.status(401).json({ error: '用户名或密码错误' });
+    if (user.status === 'suspended') return res.status(403).json({ error: '账号已被封禁，请联系客服' });
     res.json({ token: makeToken(user, !!rememberMe), user: safeUser(user) });
   } catch { res.status(500).json({ error: '服务器错误' }); }
 });
@@ -79,34 +80,61 @@ router.post('/send-sms', smsRateLimit, captchaCheck, async (req, res) => {
 });
 
 router.post('/login-phone', async (req, res) => {
-  const { phone, code, termsAccepted, rememberMe } = req.body;
+  const { phone, code, rememberMe } = req.body;
   if (!await verifyCode(phone, code, 'sms')) return res.status(400).json({ error: '验证码错误或已过期' });
   let user = await prisma.user.findUnique({ where: { phone } });
   if (!user) {
-    user = await prisma.user.create({ data: { phone, ...(termsAccepted ? { termsAcceptedAt: new Date() } : {}) } });
-    grantWelcomeCoupon(user.id); // 手机号新用户注册送券
-  } else if (termsAccepted && !user.termsAcceptedAt) {
-    user = await prisma.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date() } });
+    user = await prisma.user.create({ data: { phone, status: 'pending' } });
+    grantWelcomeCoupon(user.id);
   }
+  if (user.status === 'suspended') return res.status(403).json({ error: '账号已被封禁，请联系客服' });
   res.json({ token: makeToken(user, !!rememberMe), user: safeUser(user) });
 });
 
-// 微信手机号快速验证登录（小程序 getPhoneNumber 组件）
+// 微信手机号快速验证 + wx.login 一键登录
+// phoneCode: getPhoneNumber 组件返回的 code（换手机号）
+// loginCode: wx.login() 返回的 code（换 openid，用于绑定微信身份）
 router.post('/login-phone-wechat', async (req, res) => {
-  const { code, termsAccepted } = req.body;
-  if (!code) return res.status(400).json({ error: '缺少 code 参数' });
+  const { code: phoneCode, loginCode } = req.body;
+  if (!phoneCode) return res.status(400).json({ error: '缺少 code 参数' });
   try {
-    const phone = await getPhoneByCode(code);
+    const phone = await getPhoneByCode(phoneCode);
+
+    // 如果同时传了 loginCode，用它换 openid（绑定微信身份）
+    let openid = null;
+    if (loginCode) {
+      const appid = process.env.WX_APPID, secret = process.env.WX_SECRET;
+      if (appid && secret) {
+        const r = await fetch(`https://api.weixin.qq.com/sns/jscode2session?appid=${appid}&secret=${secret}&js_code=${loginCode}&grant_type=authorization_code`);
+        const data = await r.json();
+        if (!data.errcode) openid = data.openid;
+      }
+    }
+
+    // 优先按手机号找用户，其次按 openid
     let user = await prisma.user.findUnique({ where: { phone } });
+    if (!user && openid) user = await prisma.user.findUnique({ where: { wechatOpenid: openid } });
+
     if (!user) {
+      // 新用户：同时绑定手机号 + openid（如果有）
       user = await prisma.user.create({
-        data: { phone, ...(termsAccepted ? { termsAcceptedAt: new Date() } : {}) }
+        data: { phone, status: 'pending', ...(openid ? { wechatOpenid: openid } : {}) }
       });
       grantWelcomeCoupon(user.id);
-    } else if (termsAccepted && !user.termsAcceptedAt) {
-      user = await prisma.user.update({ where: { id: user.id }, data: { termsAcceptedAt: new Date() } });
+    } else {
+      // 已有用户：补绑空缺的字段
+      const updates = {};
+      if (!user.phone && phone)   updates.phone = phone;
+      if (!user.wechatOpenid && openid) updates.wechatOpenid = openid;
+      if (Object.keys(updates).length) {
+        user = await prisma.user.update({ where: { id: user.id }, data: updates });
+      }
     }
-    res.json({ token: makeToken(user), user: safeUser(user) });
+
+    if (user.status === 'suspended') return res.status(403).json({ error: '账号已被封禁，请联系客服' });
+
+    // 一键登录默认 30 天免登录
+    res.json({ token: makeToken(user, true), user: safeUser(user) });
   } catch (e) {
     console.error('[login-phone-wechat]', e.message);
     res.status(400).json({ error: e.message || '获取手机号失败，请重试' });
@@ -126,9 +154,10 @@ router.post('/login-wechat', async (req, res) => {
     }
     let user = await prisma.user.findUnique({ where: { wechatOpenid: data.openid } });
     if (!user) {
-      user = await prisma.user.create({ data: { wechatOpenid: data.openid } });
-      grantWelcomeCoupon(user.id); // 微信新用户注册送券
+      user = await prisma.user.create({ data: { wechatOpenid: data.openid, status: 'pending' } });
+      grantWelcomeCoupon(user.id);
     }
+    if (user.status === 'suspended') return res.status(403).json({ error: '账号已被封禁，请联系客服' });
     res.json({ token: makeToken(user), user: safeUser(user) });
   } catch { res.status(500).json({ error: '微信登录失败' }); }
 });
@@ -141,9 +170,10 @@ router.post('/login-qq', async (req, res) => {
     const { openid } = await r.json();
     let user = await prisma.user.findUnique({ where: { qqOpenid: openid } });
     if (!user) {
-      user = await prisma.user.create({ data: { qqOpenid: openid } });
-      grantWelcomeCoupon(user.id); // QQ 新用户注册送券
+      user = await prisma.user.create({ data: { qqOpenid: openid, status: 'pending' } });
+      grantWelcomeCoupon(user.id);
     }
+    if (user.status === 'suspended') return res.status(403).json({ error: '账号已被封禁，请联系客服' });
     res.json({ token: makeToken(user), user: safeUser(user) });
   } catch { res.status(500).json({ error: 'QQ登录失败' }); }
 });
@@ -156,6 +186,37 @@ router.put('/profile', require('../middleware/auth').authMiddleware, async (req,
   if (termsAcceptedAt !== undefined) data.termsAcceptedAt = new Date(termsAcceptedAt);
   const user = await prisma.user.update({ where: { id: req.user.id }, data });
   res.json({ user: safeUser(user) });
+});
+
+// 完善账号信息：接受协议 + 设置昵称 + 设置密码，将 status 改为 active
+// 适用于通过短信/微信/QQ 登录但尚未完善信息的 pending 用户
+router.put('/complete-setup', require('../middleware/auth').authMiddleware, async (req, res) => {
+  try {
+    const { name, username, password, termsAccepted } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: '请输入昵称' });
+    if (!password || password.length < 6) return res.status(400).json({ error: '密码至少6位' });
+    if (!termsAccepted) return res.status(400).json({ error: '请先同意用户协议和隐私政策' });
+
+    const data = {
+      name: name.trim(),
+      password: bcrypt.hashSync(password, 10),
+      termsAcceptedAt: new Date(),
+      status: 'active',
+    };
+    if (username && username.trim()) {
+      // 检查用户名是否已被占用（排除自己）
+      const existing = await prisma.user.findUnique({ where: { username: username.trim() } });
+      if (existing && existing.id !== req.user.id) return res.status(409).json({ error: '用户名已被占用' });
+      data.username = username.trim();
+    }
+
+    const user = await prisma.user.update({ where: { id: req.user.id }, data });
+    // 重新生成 token（payload 包含 name）
+    res.json({ token: makeToken(user), user: safeUser(user) });
+  } catch (e) {
+    console.error('[complete-setup]', e);
+    res.status(500).json({ error: '保存失败，请重试' });
+  }
 });
 
 router.post('/send-bind-sms', smsRateLimit, captchaCheck, require('../middleware/auth').authMiddleware, async (req, res) => {

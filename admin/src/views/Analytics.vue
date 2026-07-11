@@ -1,5 +1,6 @@
 <template>
   <div>
+    <!-- 统计卡片 -->
     <el-row :gutter="16" style="margin-bottom:24px">
       <el-col :span="6">
         <el-card><div style="text-align:center"><div style="font-size:32px;font-weight:bold;color:#409EFF">{{stats.total}}</div><div style="color:#999;margin-top:4px">总事件数</div></div></el-card>
@@ -15,6 +16,7 @@
       </el-col>
     </el-row>
 
+    <!-- 页面访问 & 事件分布（数据量小，不分页） -->
     <el-row :gutter="16" style="margin-bottom:24px">
       <el-col :span="12">
         <el-card header="页面访问量">
@@ -34,16 +36,27 @@
       </el-col>
     </el-row>
 
+    <!-- OH卡排名（分页 pageSize=10） -->
     <el-card header="OH卡功能使用量" style="margin-bottom:24px">
-      <el-table :data="ohcardRanks" size="small">
+      <el-table :data="pagedOhcardRanks" size="small">
         <el-table-column prop="cat" label="类型" width="120">
           <template #default="{ row }">{{ CAT_LABEL[row.cat] || row.cat }}</template>
         </el-table-column>
         <el-table-column prop="name" label="名称" />
         <el-table-column prop="count" label="使用次数" width="100" sortable />
       </el-table>
+      <div style="margin-top:12px;display:flex;justify-content:flex-end">
+        <el-pagination
+          v-model:current-page="ohcardPage"
+          :page-size="10"
+          :total="ohcardRanks.length"
+          layout="total, prev, pager, next"
+          small
+        />
+      </div>
     </el-card>
 
+    <!-- 咨询工具使用量 -->
     <el-card header="咨询工具使用量" style="margin-bottom:24px">
       <el-table :data="stats.homeworkCounts" size="small">
         <el-table-column prop="page" label="功能">
@@ -53,34 +66,99 @@
       </el-table>
     </el-card>
 
+    <!-- 最近事件（事件类型筛选 + 用户ID搜索 + 分页 pageSize=20） -->
     <el-card header="最近事件">
-      <el-table :data="stats.recent" size="small">
+      <div style="margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <el-select
+          v-model="eventFilter"
+          placeholder="筛选事件类型"
+          clearable
+          style="width:200px"
+        >
+          <el-option v-for="e in eventTypeOptions" :key="e" :label="e" :value="e" />
+        </el-select>
+        <el-input
+          v-model="userIdSearch"
+          placeholder="搜索用户ID"
+          clearable
+          style="width:180px"
+        />
+        <span style="color:#999;font-size:13px">共 {{ filteredRecentEvents.length }} 条</span>
+      </div>
+      <el-table :data="pagedRecentEvents" size="small">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="userId" label="用户ID" width="80" />
-        <el-table-column prop="event" label="事件" width="120" />
+        <el-table-column prop="event" label="事件" width="140" />
         <el-table-column prop="page" label="页面" />
         <el-table-column prop="data" label="数据" show-overflow-tooltip />
         <el-table-column prop="createdAt" label="时间" width="160">
           <template #default="{ row }">{{ new Date(row.createdAt).toLocaleString() }}</template>
         </el-table-column>
       </el-table>
+      <div style="margin-top:12px;display:flex;justify-content:flex-end">
+        <el-pagination
+          v-model:current-page="recentPage"
+          :page-size="20"
+          :total="filteredRecentEvents.length"
+          layout="total, prev, pager, next"
+          small
+        />
+      </div>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import api from '../api/index';
 
 const stats = ref({ total: 0, byPage: [], byEvent: [], recent: [], homeworkCounts: [] });
 const ohcardRanks = ref([]);
 
-const CAT_LABEL = { single:'单卡组合', combo:'跨卡牌组合', scene:'场景选卡', dilemma:'人生困境' };
-
+const CAT_LABEL = { single: '单卡组合', combo: '跨卡牌组合', scene: '场景选卡', dilemma: '人生困境' };
 const HOMEWORK_LABELS = { mood: '情绪日记', cbt: '认知记录表', dream: '梦的工作', iceberg: '冰山模型', rule: '规条转换' };
 
+// OH卡分页
+const ohcardPage = ref(1);
+const pagedOhcardRanks = computed(() => {
+  const start = (ohcardPage.value - 1) * 10;
+  return ohcardRanks.value.slice(start, start + 10);
+});
+
+// 最近事件筛选 & 分页
+const eventFilter = ref('');
+const userIdSearch = ref('');
+const recentPage = ref(1);
+
+// 从已加载数据中提取可选事件类型
+const eventTypeOptions = computed(() =>
+  [...new Set((stats.value.recent || []).map(e => e.event).filter(Boolean))].sort()
+);
+
+// 客户端筛选（后端 /analytics/events 分页接口不存在，使用已有数据做客户端过滤）
+const filteredRecentEvents = computed(() => {
+  let list = stats.value.recent || [];
+  if (eventFilter.value) {
+    list = list.filter(e => e.event === eventFilter.value);
+  }
+  const q = userIdSearch.value.trim();
+  if (q) {
+    list = list.filter(e => String(e.userId ?? '').includes(q));
+  }
+  return list;
+});
+
+// 客户端分页
+const pagedRecentEvents = computed(() => {
+  const start = (recentPage.value - 1) * 20;
+  return filteredRecentEvents.value.slice(start, start + 20);
+});
+
+// 筛选条件变化时重置到第一页
+watch([eventFilter, userIdSearch], () => { recentPage.value = 1; });
+
 const uniqueUsers = computed(() => {
-  const ids = stats.value.recent?.map(e => e.userId).filter(Boolean);
+  const ids = (stats.value.recent || []).map(e => e.userId).filter(Boolean);
   return new Set(ids).size;
 });
 

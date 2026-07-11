@@ -1,11 +1,15 @@
 <template>
   <div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h2>📄 协议版本管理</h2>
+    <!-- 两个协议类型 Tab -->
+    <el-tabs v-model="activeType" @tab-change="load(1)">
+      <el-tab-pane label="📄 用户服务协议" name="terms" />
+      <el-tab-pane label="🔒 隐私政策" name="privacy" />
+    </el-tabs>
+
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
       <el-button type="primary" @click="openNew">新建草稿</el-button>
     </div>
 
-    <!-- 版本列表 -->
     <el-table :data="list" border v-loading="loading">
       <el-table-column prop="version" label="版本号" width="100" />
       <el-table-column prop="title" label="标题" />
@@ -35,16 +39,34 @@
       </el-table-column>
     </el-table>
 
+    <el-pagination
+      v-model:current-page="page"
+      :page-size="pageSize"
+      :total="total"
+      layout="prev,pager,next,total"
+      style="margin-top:16px;justify-content:flex-end;display:flex"
+      @current-change="load"
+    />
+
     <!-- 编辑弹窗 -->
-    <el-dialog v-model="dlg" :title="editForm.id ? (editForm.isDraft ? '编辑草稿' : '查看版本') : '新建草稿'" width="780px">
+    <el-dialog
+      v-model="dlg"
+      :title="dlgTitle"
+      width="780px"
+    >
       <el-form :model="editForm" label-width="80px">
         <el-form-item label="版本号">
-          <el-input v-model="editForm.version" placeholder="如 1.0 / 1.1 / 2.0" :disabled="!editForm.isDraft && !!editForm.id" style="width:200px" />
+          <el-input
+            v-model="editForm.version"
+            placeholder="如 1.0 / 1.1 / 2.0"
+            :disabled="!editForm.isDraft && !!editForm.id"
+            style="width:200px"
+          />
         </el-form-item>
         <el-form-item label="标题">
           <el-input v-model="editForm.title" :disabled="!editForm.isDraft && !!editForm.id" />
         </el-form-item>
-        <el-form-item label="协议内容">
+        <el-form-item label="正文内容">
           <el-input
             v-model="editForm.content"
             type="textarea"
@@ -56,7 +78,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dlg=false">{{ editForm.isDraft || !editForm.id ? '取消' : '关闭' }}</el-button>
+        <el-button @click="dlg=false">{{ (editForm.isDraft || !editForm.id) ? '取消' : '关闭' }}</el-button>
         <el-button v-if="editForm.isDraft || !editForm.id" type="primary" :loading="saving" @click="save">
           {{ editForm.id ? '保存草稿' : '创建草稿' }}
         </el-button>
@@ -69,21 +91,38 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import api from '../api/index';
+
+const activeType = ref('terms');
+const TYPE_LABELS = { terms: '用户服务协议', privacy: '隐私政策' };
 
 const list = ref([]);
 const loading = ref(false);
 const dlg = ref(false);
 const saving = ref(false);
 const publishing = ref(false);
-const editForm = ref({ id: null, version: '', title: '用户服务协议', content: '', isDraft: 1 });
+const page = ref(1);
+const pageSize = 20;
+const total = ref(0);
 
-async function load() {
+const editForm = ref({ id: null, type: 'terms', version: '', title: '', content: '', isDraft: 1 });
+
+const dlgTitle = computed(() => {
+  const typeLabel = TYPE_LABELS[editForm.value.type] || editForm.value.type;
+  if (!editForm.value.id) return `新建${typeLabel}草稿`;
+  return editForm.value.isDraft ? `编辑草稿 · ${typeLabel}` : `查看版本 · ${typeLabel}`;
+});
+
+async function load(p = page.value) {
   loading.value = true;
-  try { list.value = await api.get('/terms/all'); }
-  catch { ElMessage.error('加载失败'); }
+  page.value = p;
+  try {
+    const rows = await api.get('/terms/all', { params: { type: activeType.value } });
+    list.value = rows;
+    total.value = rows.length;
+  } catch { ElMessage.error('加载失败'); }
   finally { loading.value = false; }
 }
 onMounted(load);
@@ -95,7 +134,14 @@ function fmt(d) {
 }
 
 function openNew() {
-  editForm.value = { id: null, version: '', title: '用户服务协议', content: '', isDraft: 1 };
+  editForm.value = {
+    id: null,
+    type: activeType.value,
+    version: '',
+    title: TYPE_LABELS[activeType.value] || '',
+    content: '',
+    isDraft: 1
+  };
   dlg.value = true;
 }
 
@@ -116,7 +162,7 @@ async function save() {
     if (editForm.value.id) {
       await api.put(`/terms/${editForm.value.id}`, editForm.value);
     } else {
-      const { id } = await api.post('/terms', editForm.value);
+      const { id } = await api.post('/terms', { ...editForm.value, type: activeType.value });
       editForm.value.id = id;
     }
     ElMessage.success('草稿已保存');

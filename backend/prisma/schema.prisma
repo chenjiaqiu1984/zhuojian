@@ -17,6 +17,7 @@ model User {
   wechatOpenid String?   @unique @map("wechat_openid")
   qqOpenid     String?   @unique @map("qq_openid")
   role         String    @default("user")
+  status       String    @default("active")  // "active" | "pending"（通过短信/微信注册但未完善信息的用户）
   name         String?
   avatar       String?
   termsAcceptedAt DateTime? @map("terms_accepted_at")
@@ -41,6 +42,7 @@ model VerifyCode {
 
 model TermsVersion {
   id          Int       @id @default(autoincrement())
+  type        String    @default("terms")  // "terms"=用户服务协议 | "privacy"=隐私政策
   version     String    // e.g. "1.0", "1.1"
   title       String    @default("用户服务协议")
   content     String    // 协议正文（Markdown 或纯文本）

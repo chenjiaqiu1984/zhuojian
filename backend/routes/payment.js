@@ -177,6 +177,46 @@ router.get('/orders', authMiddleware, async (req, res) => {
   res.json(orders);
 });
 
+// ── 管理员订单列表（分页 + 搜索）────────────────────────────────
+// GET /api/payment/admin/orders
+router.get('/admin/orders', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin')
+    return res.status(403).json({ error: '权限不足' });
+
+  const { q, status, page = 1, pageSize = 20 } = req.query;
+  const take = Math.min(Number(pageSize) || 20, 100);
+  const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+
+  const where = {};
+
+  if (status) {
+    where.status = status;
+  }
+
+  if (q) {
+    where.OR = [
+      { orderNo: { contains: q } },
+      { user: { name:     { contains: q } } },
+      { user: { username: { contains: q } } },
+      { user: { phone:    { contains: q } } },
+    ];
+  }
+
+  const select = {
+    id: true, orderNo: true, amount: true, status: true,
+    payType: true, transactionId: true, paidAt: true, createdAt: true,
+    user:    { select: { id: true, name: true, username: true, phone: true } },
+    booking: { select: { id: true, slot: { select: { startTime: true } }, consultant: { select: { name: true } } } }
+  };
+
+  const [total, items] = await Promise.all([
+    prisma.order.count({ where }),
+    prisma.order.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take, select }),
+  ]);
+
+  res.json({ total, items });
+});
+
 // ── 删除订单记录（用户隐藏已付款订单）────────────────────────────
 // DELETE /api/payment/order/:orderNo
 router.delete('/order/:orderNo', authMiddleware, async (req, res) => {

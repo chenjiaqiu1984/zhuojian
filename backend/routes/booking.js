@@ -6,6 +6,46 @@ const { alipayRefund } = require('../services/alipay');
 
 const router = express.Router();
 
+router.get('/admin', authMiddleware, requireRole(['admin', 'super_admin']), async (req, res) => {
+  const { q, status, page = 1, pageSize = 20 } = req.query;
+  const skip = (Number(page) - 1) * Number(pageSize);
+  const take = Number(pageSize);
+
+  const where = {};
+  if (status) where.status = status;
+
+  if (q) {
+    where.OR = [
+      { consultant: { name: { contains: q } } },
+      { user: { name: { contains: q } } },
+      { user: { phone: { contains: q } } },
+    ];
+  }
+
+  const [total, items] = await Promise.all([
+    prisma.booking.count({ where }),
+    prisma.booking.findMany({
+      where,
+      skip,
+      take,
+      include: { user: true, consultant: true, slot: true },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ]);
+
+  res.json({
+    total,
+    items: items.map(b => ({
+      ...b,
+      user_name: b.user?.name,
+      user_phone: b.user?.phone,
+      consultant_name: b.consultant?.name,
+      start_time: b.slot?.startTime,
+      end_time: b.slot?.endTime,
+    })),
+  });
+});
+
 router.get('/', authMiddleware, async (req, res) => {
   const { role, id } = req.user;
   let bookings;

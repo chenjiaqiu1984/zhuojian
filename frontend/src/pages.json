@@ -47,6 +47,7 @@
     { "path": "pages/admin/packages",   "style": { "navigationBarTitleText": "套餐管理" } },
     { "path": "pages/profile/coupons",  "style": { "navigationBarTitleText": "我的优惠券" } },
     { "path": "pages/admin/coupons",    "style": { "navigationBarTitleText": "优惠券管理" } },
+    { "path": "pages/admin/users",      "style": { "navigationBarTitleText": "用户管理" } },
     { "path": "pages/orders/index",     "style": { "navigationBarTitleText": "我的订单" } }
   ],
   "globalStyle": {

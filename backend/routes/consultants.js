@@ -5,7 +5,21 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const consultants = await prisma.consultant.findMany({ where: { isActive: 1 } });
+  const { q, page = 1, pageSize = 20 } = req.query;
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const pageSizeNum = Math.max(1, parseInt(pageSize) || 20);
+  const skip = (pageNum - 1) * pageSizeNum;
+
+  const where = { isActive: 1 };
+  if (q) {
+    where.name = { contains: q };
+  }
+
+  const [total, consultants] = await Promise.all([
+    prisma.consultant.count({ where }),
+    prisma.consultant.findMany({ where, skip, take: pageSizeNum })
+  ]);
+
   const min48h = new Date(Date.now() + 48 * 3600000).toISOString();
   const max7d  = new Date(Date.now() + (48 + 7 * 24) * 3600000).toISOString();
   const avail = await prisma.timeSlot.groupBy({
@@ -14,7 +28,7 @@ router.get('/', async (req, res) => {
     _count: true
   });
   const availSet = new Set(avail.filter(a => a._count > 0).map(a => a.consultantId));
-  res.json(consultants.map(c => ({ ...c, hasAvailableSlots: availSet.has(c.id) })));
+  res.json({ total, items: consultants.map(c => ({ ...c, hasAvailableSlots: availSet.has(c.id) })) });
 });
 
 router.get('/my', authMiddleware, async (req, res) => {
