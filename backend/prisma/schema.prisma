@@ -126,10 +126,11 @@ model News {
   videoUrl    String?  @map("video_url")
   type        String   @default("news")
   author      String?
-  isPaid      Int      @default(0) @map("is_paid")   // 0=免费 1=付费
-  price       Int      @default(0)                    // 单位：分
-  isPublished Int      @default(1) @map("is_published")
-  createdAt   DateTime @default(now()) @map("created_at")
+  isPaid      Int       @default(0) @map("is_paid")   // 0=免费 1=付费
+  price       Int       @default(0)                    // 单位：分
+  isPublished Int       @default(1) @map("is_published")
+  endDate     DateTime? @map("end_date")              // 报名截止日期，null=长期
+  createdAt   DateTime  @default(now()) @map("created_at")
 }
 
 model OhCardCategory {

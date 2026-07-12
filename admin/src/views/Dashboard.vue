@@ -36,10 +36,10 @@ onMounted(async () => {
       api.get('/booking'),
       api.get('/ohcard/cards')
     ]);
-    stats.value[0].value = cs.length;
-    stats.value[1].value = ns.length;
-    stats.value[2].value = bs.length;
-    stats.value[3].value = cards.length;
+    stats.value[0].value = cs.total;
+    stats.value[1].value = ns.total;
+    stats.value[2].value = bs.length ?? bs.total ?? 0;
+    stats.value[3].value = cards.length ?? cards.total ?? 0;
   } catch {}
 });
 </script>

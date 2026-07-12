@@ -1,68 +1,104 @@
 <template>
   <view class="page">
-    <view v-if="loading" class="center">加载中...</view>
-    <view v-else-if="scale && showInstruction" class="instruction-page">
-      <text class="inst-title">{{scale.name}}</text>
-      <view class="inst-box">
-        <text class="inst-text">{{scale.instruction}}</text>
+    <view v-if="loading" class="status-center"><text class="status-txt">加载中...</text></view>
+
+    <!-- Instruction Page -->
+    <view v-else-if="scale && showInstruction" class="inst-page">
+      <view class="inst-hero">
+        <view class="inst-hero-glow" />
+        <view class="inst-hero-content">
+          <text class="inst-eyebrow">开始前请阅读</text>
+          <text class="inst-title">{{ scale.name }}</text>
+          <view class="inst-pills">
+            <text class="inst-pill">{{ questions.length }} 题</text>
+            <text class="inst-pill-sep">·</text>
+            <text class="inst-pill">约 {{ scale.estimatedMinutes }} 分钟</text>
+          </view>
+        </view>
       </view>
-      <view class="inst-meta">
-        <text>{{questions.length}} 题</text>
-        <text>约 {{scale.estimatedMinutes}} 分钟</text>
+      <view class="inst-body">
+        <view class="inst-card">
+          <text class="inst-text">{{ scale.instruction }}</text>
+        </view>
+        <button class="btn-start" @click="startTest()">开始测评</button>
+        <view class="data-notice">
+          <text class="data-notice-icon">🔒</text>
+          <text class="data-notice-text">您的测评数据将被加密保存，可能被用于咨询前的背景分析与专业解读，以帮助咨询师更好地了解您的状况。我们承诺严格保密，不向任何第三方泄露您的个人信息。</text>
+        </view>
       </view>
-      <button class="btn-start" @click="startTest()">开始测评</button>
     </view>
+
+    <!-- Assessment in Progress -->
     <view v-else-if="scale">
-      <view class="progress-bar">
-        <view class="progress-fill" :style="{width: ((current+1)/questions.length*100)+'%'}"></view>
+      <view class="progress-wrap">
+        <view class="progress-bar">
+          <view class="progress-fill" :style="{ width: ((current + 1) / questions.length * 100) + '%' }"></view>
+        </view>
+        <view class="progress-row">
+          <text class="progress-label">第 {{ current + 1 }} 题</text>
+          <text class="progress-total">{{ current + 1 }} / {{ questions.length }}</text>
+        </view>
       </view>
-      <view class="progress-text">{{current+1}} / {{questions.length}}</view>
 
       <view v-if="current === 0 && scale.category !== 'fun'" class="guide-banner">
-        <text class="guide-text">请根据你最近两周的真实感受作答，不要过多思考，选择第一反应最符合的选项。所有答案都是对的，诚实的作答才能帮助你真正了解自己。</text>
+        <text class="guide-text">请根据最近两周的真实感受作答，选择第一反应最符合的选项。</text>
       </view>
 
-      <view class="question-card">
-        <text class="q-text">{{questions[current].content}}</text>
+      <view class="q-card">
+        <text class="q-text">{{ questions[current].content }}</text>
         <view class="options">
           <view
             v-for="opt in JSON.parse(questions[current].options)"
             :key="opt.value"
             :class="['option', answers[questions[current].id] === opt.value && 'selected', optionsLocked && 'locked']"
             @click="select(questions[current].id, opt.value)"
-          >{{opt.label}}</view>
+          >
+            <view :class="['opt-dot', answers[questions[current].id] === opt.value && 'opt-dot-on']"></view>
+            <text class="opt-label">{{ opt.label }}</text>
+          </view>
         </view>
       </view>
 
-      <view v-if="!isFlow" class="nav-btns">
+      <view v-if="!isFlow" class="nav-row">
         <button v-if="current > 0" class="btn-prev" @click="current--">上一题</button>
-        <button v-if="current < questions.length-1" class="btn-next" :disabled="answers[questions[current].id] === undefined" @click="current < questions.length-1 && current++">下一题</button>
-        <button v-else class="btn-submit" :disabled="!allAnswered || submitting" @click="trySubmit()">{{submitting ? '提交中...' : '提交测评'}}</button>
+        <view v-else class="btn-spacer" />
+        <button
+          v-if="current < questions.length - 1"
+          class="btn-next"
+          :disabled="answers[questions[current].id] === undefined"
+          @click="current < questions.length - 1 && current++"
+        >下一题</button>
+        <button
+          v-else
+          class="btn-submit"
+          :disabled="!allAnswered || submitting"
+          @click="trySubmit()"
+        >{{ submitting ? '提交中...' : '提交测评' }}</button>
       </view>
     </view>
 
-    <!-- login prompt for non-logged-in users -->
-    <view v-if="showLoginPrompt" class="login-mask">
-      <view class="login-modal">
-        <text class="lm-title">登录后查看完整解析</text>
-        <text class="lm-desc">完成测评后，登录用户可查看分数含义和专业解读</text>
-        <button class="lm-btn-login" @click="goLogin()">登录</button>
-        <button class="lm-btn-reg" @click="goRegister()">新用户注册</button>
-        <text class="lm-skip" @click="showLoginPrompt=false">先测评，稍后登录</text>
-      </view>
-    </view>
-
-    <!-- voucher/pay modal -->
-    <view v-if="showPayModal" class="modal-mask">
+    <!-- Login Prompt -->
+    <view v-if="showLoginPrompt" class="mask">
       <view class="modal">
-        <text class="modal-title">{{payInfo.reason === 'repeat' ? '再次测评' : '付费测评'}}</text>
-        <text class="modal-desc">{{payInfo.reason === 'repeat' ? '您已完成过本测评，再次测评需付费或使用兑换码' : '本测评为专业付费项目'}}</text>
-        <text class="modal-price">¥{{(payInfo.price/100).toFixed(2)}}</text>
+        <text class="modal-title">登录后查看完整解析</text>
+        <text class="modal-desc">登录用户可查看分数含义和专业解读</text>
+        <button class="btn-modal-primary" @click="goLogin()">登录</button>
+        <button class="btn-modal-secondary" @click="goRegister()">新用户注册</button>
+        <text class="modal-skip" @click="showLoginPrompt=false">先测评，稍后登录</text>
+      </view>
+    </view>
+
+    <!-- Pay Modal -->
+    <view v-if="showPayModal" class="mask">
+      <view class="modal">
+        <text class="modal-title">{{ payInfo.reason === 'repeat' ? '再次测评' : '付费测评' }}</text>
+        <text class="modal-desc">{{ payInfo.reason === 'repeat' ? '您已完成过本测评，再次测评需付费或使用兑换码' : '本测评为专业付费项目' }}</text>
+        <text class="modal-price">¥{{ (payInfo.price / 100).toFixed(2) }}</text>
         <input v-model="voucherCode" placeholder="有兑换码？请输入" class="voucher-input" />
         <view class="modal-btns">
-          <button class="btn-cancel" @click="showPayModal=false">取消</button>
-          <button v-if="voucherCode" class="btn-confirm" @click="submitWithVoucher()">使用兑换码</button>
-          <button v-else class="btn-pay" @click="handlePay()">去支付</button>
+          <button class="btn-modal-secondary sm" @click="showPayModal=false">取消</button>
+          <button v-if="voucherCode" class="btn-modal-primary sm" @click="submitWithVoucher()">使用兑换码</button>
+          <button v-else class="btn-wechat sm" @click="handlePay()">去支付</button>
         </view>
       </view>
     </view>
@@ -71,6 +107,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { assessmentApi } from '../../api/index.js';
 import { useUserStore } from '../../store/user.js';
 import { track } from '../../utils/track.js';
@@ -92,7 +129,6 @@ const showPayModal = ref(false);
 const showInstruction = ref(false);
 const payInfo = ref({});
 const voucherCode = ref('');
-
 const showLoginPrompt = ref(false);
 
 const isFlow = computed(() => {
@@ -126,6 +162,10 @@ function startTest() {
 
 function goLogin() { uni.navigateTo({ url: '/pages/login/index' }); }
 function goRegister() { uni.navigateTo({ url: '/pages/register/index' }); }
+
+onShow(() => {
+  if (store.isLoggedIn()) showLoginPrompt.value = false;
+});
 
 const allAnswered = computed(() => questions.value.every(q => answers.value[q.id] !== undefined));
 
@@ -196,47 +236,316 @@ function handlePay() {
 }
 </script>
 
-<style scoped>
-.page { background: #f5f7fa; min-height: 100vh; padding-bottom: 30px; }
-.guide-banner { margin: 12px; background: #e8f0fb; border-left: 4px solid #4A7BBA; border-radius: 0 8px 8px 0; padding: 14px 16px; }
-.guide-text { font-size: 13px; color: #3a5f8a; line-height: 1.7; display: block; }
-.center { text-align: center; padding: 60px; color: #999; }
-.instruction-page { padding: 32px 20px; min-height: 100vh; background: #f5f7fa; display: flex; flex-direction: column; }
-.inst-title { font-size: 20px; font-weight: 700; color: #1C2A27; display: block; margin-bottom: 20px; }
-.inst-box { background: #fff; border-radius: 12px; padding: 20px; flex: 1; margin-bottom: 20px; }
-.inst-text { font-size: 14px; color: #444; line-height: 1.9; display: block; white-space: pre-wrap; }
-.inst-meta { display: flex; gap: 16px; font-size: 13px; color: #9BBCB4; margin-bottom: 24px; }
-.btn-start { background: #4A8A7A; color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 16px; font-weight: 600; width: 100%; }
-.progress-bar { height: 4px; background: #e0e0e0; }
-.progress-fill { height: 4px; background: #4A7BBA; transition: width 0.3s; }
-.progress-text { text-align: right; padding: 8px 16px; font-size: 12px; color: #999; }
-.question-card { margin: 12px; background: #fff; border-radius: 12px; padding: 24px 16px; }
-.q-text { font-size: 16px; color: #333; line-height: 1.7; display: block; margin-bottom: 20px; }
-.options { display: flex; flex-direction: column; gap: 10px; }
-.option { padding: 12px 16px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; color: #333; }
-.option.selected { border-color: #4A7BBA; background: #e8f0fb; color: #4A7BBA; }
-.option.locked { opacity: 0.5; pointer-events: none; }
-.nav-btns { margin: 16px; display: flex; gap: 12px; }
-.btn-prev, .btn-next, .btn-submit { flex: 1; padding: 12px; border-radius: 8px; font-size: 15px; border: none; }
-.btn-prev { background: #f0f0f0; color: #666; }
-.btn-next, .btn-submit { background: #4A7BBA; color: #fff; }
-.btn-next:disabled, .btn-submit:disabled { opacity: 0.5; }
-.modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.login-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 200; }
-.login-modal { background: #fff; border-radius: 16px; padding: 28px 24px; width: 82%; text-align: center; }
-.lm-title { font-size: 18px; font-weight: 600; display: block; margin-bottom: 8px; }
-.lm-desc { font-size: 13px; color: #666; display: block; margin-bottom: 20px; line-height: 1.6; }
-.lm-btn-login { width: 100%; background: #4A7BBA; color: #fff; border-radius: 8px; padding: 12px; font-size: 15px; border: none; margin-bottom: 10px; }
-.lm-btn-reg { width: 100%; background: #f0f0f0; color: #333; border-radius: 8px; padding: 12px; font-size: 15px; border: none; margin-bottom: 14px; }
-.lm-skip { font-size: 13px; color: #999; cursor: pointer; display: block; }
-.modal { background: #fff; border-radius: 16px; padding: 24px; width: 80%; }
-.modal-title { font-size: 18px; font-weight: 600; display: block; margin-bottom: 8px; }
-.modal-desc { font-size: 14px; color: #666; display: block; margin-bottom: 12px; }
-.modal-price { font-size: 24px; color: #e65100; font-weight: 700; display: block; margin-bottom: 16px; }
-.voucher-input { border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; width: 100%; margin-bottom: 16px; font-size: 14px; }
-.modal-btns { display: flex; gap: 10px; }
-.btn-cancel, .btn-confirm, .btn-pay { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; border: none; }
-.btn-cancel { background: #f0f0f0; color: #666; }
-.btn-confirm { background: #4A7BBA; color: #fff; }
-.btn-pay { background: #07c160; color: #fff; }
+<style scoped lang="scss">
+$teal: #4A8A7A;
+$teal-dark: #3A6E80;
+$bg: #F5F7F6;
+$text-1: #1C2A27;
+$text-2: #617870;
+$muted: #9BBCB4;
+$border: #E8EFED;
+$card-r: 24rpx;
+$card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
+
+.page { min-height: 100vh; background: $bg; }
+
+/* Status */
+.status-center { text-align: center; padding: 120rpx 0; }
+.status-txt { font-size: 28rpx; color: $muted; }
+
+/* Instruction Page */
+.inst-page { min-height: 100vh; display: flex; flex-direction: column; }
+.inst-hero {
+  position: relative;
+  padding: 80rpx 48rpx 60rpx;
+  overflow: hidden;
+  background: linear-gradient(135deg, $teal 0%, $teal-dark 100%);
+}
+.inst-hero-glow {
+  position: absolute;
+  top: -120rpx;
+  right: -100rpx;
+  width: 440rpx;
+  height: 380rpx;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.14) 0%, transparent 66%);
+  pointer-events: none;
+}
+.inst-hero-content { position: relative; z-index: 1; }
+.inst-eyebrow {
+  display: block;
+  font-size: 20rpx;
+  letter-spacing: 0.34em;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 20rpx;
+}
+.inst-title {
+  display: block;
+  font-size: 52rpx;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.3;
+  margin-bottom: 28rpx;
+  font-family: "Noto Serif SC", serif;
+  letter-spacing: 0.04em;
+}
+.inst-pills { display: flex; align-items: center; gap: 16rpx; }
+.inst-pill {
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.78);
+  background: rgba(255,255,255,0.15);
+  padding: 8rpx 24rpx;
+  border-radius: 32rpx;
+}
+.inst-pill-sep { font-size: 22rpx; color: rgba(255,255,255,0.4); }
+.inst-body { flex: 1; padding: 40rpx 28rpx 48rpx; display: flex; flex-direction: column; }
+.inst-card {
+  background: #fff;
+  border-radius: $card-r;
+  border: 1rpx solid $border;
+  box-shadow: $card-shadow;
+  padding: 40rpx 36rpx;
+  flex: 1;
+  margin-bottom: 40rpx;
+}
+.inst-text {
+  display: block;
+  font-size: 28rpx;
+  color: $text-2;
+  line-height: 2;
+  white-space: pre-wrap;
+}
+.btn-start {
+  background: $teal;
+  color: #fff;
+  border: none;
+  border-radius: $card-r;
+  padding: 0;
+  height: 96rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  width: 100%;
+  letter-spacing: 0.06em;
+  &:active { transform: scale(0.98); opacity: 0.92; }
+}
+.data-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  margin-top: 28rpx;
+  padding: 24rpx 28rpx;
+  background: rgba(74,138,122,0.06);
+  border: 1rpx solid rgba(74,138,122,0.18);
+  border-radius: 16rpx;
+}
+.data-notice-icon {
+  font-size: 28rpx;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+.data-notice-text {
+  font-size: 22rpx;
+  color: $text-2;
+  line-height: 1.8;
+  flex: 1;
+}
+
+/* Progress */
+.progress-wrap { padding: 0 0 4rpx; }
+.progress-bar { height: 6rpx; background: $border; }
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, $teal, $teal-dark);
+  transition: width 0.35s ease;
+  border-radius: 0 4rpx 4rpx 0;
+}
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 28rpx;
+}
+.progress-label { font-size: 24rpx; color: $teal; font-weight: 600; }
+.progress-total { font-size: 22rpx; color: $muted; }
+
+/* Guide */
+.guide-banner {
+  margin: 0 28rpx 8rpx;
+  background: rgba(74,138,122,0.08);
+  border-left: 6rpx solid rgba(74,138,122,0.5);
+  border-radius: 0 16rpx 16rpx 0;
+  padding: 24rpx 28rpx;
+}
+.guide-text { font-size: 24rpx; color: $text-2; line-height: 1.8; display: block; }
+
+/* Question card */
+.q-card {
+  margin: 16rpx 28rpx;
+  background: #fff;
+  border-radius: $card-r;
+  border: 1rpx solid $border;
+  box-shadow: $card-shadow;
+  padding: 44rpx 36rpx 36rpx;
+}
+.q-text {
+  display: block;
+  font-size: 32rpx;
+  color: $text-1;
+  line-height: 1.75;
+  margin-bottom: 40rpx;
+  font-family: "Noto Serif SC", serif;
+  letter-spacing: 0.02em;
+}
+.options { display: flex; flex-direction: column; gap: 20rpx; }
+.option {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 28rpx 32rpx;
+  border: 1rpx solid $border;
+  border-radius: 20rpx;
+  background: #fff;
+  transition: all 0.18s ease;
+  &.selected {
+    border-color: $teal;
+    background: rgba(74,138,122,0.06);
+  }
+  &.locked { opacity: 0.5; pointer-events: none; }
+  &:active { transform: scale(0.99); }
+}
+.opt-dot {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 3rpx solid $border;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+  &.opt-dot-on {
+    border-color: $teal;
+    background: $teal;
+    box-shadow: 0 0 0 6rpx rgba(74,138,122,0.15);
+  }
+}
+.opt-label {
+  font-size: 28rpx;
+  color: $text-2;
+  line-height: 1.5;
+  .option.selected & { color: $teal; font-weight: 500; }
+}
+
+/* Nav */
+.nav-row { margin: 24rpx 28rpx 40rpx; display: flex; gap: 20rpx; }
+.btn-spacer { flex: 1; }
+.btn-prev {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 20rpx;
+  font-size: 28rpx;
+  border: 1rpx solid $border;
+  background: #fff;
+  color: $text-2;
+}
+.btn-next, .btn-submit {
+  flex: 2;
+  height: 88rpx;
+  border-radius: 20rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  border: none;
+  background: $teal;
+  color: #fff;
+  letter-spacing: 0.04em;
+  &:disabled { opacity: 0.45; }
+  &:active { opacity: 0.88; }
+}
+
+/* Modals */
+.mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.modal {
+  background: #fff;
+  border-radius: 32rpx;
+  padding: 56rpx 48rpx 48rpx;
+  width: 86%;
+  text-align: center;
+}
+.modal-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: $text-1;
+  font-family: "Noto Serif SC", serif;
+  margin-bottom: 16rpx;
+}
+.modal-desc {
+  display: block;
+  font-size: 26rpx;
+  color: $text-2;
+  line-height: 1.7;
+  margin-bottom: 40rpx;
+}
+.modal-price {
+  display: block;
+  font-size: 56rpx;
+  font-weight: 700;
+  color: #D8693A;
+  margin-bottom: 32rpx;
+}
+.btn-modal-primary {
+  width: 100%;
+  height: 88rpx;
+  border-radius: 20rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  border: none;
+  background: $teal;
+  color: #fff;
+  margin-bottom: 16rpx;
+  letter-spacing: 0.04em;
+}
+.btn-modal-secondary {
+  width: 100%;
+  height: 88rpx;
+  border-radius: 20rpx;
+  font-size: 28rpx;
+  border: 1rpx solid $border;
+  background: #fff;
+  color: $text-2;
+  &.sm { flex: 1; width: auto; }
+}
+.btn-wechat {
+  flex: 2;
+  height: 88rpx;
+  border-radius: 20rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  border: none;
+  background: #07c160;
+  color: #fff;
+}
+.modal-skip {
+  display: block;
+  font-size: 24rpx;
+  color: $muted;
+  margin-top: 28rpx;
+}
+.voucher-input {
+  border: 1rpx solid $border;
+  border-radius: 16rpx;
+  padding: 0 28rpx;
+  height: 80rpx;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 26rpx;
+  margin-bottom: 28rpx;
+  color: $text-1;
+}
+.modal-btns { display: flex; gap: 20rpx; }
 </style>

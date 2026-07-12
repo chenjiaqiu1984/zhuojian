@@ -26,7 +26,8 @@
         class="mp-tap-btn"
         open-type="getPhoneNumber"
         :disabled="loading"
-        @getphonenumber="onGetPhoneNumber"
+        @getphonenumber="(e) => onGetPhoneNumber(e)"
+        @tap="() => onBtnTap()"
       >{{ loading ? '登录中...' : '微信一键登录' }}</button>
 
       <view class="mp-terms">
@@ -46,6 +47,10 @@
   <!-- ══ H5 / 其他平台：完整表单 ══ -->
   <!-- #ifndef MP-WEIXIN -->
   <view class="page">
+    <!-- 背景柔光 -->
+    <view class="bg-glow bg-glow-1" />
+    <view class="bg-glow bg-glow-2" />
+
     <!-- 顶部品牌区 -->
     <view class="brand-area">
       <view class="brand-logo-frame">
@@ -57,6 +62,8 @@
 
     <!-- 表单卡片 -->
     <view class="form-card">
+      <text class="form-welcome">你好，欢迎</text>
+
       <view class="tab-bar">
         <view v-for="(t,i) in tabs" :key="i"
               class="tab-item" :class="{active: activeTab===i}"
@@ -70,16 +77,16 @@
         <view class="field-group">
           <text class="field-label">用户名</text>
           <view class="input-wrap">
-            <input class="ipt" :value="pwd.username" @input="pwd.username = $event.detail?.value ?? ''" placeholder="请输入用户名" />
+            <input class="ipt" v-model="pwd.username" placeholder="请输入用户名" />
           </view>
         </view>
         <view class="field-group">
           <text class="field-label">密码</text>
           <view class="input-wrap">
-            <input class="ipt" :value="pwd.password" @input="pwd.password = $event.detail?.value ?? ''" placeholder="请输入密码" type="password" />
+            <input class="ipt" v-model="pwd.password" placeholder="请输入密码" type="password" />
           </view>
         </view>
-        <text class="submit-btn" @click="loginPwd()">{{loading ? '登录中...' : '登录'}}</text>
+        <text class="submit-btn" @click="loginPwd()">{{loading ? '登录中...' : '登 录'}}</text>
         <view class="remember-row" @click="rememberMe=!rememberMe">
           <view :class="['checkbox', rememberMe && 'checked']" />
           <text class="remember-txt">记住登录状态（30天）</text>
@@ -95,7 +102,7 @@
         <view class="field-group">
           <text class="field-label">手机号</text>
           <view class="input-wrap">
-            <input class="ipt" :value="phone.num" @input="phone.num = $event.detail?.value ?? ''" placeholder="请输入手机号" type="number" maxlength="11" />
+            <input class="ipt" v-model="phone.num" placeholder="请输入手机号" type="number" maxlength="11" />
           </view>
         </view>
         <view class="field-group">
@@ -209,23 +216,59 @@ function goPrivacy() { uni.navigateTo({ url: '/pages/legal/privacy' }); }
 // #endif
 
 // #ifdef MP-WEIXIN
+function onBtnTap() {
+  console.log('[login] button tapped');
+}
+// #endif
+
+// #ifdef MP-WEIXIN
 // 一键登录：同时获取手机号 + openid，实现 30 天免登录
 async function onGetPhoneNumber(e) {
-  if (e.detail.errno || !e.detail.code) return;
+  console.log('[login] getPhoneNumber detail:', JSON.stringify(e.detail));
+
+  // errno 非 0 表示用户拒绝或出错；errno===2 是用户主动取消，不必提示
+  const errno = Number(e.detail.errno) || 0;
+  if (errno !== 0) {
+    console.warn('[login] errno non-zero:', errno);
+    if (errno !== 2) uni.showToast({ title: '获取手机号被拒绝', icon: 'none' });
+    return;
+  }
+  // code 为空：老版基础库或授权异常，给出明确提示而不是静默退出
+  if (!e.detail.code) {
+    console.warn('[login] no code in detail');
+    uni.showToast({ title: '未获取到授权码，请升级微信后重试', icon: 'none' });
+    return;
+  }
+
   loading.value = true;
   try {
     // 静默调用 wx.login 获取 loginCode（用于后端绑定 openid）
+    // 加 5s 超时防止 uni.login 挂起
+    console.log('[login] calling wx.login...');
     const loginCode = await new Promise((resolve) => {
-      uni.login({ provider: 'weixin',
-        success: (r) => resolve(r.code),
-        fail: () => resolve(null)
+      const t = setTimeout(() => { console.warn('[login] wx.login timeout'); resolve(null); }, 5000);
+      uni.login({
+        provider: 'weixin',
+        success: (r) => { clearTimeout(t); console.log('[login] wx.login ok, code prefix:', r.code?.slice(0,8)); resolve(r.code); },
+        fail:    (err) => { clearTimeout(t); console.error('[login] wx.login fail:', err); resolve(null); }
       });
     });
+
+    console.log('[login] calling loginPhoneWechat, loginCode:', loginCode ? 'ok' : 'null');
     await store.loginPhoneWechat(e.detail.code, loginCode);
-    if (store.isPending) uni.redirectTo({ url: '/pages/login/complete' });
-    else success();
+    console.log('[login] loginPhoneWechat ok, isPending:', store.isPending, 'user status:', store.user?.status);
+
+    if (store.isPending) {
+      console.log('[login] redirectTo complete page');
+      uni.redirectTo({ url: '/pages/login/complete' });
+    } else {
+      console.log('[login] calling success()');
+      success();
+    }
   } catch (err) {
-    uni.showToast({ title: err.error || '登录失败，请重试', icon: 'none' });
+    // err.error：后端业务错误；err.errMsg：uni-app 网络错误
+    console.error('[login] error:', JSON.stringify(err));
+    uni.showToast({ title: err.error || err.errMsg || '登录失败，请重试', icon: 'none' });
   } finally {
     loading.value = false;
   }
@@ -251,7 +294,6 @@ function success() {
 
 .mp-root {
   min-height: 100vh;
-  /* 深森林绿 → 明亮茶绿 → 浅sage — 无硬切 */
   background: linear-gradient(168deg, #163831 0%, #1F5448 22%, #2E7262 45%, #4A8A7A 68%, #7DBFB0 88%, #D6EDE8 100%);
   display: flex;
   flex-direction: column;
@@ -337,7 +379,6 @@ function success() {
   background: #fff;
   border-radius: 48rpx 48rpx 0 0;
   padding: 64rpx 52rpx 80rpx;
-  /* 柔和顶部阴影融入渐变 */
   box-shadow: 0 -8rpx 80rpx rgba(22,56,49,.18);
 }
 
@@ -357,9 +398,7 @@ function success() {
   margin-bottom: 52rpx;
 }
 
-/* 一键登录按钮
-   ─ 品牌渐变底色，白色文字，深色阴影
-   ─ :active 微下压感 */
+/* 一键登录按钮 */
 .mp-tap-btn {
   display: block;
   width: 100%;
@@ -375,7 +414,6 @@ function success() {
   border: none;
   box-shadow: 0 16rpx 48rpx rgba(30,84,72,.35), inset 0 1rpx 0 rgba(255,255,255,.15);
   margin-bottom: 44rpx;
-  /* 消除微信默认边框 */
   &::after { border: none !important; }
   &[disabled] {
     opacity: 0.55;
@@ -425,123 +463,312 @@ function success() {
 
 
 /* ═══════════════════════════════════════════
-   H5 / 其他平台：保持原有设计
+   H5 / 其他平台：精致全屏设计
+   ─ 同款渐变 · 品牌感 · 浮动白卡
 ═══════════════════════════════════════════ */
 
 .page {
   min-height: 100vh;
-  background: linear-gradient(170deg, #3A6E80 0%, #4A8A7A 55%, #F2F4F3 55%);
-  display: flex; flex-direction: column;
+  background: linear-gradient(168deg, #163831 0%, #1F5448 22%, #2E7262 45%, #4A8A7A 68%, #7DBFB0 88%, #D6EDE8 100%);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 背景柔光 */
+.bg-glow {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.bg-glow-1 {
+  width: 560rpx; height: 560rpx;
+  top: -120rpx; right: -120rpx;
+  background: radial-gradient(circle, rgba(255,255,255,.10) 0%, transparent 65%);
+}
+.bg-glow-2 {
+  width: 420rpx; height: 420rpx;
+  top: 40%; left: -140rpx;
+  background: radial-gradient(circle, rgba(255,255,255,.07) 0%, transparent 65%);
 }
 
 /* 品牌区 */
 .brand-area {
-  padding: 72rpx 48rpx 48rpx;
-  display: flex; flex-direction: column; align-items: center;
+  position: relative;
+  z-index: 1;
+  padding: 88rpx 48rpx 56rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .brand-logo-frame {
-  width: 120rpx; height: 120rpx;
-  border-radius: 28rpx;
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 32rpx;
   overflow: hidden;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   background: #fff;
   box-shadow:
-    0 6rpx 32rpx rgba(22,56,49,.35),
-    0 0 0 2rpx rgba(255,255,255,.25),
-    0 0 0 8rpx rgba(255,255,255,.08);
-  margin-bottom: 24rpx;
+    0 8rpx 40rpx rgba(22,56,49,.40),
+    0 0 0 3rpx rgba(255,255,255,.20),
+    0 0 0 10rpx rgba(255,255,255,.07);
+  margin-bottom: 28rpx;
 }
 .brand-logo-img {
-  width: 120rpx; height: 120rpx;
+  width: 140rpx;
+  height: 140rpx;
   display: block;
 }
-.brand-name { font-size: 48rpx; font-weight: 800; color: #fff; letter-spacing: -1rpx; }
-.brand-sub { font-size: 22rpx; color: rgba(255,255,255,.7); margin-top: 8rpx; letter-spacing: 1rpx; }
+.brand-name {
+  display: block;
+  font-size: 48rpx;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 4rpx;
+  margin-bottom: 12rpx;
+}
+.brand-sub {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255,255,255,.58);
+  letter-spacing: 2rpx;
+}
 
 /* 表单卡片 */
 .form-card {
+  position: relative;
+  z-index: 1;
   background: #fff;
-  border-radius: 40rpx 40rpx 0 0;
-  flex: 1; padding: 36rpx 40rpx 80rpx;
-  margin-top: 16rpx;
+  border-radius: 48rpx 48rpx 0 0;
+  flex: 1;
+  padding: 56rpx 48rpx 80rpx;
+  box-shadow: 0 -8rpx 80rpx rgba(22,56,49,.18);
 }
 
-/* Tab */
-.tab-bar { display: flex; border-bottom: 2rpx solid #F2F4F3; margin-bottom: 4rpx; }
+/* 欢迎标题 */
+.form-welcome {
+  display: block;
+  font-size: 52rpx;
+  font-weight: 800;
+  color: #142721;
+  letter-spacing: -0.5rpx;
+  margin-bottom: 36rpx;
+}
+
+/* Tab 栏 */
+.tab-bar {
+  display: flex;
+  border-bottom: 2rpx solid #EEF1EF;
+  margin-bottom: 8rpx;
+}
 .tab-item {
-  flex: 1; text-align: center; padding: 20rpx 0;
-  font-size: 26rpx; color: #9BBCB4; position: relative;
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0;
+  font-size: 28rpx;
+  color: #9BBCB4;
+  position: relative;
   transition: color 0.2s;
 }
-.tab-item.active { color: #1C2A27; font-weight: 700; }
+.tab-item.active {
+  color: #142721;
+  font-weight: 700;
+}
 .tab-item.active::after {
-  content: ''; position: absolute;
-  bottom: -2rpx; left: 20%; width: 60%; height: 4rpx;
-  background: #4A8A7A; border-radius: 2rpx;
+  content: '';
+  position: absolute;
+  bottom: -2rpx;
+  left: 15%;
+  width: 70%;
+  height: 4rpx;
+  background: linear-gradient(90deg, #2E7262, #4A8A7A);
+  border-radius: 2rpx;
 }
 
-/* 表单字段 */
-.tab-body { padding-top: 32rpx; display: flex; flex-direction: column; gap: 8rpx; }
-.field-group { display: flex; flex-direction: column; gap: 10rpx; margin-bottom: 12rpx; }
-.field-label { font-size: 24rpx; font-weight: 600; color: #617870; padding-left: 4rpx; }
-.input-wrap {
-  background: #F7F9F8; border-radius: 16rpx;
-  border: 2rpx solid #E8EDEB;
-  padding: 0 24rpx; height: 96rpx;
-  display: flex; align-items: center;
+/* 表单区域 */
+.tab-body {
+  padding-top: 36rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
 }
-.input-wrap:focus-within { border-color: #4A8A7A; }
-.ipt { flex: 1; height: 96rpx; font-size: 28rpx; color: #1C2A27; background: transparent; }
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+}
+.field-label {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #617870;
+  padding-left: 4rpx;
+}
+.input-wrap {
+  background: #F7F9F8;
+  border-radius: 16rpx;
+  border: 2rpx solid #E8EDEB;
+  padding: 0 28rpx;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+.input-wrap:focus-within {
+  border-color: #4A8A7A;
+  background: #F3FAF8;
+}
+.ipt {
+  flex: 1;
+  height: 100rpx;
+  font-size: 28rpx;
+  color: #1C2A27;
+  background: transparent;
+}
 
 /* 验证码行 */
-.code-row { display: flex; align-items: center; gap: 16rpx; }
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
 .send-btn {
-  background: #EDF7F4; border-radius: 16rpx;
-  padding: 0 28rpx; height: 96rpx;
-  display: flex; align-items: center; justify-content: center;
+  background: #EDF7F4;
+  border-radius: 16rpx;
+  padding: 0 32rpx;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
-.send-btn text { font-size: 24rpx; color: #4A8A7A; font-weight: 600; white-space: nowrap; }
+.send-btn text {
+  font-size: 24rpx;
+  color: #4A8A7A;
+  font-weight: 600;
+  white-space: nowrap;
+}
 .send-btn-disabled { background: #F2F4F3; }
 .send-btn-disabled text { color: #B0BEB8; }
 
 /* 提交按钮 */
 .submit-btn {
-  background: linear-gradient(135deg, #4A8A7A, #3A6E80);
-  border-radius: 16rpx; padding: 28rpx 24rpx;
-  text-align: center; margin-top: 8rpx;
-  color: #fff; font-size: 30rpx; font-weight: 700; letter-spacing: 1rpx;
-  width: 100%; box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 108rpx;
+  line-height: 108rpx;
+  text-align: center;
+  background: linear-gradient(135deg, #1F5448 0%, #2E7262 40%, #4A8A7A 100%);
+  border-radius: 28rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 2rpx;
+  box-shadow: 0 16rpx 48rpx rgba(30,84,72,.30), inset 0 1rpx 0 rgba(255,255,255,.15);
+  margin-top: 12rpx;
+  box-sizing: border-box;
 }
 
-/* 辅助链接 */
-.aux-row { display: flex; justify-content: center; gap: 48rpx; margin-top: 24rpx; }
-.aux-link { font-size: 26rpx; color: #4A8A7A; }
+/* 记住我 */
+.remember-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 24rpx;
+  cursor: pointer;
+}
+.checkbox {
+  width: 36rpx;
+  height: 36rpx;
+  border: 2rpx solid #C0CCC8;
+  border-radius: 8rpx;
+  background: #fff;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.checkbox.checked {
+  background: #4A8A7A;
+  border-color: #4A8A7A;
+  position: relative;
+}
+.checkbox.checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 22rpx;
+  line-height: 1;
+}
+.remember-txt {
+  font-size: 24rpx;
+  color: #617870;
+}
+
+/* 辅助链接行 */
+.aux-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 28rpx;
+  padding: 0 4rpx;
+}
+.aux-link {
+  font-size: 26rpx;
+  color: #4A8A7A;
+  font-weight: 500;
+}
 
 /* 第三方登录 */
-.third-login { margin-top: 48rpx; }
+.third-login { margin-top: 56rpx; }
 .divider {
-  display: flex; align-items: center; gap: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
   margin-bottom: 32rpx;
 }
-.divider::before, .divider::after { content: ''; flex: 1; height: 1rpx; background: #EEF1EF; }
-.divider-txt { font-size: 22rpx; color: #B0BEB8; flex-shrink: 0; }
-.third-btns { display: flex; justify-content: center; gap: 40rpx; }
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1rpx;
+  background: #EEF1EF;
+}
+.divider-txt {
+  font-size: 22rpx;
+  color: #B0BEB8;
+  flex-shrink: 0;
+}
+.third-btns {
+  display: flex;
+  justify-content: center;
+  gap: 40rpx;
+}
 .third-btn {
-  width: 88rpx; height: 88rpx; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,.14);
 }
 .wechat { background: #07C160; }
 
-/* 记住我 */
-.remember-row { display: flex; align-items: center; gap: 12rpx; margin-top: 20rpx; cursor: pointer; }
-.checkbox { width: 36rpx; height: 36rpx; border: 2rpx solid #C0CCC8; border-radius: 8rpx; background: #fff; flex-shrink: 0; transition: all 0.2s; }
-.checkbox.checked { background: #4A8A7A; border-color: #4A8A7A; position: relative; }
-.checkbox.checked::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; font-size: 22rpx; line-height: 1; }
-.remember-txt { font-size: 24rpx; color: #617870; }
-
 /* 图形验证码 */
-.captcha-row { display: flex; align-items: center; gap: 16rpx; }
-.captcha-img { width: 200rpx; height: 80rpx; border-radius: 8rpx; background: #F7F9F8; flex-shrink: 0; border: 2rpx solid #E8EDEB; }
+.captcha-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.captcha-img {
+  width: 200rpx;
+  height: 80rpx;
+  border-radius: 8rpx;
+  background: #F7F9F8;
+  flex-shrink: 0;
+  border: 2rpx solid #E8EDEB;
+}
 </style>

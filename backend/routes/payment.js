@@ -524,20 +524,27 @@ router.post('/activity/:newsId', authMiddleware, async (req, res) => {
     const newsId   = Number(req.params.newsId);
     const userId   = req.user.id;
     const { payMethod } = req.body;
-    const amount   = 1; // 暂时固定0.01元（1分）
-    const orderNo  = genOrderNo(userId);
-    const expireAt = new Date(Date.now() + 15 * 60 * 1000);
 
     const news = await prisma.news.findUnique({ where: { id: newsId } });
     if (!news) return res.status(404).json({ error: '活动不存在' });
 
-    await prisma.order.create({ data: { orderNo, userId, amount, expireAt, payType: payMethod === 'alipay' ? 'alipay' : 'wxpay' } });
+    // 使用数据库中的实际价格（分），未设置价格时最低收取1分
+    const amount   = (news.isPaid && news.price > 0) ? news.price : 1;
+    const orderNo  = genOrderNo(userId);
+    const expireAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    const isAlipay = payMethod === 'alipay' || payMethod === 'alipay-pc';
+    await prisma.order.create({ data: { orderNo, userId, amount, expireAt, payType: isAlipay ? 'alipay' : 'wxpay' } });
 
     const base = process.env.PAY_NOTIFY_BASE || `http://localhost:${process.env.PORT || 3000}`;
     const desc  = `活动报名 - ${news.title}`;
 
     if (payMethod === 'alipay') {
       const { payUrl } = await createAlipayOrder({ orderNo, amount, desc, notifyUrl: `${base}/api/payment/alipay/notify`, returnUrl: `${base}/#/pages/payment/result?orderNo=${orderNo}` });
+      return res.json({ orderNo, payUrl });
+    }
+    if (payMethod === 'alipay-pc') {
+      const { payUrl } = await createAlipayPcOrder({ orderNo, amount, desc, notifyUrl: `${base}/api/payment/alipay/notify`, returnUrl: `${base}/#/pages/payment/result?orderNo=${orderNo}` });
       return res.json({ orderNo, payUrl });
     }
     if (payMethod === 'native') {

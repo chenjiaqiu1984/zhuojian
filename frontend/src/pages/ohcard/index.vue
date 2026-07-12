@@ -1,17 +1,23 @@
 <template>
   <view class="page">
     <view class="hero">
-      <text class="hero-title">心理图卡探索</text>
-      <text class="hero-sub">通过心理图卡走进内心世界</text>
+      <view class="hero-glow" />
+      <view class="hero-content">
+        <text class="hero-eyebrow">心理投射工具</text>
+        <text class="hero-title">图卡探索</text>
+        <text class="hero-sub">让图像成为语言，看见内心深处的声音</text>
+      </view>
     </view>
 
-    <view class="sections">
+    <view class="content">
       <!-- 单卡牌组合 -->
       <view class="section">
-        <text class="sec-title">🃏 单卡牌组合</text>
-        <view class="scene-list">
-          <view class="scene-chip" v-for="d in singleDecks" :key="d.name" @click="navDeck(d)" :style="{borderColor:d.color,...chipStyle(singleDecks)}">
-            <text class="chip-icon">{{d.icon}}</text>
+        <view class="sec-header">
+          <view class="sec-bar" />
+          <text class="sec-title">单卡牌组合</text>
+        </view>
+        <view class="card-grid">
+          <view class="card-chip" v-for="d in singleDecks" :key="d.name" @click="navDeck(d)">
             <text class="chip-name">{{d.name}}</text>
           </view>
         </view>
@@ -19,21 +25,28 @@
 
       <!-- 跨卡牌组合 -->
       <view class="section">
-        <text class="sec-title">🔮 跨卡牌组合</text>
-        <view class="scene-list">
-          <view class="scene-chip" v-for="c in comboPreviews" :key="c.id" @click="nav('/pages/ohcard/combo?id='+c.id,{cat:'combo',id:c.id,name:c.title})" :style="{borderColor:c.color,...chipStyle(comboPreviews)}">
-            <text class="chip-icon">{{c.icon}}</text>
+        <view class="sec-header">
+          <view class="sec-bar" />
+          <text class="sec-title">跨卡牌组合</text>
+        </view>
+        <view class="card-grid">
+          <view class="card-chip" v-for="c in comboPreviews" :key="c.id"
+            @click="nav('/pages/ohcard/combo?id='+c.id,{cat:'combo',id:c.id,name:c.title})">
             <text class="chip-name">{{c.title}}</text>
+            <text v-if="c.for" class="chip-sub">{{c.for}}</text>
           </view>
         </view>
       </view>
 
       <!-- 场景选卡 -->
       <view class="section">
-        <text class="sec-title">🎯 场景选卡</text>
-        <view class="scene-list">
-          <view class="scene-chip" v-for="s in scenePreviews" :key="s.id" @click="nav('/pages/ohcard/scene?id='+s.id,{cat:'scene',id:s.id,name:s.title})" :style="{borderColor:s.color,...chipStyle(scenePreviews)}">
-            <text class="chip-icon">{{s.icon}}</text>
+        <view class="sec-header">
+          <view class="sec-bar" />
+          <text class="sec-title">场景选卡</text>
+        </view>
+        <view class="card-grid">
+          <view class="card-chip" v-for="s in scenePreviews" :key="s.id"
+            @click="nav('/pages/ohcard/scene?id='+s.id,{cat:'scene',id:s.id,name:s.title})">
             <text class="chip-name">{{s.title}}</text>
           </view>
         </view>
@@ -41,18 +54,22 @@
 
       <!-- 人生困境 -->
       <view class="section">
-        <text class="sec-title">🌊 人生困境</text>
-        <view class="scene-list">
-          <view class="scene-chip" v-for="d in dilemmas" :key="d.id" @click="nav('/pages/ohcard/dilemma?id='+d.id,{cat:'dilemma',id:d.id,name:d.title})" :style="{borderColor:d.color,...chipStyle(dilemmas)}">
-            <text class="chip-icon">{{d.icon}}</text>
+        <view class="sec-header">
+          <view class="sec-bar" />
+          <text class="sec-title">人生困境</text>
+        </view>
+        <view class="card-grid">
+          <view class="card-chip" v-for="d in dilemmas" :key="d.id"
+            @click="nav('/pages/ohcard/dilemma?id='+d.id,{cat:'dilemma',id:d.id,name:d.title})">
             <text class="chip-name">{{d.title}}</text>
           </view>
         </view>
       </view>
     </view>
 
-    <view class="record-btn" @click="uni.navigateTo({url:'/pages/ohcard/record'})">
-      <text>📋 查看我的记录</text>
+    <view class="record-entry" @click="uni.navigateTo({url:'/pages/ohcard/record'})">
+      <text class="record-label">查看我的记录</text>
+      <text class="record-arrow">›</text>
     </view>
   </view>
 </template>
@@ -62,12 +79,6 @@ import { onMounted, ref } from 'vue';
 import { track } from '../../utils/track';
 import { SERVER } from '../../config';
 import { ohcardApi } from '../../api/index';
-
-function chipStyle(list) {
-  const n = list.length;
-  if (n <= 3) return { width: `calc((100% - ${(n - 1) * 12}rpx) / ${n})` };
-  return {};
-}
 
 function nav(url, trackData) {
   track('ohcard_open', '/pages/ohcard/index', trackData);
@@ -122,7 +133,6 @@ const dilemmas = ref([
 
 onMounted(async () => {
   track('page_view', '/pages/ohcard/index');
-  // 从API 获取真实 ID 和顺序（覆盖硬编码的 id）
   try {
     const [combos, scenes, dils, cats, singles] = await Promise.all([
       ohcardApi.presets('combo'),
@@ -149,7 +159,6 @@ onMounted(async () => {
       });
     }
   } catch {}
-  // 按使用量排序
   uni.request({
     url: `${SERVER}/api/analytics/ohcard-ranks`,
     method: 'GET',
@@ -166,21 +175,160 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.page { min-height:100vh; background:#F5F7F6; padding-bottom:40rpx; }
-.hero { background:linear-gradient(135deg,#4A8A7A,#3A6E80); padding:50rpx 32rpx 36rpx; text-align:center; }
-.hero-title { color:#fff; font-size:44rpx; font-weight:bold; display:block; }
-.hero-sub { color:rgba(255,255,255,.75); font-size:26rpx; margin-top:8rpx; display:block; }
+.page {
+  min-height: 100vh;
+  background: #F5F7F6;
+  padding-bottom: 88rpx;
+}
 
-.sections { padding:0 24rpx; }
-.section { margin-top:28rpx; background:#fff; border-radius:20rpx; padding:28rpx; }
-.sec-title { font-size:30rpx; font-weight:700; color:#1C2A27; display:block; margin-bottom:6rpx; }
-.sec-sub { font-size:22rpx; color:#999; display:block; margin-bottom:18rpx; }
+/* ---- Hero ---- */
+.hero {
+  position: relative;
+  padding: 96rpx 48rpx 72rpx;
+  overflow: hidden;
+  background: linear-gradient(135deg, #4A8A7A 0%, #3A6E80 100%);
+}
 
-/* chips */
-.scene-list { display:flex; flex-wrap:wrap; gap:12rpx; }
-.scene-chip { display:flex; align-items:center; justify-content:center; gap:8rpx; padding:14rpx 0; border:2rpx solid; border-radius:40rpx; background:#fff; width:calc(33.33% - 8rpx); box-sizing:border-box; }
-.chip-icon { font-size:26rpx; flex-shrink:0; }
-.chip-name { font-size:22rpx; color:#333; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hero-glow {
+  position: absolute;
+  top: -160rpx;
+  right: -120rpx;
+  width: 560rpx;
+  height: 480rpx;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.14) 0%, transparent 66%);
+  pointer-events: none;
+}
 
-.record-btn { display:flex; justify-content:center; margin:24rpx 24rpx 0; padding:24rpx; border:2rpx solid #4A8A7A; border-radius:16rpx; color:#4A8A7A; font-size:28rpx; }
+.hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.hero-eyebrow {
+  display: block;
+  font-size: 20rpx;
+  letter-spacing: 0.34em;
+  color: rgba(255,255,255,0.72);
+  margin-bottom: 28rpx;
+}
+
+.hero-title {
+  display: block;
+  font-size: 66rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 0.06em;
+  line-height: 1.18;
+  margin-bottom: 24rpx;
+  font-family: "Noto Serif SC", serif;
+}
+
+.hero-sub {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.9;
+  letter-spacing: 0.03em;
+}
+
+/* ---- Sections ---- */
+.content {
+  padding: 0 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 52rpx;
+  margin-top: 44rpx;
+}
+
+.sec-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 28rpx;
+  padding-left: 2rpx;
+}
+
+.sec-bar {
+  width: 6rpx;
+  height: 30rpx;
+  border-radius: 4rpx;
+  flex-shrink: 0;
+  background: #4A8A7A;
+}
+
+.sec-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1C2A27;
+  letter-spacing: 0.04em;
+  font-family: "Noto Serif SC", serif;
+}
+
+/* ---- Card grid ---- */
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.card-chip {
+  width: 48.6%;
+  box-sizing: border-box;
+  margin-bottom: 18rpx;
+  padding: 32rpx 28rpx;
+  border-radius: 24rpx;
+  background: #FFFFFF;
+  border: 1rpx solid #E8EFED;
+  box-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  transition: transform 0.15s ease;
+}
+
+.card-chip:active {
+  transform: scale(0.98);
+}
+
+.chip-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1C2A27;
+  line-height: 1.5;
+  display: block;
+  letter-spacing: 0.01em;
+}
+
+.chip-sub {
+  font-size: 19rpx;
+  color: #9BBCB4;
+  line-height: 1.45;
+  display: block;
+}
+
+/* ---- Record entry ---- */
+.record-entry {
+  margin: 56rpx 28rpx 0;
+  padding: 34rpx 36rpx;
+  border: 1rpx solid #E8EFED;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFFFFF;
+}
+
+.record-label {
+  font-size: 27rpx;
+  color: #617870;
+  letter-spacing: 0.04em;
+}
+
+.record-arrow {
+  font-size: 40rpx;
+  color: #4A8A7A;
+  line-height: 1;
+}
 </style>

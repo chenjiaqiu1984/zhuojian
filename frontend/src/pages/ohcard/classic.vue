@@ -58,11 +58,11 @@
           </view>
         </template>
         <text class="section-label" style="margin-top:28rpx">此刻感受</text>
-        <textarea class="note-input" v-model="note" placeholder="写下你的感想..." maxlength="500" />
+        <textarea class="note-input" v-model="note" placeholder="写下你的感想..." placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
-          <u-button type="primary" :disabled="saving" @click="saveRecord()">{{saving?'保存中...':'保存记录'}}</u-button>
-          <u-button plain @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</u-button>
-          <u-button plain @click="uni.navigateBack()">返回抽卡菜单</u-button>
+          <view class="btn btn-primary" :class="{disabled:saving}" @click="saveRecord()">{{saving?'保存中...':'保存记录'}}</view>
+          <view class="btn btn-ghost" @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</view>
+          <view class="btn btn-ghost" @click="uni.navigateBack()">返回抽卡菜单</view>
         </view>
       </view>
     </view>
@@ -270,39 +270,26 @@ function reset() {
 </script>
 
 <style scoped lang="scss">
-.page { padding: 32rpx; min-height: 100vh; background: #F5F7FA; }
-.title { font-size: 36rpx; font-weight: bold; color: #333; display: block; margin-bottom: 32rpx; }
-.section-label { font-size: 26rpx; font-weight: 600; color: #555; display: block; margin-bottom: 16rpx; }
+.page { padding: 44rpx 32rpx 64rpx; min-height: 100vh; background: #F5F7F6; }
+.title { font-size: 36rpx; font-weight: 600; color: #1C2A27; display: block; margin-bottom: 32rpx; font-family: "Noto Serif SC", serif; }
+.section-label { font-size: 26rpx; font-weight: 600; color: #617870; display: block; margin-bottom: 16rpx; letter-spacing: 0.04em; }
 
 /* Intro & guide */
-.deck-tag { text-align: center; margin-bottom: 16rpx; }
-.deck-tag-text { font-size: 24rpx; color: #4A7BBA; background: #EBF2FF; padding: 8rpx 24rpx; border-radius: 32rpx; }
-.intro-box { background: linear-gradient(135deg,#4A7BBA,#7B68EE); border-radius: 20rpx; padding: 40rpx 36rpx; margin-bottom: 32rpx; }
-.intro-title { color: #fff; font-size: 32rpx; font-weight: bold; display: block; margin-bottom: 16rpx; }
-.intro-body { color: rgba(255,255,255,.85); font-size: 26rpx; line-height: 1.7; display: block; }
-.guide-prompt { background: #fff8ec; border-left: 6rpx solid #c8a84b; border-radius: 0 16rpx 16rpx 0; padding: 28rpx 32rpx; margin-bottom: 8rpx; }
-.guide-label { font-size: 24rpx; color: #999; display: block; margin-bottom: 10rpx; }
-.guide-question { font-size: 30rpx; color: #5a3e00; font-weight: 600; display: block; line-height: 1.6; }
-.reflect-hint { display: block; text-align: center; font-size: 24rpx; color: #888; margin-bottom: 28rpx; line-height: 1.6; padding: 0 16rpx; }
-
-/* Deck selection */
-.deck-list { display: flex; flex-direction: column; gap: 20rpx; }
-.deck-item { padding: 28rpx 32rpx; background: #fff; border: 3rpx solid #eee; border-radius: 16rpx; }
-.deck-item.active { border-color: #4A7BBA; background: #EBF2FF; }
-.deck-name { font-size: 30rpx; font-weight: 600; color: #333; display: block; }
-.deck-desc { font-size: 24rpx; color: #999; display: block; margin-top: 8rpx; }
+.deck-tag { text-align: center; margin-bottom: 22rpx; }
+.deck-tag-text { font-size: 24rpx; color: #4A8A7A; background: #EDF4F0; padding: 10rpx 30rpx; border-radius: 32rpx; }
+.reflect-hint { display: block; text-align: center; font-size: 24rpx; color: #9BBCB4; margin-bottom: 44rpx; line-height: 1.7; padding: 0 24rpx; }
 
 /* Cards row */
-.cards-row { display: flex; gap: 24rpx; justify-content: center; margin-bottom: 32rpx; }
-.card-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.card-label { font-size: 24rpx; color: #888; margin-bottom: 12rpx; }
+.cards-row { display: flex; gap: 32rpx; justify-content: center; margin-bottom: 44rpx; }
+.card-col { display: flex; flex-direction: column; align-items: center; }
+.card-label { font-size: 24rpx; color: #9BBCB4; margin-bottom: 16rpx; }
 
 /* Card flip */
 .card { position: relative; border-radius: 16rpx; overflow: hidden; will-change: transform; }
 .card-back, .card-front { width: 100%; height: 100%; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; }
-.card-back { background: linear-gradient(135deg, #4A7BBA, #7B68EE); }
-.back-text { color: #fff; font-size: 24rpx; }
-.card-front { background: #fff; box-shadow: 0 8rpx 32rpx rgba(0,0,0,.15); overflow: hidden; }
+.card-back { background: linear-gradient(135deg, #4A8A7A, #3A6E80); box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
+.back-text { color: rgba(255,255,255,0.9); font-size: 24rpx; letter-spacing: 2rpx; }
+.card-front { background: #fff; box-shadow: 0 12rpx 36rpx rgba(28,42,39,.14); overflow: hidden; }
 
 /* Image card */
 .img-card { width: 220rpx; height: 310rpx; }
@@ -310,10 +297,10 @@ function reset() {
 
 /* Word card (bigger by one ring) */
 .word-card { width: 260rpx; height: 360rpx; }
-.word-front { background: linear-gradient(160deg, #0f2044, #1a3a6b) !important; }
+.word-front { background: linear-gradient(160deg, #1E3A34, #2C5249) !important; }
 .word-frame {
   width: 86%; height: 86%;
-  border: 4rpx solid #c8a84b;
+  border: 4rpx solid #C8A84B;
   border-radius: 12rpx;
   display: flex; align-items: center; justify-content: center;
   position: relative;
@@ -330,43 +317,49 @@ function reset() {
 }
 
 /* Swap button */
-.swap-row { margin-top: 16rpx; }
+.swap-row { margin-top: 20rpx; text-align: center; }
 .swap-btn {
-  font-size: 24rpx; color: #4A7BBA; padding: 10rpx 28rpx;
-  border: 2rpx solid #4A7BBA; border-radius: 32rpx; background: #fff;
+  font-size: 24rpx; color: #4A8A7A; padding: 12rpx 30rpx;
+  border: 1rpx solid rgba(74,138,122,0.5); border-radius: 32rpx; background: #FFFFFF;
 }
-.swap-btn.disabled { color: #aaa; border-color: #ccc; pointer-events: none; }
-
-/* Action area */
-.action-area { width: 100%; }
-.note-input {
-  width: 100%; min-height: 150rpx; background: #fff;
-  border: 2rpx solid #e8e8e8; border-radius: 16rpx;
-  padding: 20rpx 24rpx; font-size: 28rpx; color: #333; box-sizing: border-box;
-}
-.btn-group { display:flex; flex-direction:column; gap:16rpx; margin-top:24rpx; }
+.swap-btn.disabled { color: #B7C6C1; border-color: #E8EFED; background: transparent; pointer-events: none; }
 
 /* Composite */
+.composite-section { background: #FFFFFF; border-radius: 24rpx; padding: 34rpx 30rpx; border: 1rpx solid #E8EFED; }
+.note-input {
+  width: 100%; min-height: 150rpx; background: #F5F7F6;
+  border: 1rpx solid #E8EFED; border-radius: 16rpx;
+  padding: 20rpx 24rpx; font-size: 28rpx; color: #1C2A27; box-sizing: border-box;
+}
+.note-ph { color: #9BBCB4; }
+
+/* Buttons */
+.btn-group { display:flex; flex-direction:column; gap:16rpx; margin-top:28rpx; }
+.btn { text-align:center; font-size:28rpx; padding:26rpx 0; border-radius:16rpx; letter-spacing:2rpx; }
+.btn-primary { background: linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-weight:600; box-shadow: 0 8rpx 22rpx rgba(74,138,122,0.24); }
+.btn-primary.disabled { opacity:0.55; box-shadow:none; }
+.btn-ghost { background: #FFFFFF; color: #617870; border:1rpx solid #E8EFED; }
+
+/* Fullscreen */
 .fs-overlay {
   position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,.92);
+  background: rgba(20,32,29,.94);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .fs-img { width: 100vw; height: 90vh; }
 .fs-hint { color: rgba(255,255,255,.5); font-size: 22rpx; margin-top: 20rpx; }
 
-/* Composite */
-.composite-step { display: flex; flex-direction: column; align-items: center; }
+/* Composite card */
 .composite-card {
   width: 320rpx; height: 440rpx; border-radius: 20rpx; overflow: hidden;
-  position: relative; box-shadow: 0 16rpx 48rpx rgba(0,0,0,.25); margin-bottom: 36rpx;
+  position: relative; box-shadow: 0 16rpx 44rpx rgba(28,42,39,.18); margin: 0 auto 36rpx;
 }
 .composite-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .composite-overlay {
   position: absolute; bottom: 0; left: 0; right: 0; height: 120rpx;
-  background: linear-gradient(transparent, rgba(26,58,107,0.95));
+  background: linear-gradient(transparent, rgba(30,58,52,0.96));
   display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 20rpx;
 }
-.composite-divider { width: 60rpx; height: 2rpx; background: #c8a84b; margin-bottom: 12rpx; }
+.composite-divider { width: 60rpx; height: 2rpx; background: #C8A84B; margin-bottom: 12rpx; }
 .composite-word { color: #fff; font-size: 48rpx; font-weight: bold; letter-spacing: 6rpx; }
 </style>

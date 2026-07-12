@@ -50,7 +50,7 @@
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; background: #F5F7F6; }
+.page { height: 100vh; background: #F5F7F6; }
 .content { padding: 32rpx; }
 .update-date { display: block; font-size: 24rpx; color: #aaa; margin-bottom: 32rpx; }
 .section-title { display: block; font-size: 30rpx; font-weight: 700; color: #1C2A27; margin: 32rpx 0 12rpx; }

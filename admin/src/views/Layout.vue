@@ -7,6 +7,7 @@
         <template v-if="['admin','super_admin'].includes(store.user?.role)">
           <el-menu-item index="/about"><el-icon><InfoFilled /></el-icon>关于我们</el-menu-item>
           <el-menu-item index="/news"><el-icon><Promotion /></el-icon>新闻活动</el-menu-item>
+          <el-menu-item index="/learning"><el-icon><Reading /></el-icon>学习报名</el-menu-item>
           <el-menu-item index="/ohcard"><el-icon><Grid /></el-icon>图卡管理</el-menu-item>
           <el-menu-item index="/assessment"><el-icon><DataAnalysis /></el-icon>测评管理</el-menu-item>
           <el-menu-item index="/analytics"><el-icon><TrendCharts /></el-icon>埋点统计</el-menu-item>

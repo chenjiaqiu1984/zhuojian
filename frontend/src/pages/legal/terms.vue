@@ -1,5 +1,6 @@
 <template>
-  <scroll-view class="page" scroll-y>
+  <view class="page">
+    <scroll-view class="content-scroll" scroll-y :style="{ height: scrollH }">
     <view class="content">
       <text class="doc-title">用户服务协议</text>
       <text class="update-date">版本日期：2026年7月1日　生效日期：2026年7月1日</text>
@@ -69,8 +70,9 @@
       <text class="body">10.3 如有疑问或需行使数据权利，请发送邮件至平台客服邮箱：<text class="em">345958875@qq.com</text>，或通过"关于我们"页面联系我们。</text>
 
     </view>
+    </scroll-view>
 
-    <!-- 签署区域（未签署时显示） -->
+    <!-- 签署区域：在 scroll-view 外，始终固定在底部 -->
     <view v-if="store.isLoggedIn() && !signed" class="sign-bar">
       <text class="sign-tip">阅读并同意以上协议内容</text>
       <text class="sign-btn" @click="signTerms()">同意并签署</text>
@@ -78,13 +80,27 @@
     <view v-else-if="signed" class="signed-bar">
       <text class="signed-text">✅ 已签署 · {{fmtDate(store.user.termsAcceptedAt)}}</text>
     </view>
-  </scroll-view>
+  </view>
 </template>
 
 <script setup>
-import { computed, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
+
+// 微信小程序 scroll-view 必须有明确的 height，flex:1 无效
+// 根据是否显示 sign-bar 动态计算可滚动区域高度
+const scrollH = ref('100vh');
+onMounted(() => {
+  const { windowHeight } = uni.getSystemInfoSync();
+  // sign-bar 约 160rpx，但此时 signed 可能还没算出来，先用全高
+  // 有 sign-bar 时父容器 flex 布局会把底部撑开，scroll-view 用 100% 仍然无效
+  // 最简单方案：动态减去已知固定高度
+  const hasSignBar = store.isLoggedIn() && !signed.value;
+  // sign-bar padding(24+24)rpx + button(78rpx) + gap(12rpx) ≈ 138rpx ≈ windowWidth/750*138
+  const signBarPx = hasSignBar ? Math.ceil(windowHeight * 138 / (uni.getSystemInfoSync().windowWidth / 750 * 750)) : 0;
+  scrollH.value = (windowHeight - signBarPx) + 'px';
+});
 
 
 const store = useUserStore();
@@ -110,8 +126,16 @@ async function signTerms() {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; background: #F5F7F6; }
-.content { padding: 32rpx 32rpx 80rpx; }
+/* 整页 flex 纵向布局，scroll 区弹性填充剩余高度 */
+.page {
+  height: 100vh;
+  display: flex; flex-direction: column;
+  background: #F5F7F6;
+}
+.content-scroll {
+  /* 高度由 JS 动态注入（小程序 scroll-view 必须有明确的 px 高度） */
+}
+.content { padding: 32rpx 32rpx 40rpx; }
 
 .doc-title {
   display: block;
@@ -139,11 +163,14 @@ async function signTerms() {
   margin-bottom: 12rpx;
 }
 .indent { padding-left: 24rpx; }
+
+/* 签署栏：flex-shrink:0 保证始终可见，不随内容滚动 */
 .sign-bar {
-  position: sticky; bottom: 0;
+  flex-shrink: 0;
   background: #fff; padding: 24rpx 32rpx;
   box-shadow: 0 -4rpx 16rpx rgba(0,0,0,.06);
   display: flex; flex-direction: column; gap: 12rpx; align-items: center;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom, 0px));
 }
 .sign-tip { font-size: 22rpx; color: #9BBCB4; }
 .sign-btn {
@@ -152,6 +179,7 @@ async function signTerms() {
   padding: 24rpx 0; border-radius: 16rpx;
 }
 .signed-bar {
+  flex-shrink: 0;
   padding: 24rpx 32rpx; text-align: center;
   background: #EDF7F4;
 }

@@ -115,8 +115,11 @@ defineExpose({ check });
 .modal {
   background: #fff; width: 100%;
   border-radius: 32rpx 32rpx 0 0;
+  /* 限制高度，内容区才能真正滚动 */
   max-height: 88vh;
+  height: 88vh;
   display: flex; flex-direction: column;
+  overflow: hidden;
 }
 
 .modal-head {
@@ -130,16 +133,28 @@ defineExpose({ check });
 }
 .modal-version { font-size: 22rpx; color: #9BBCB4; }
 
-.content-scroll { flex: 1; padding: 24rpx 40rpx; }
+.content-scroll {
+  flex: 1;
+  /* H5 flex 子元素默认 min-height:auto，不加这行会撑破容器 */
+  min-height: 0;
+  padding: 24rpx 40rpx;
+  /* H5 scroll-view 需要显式 overflow 才能滚动 */
+  overflow-y: auto;
+}
 .content-text {
   font-size: 25rpx; color: #555; line-height: 1.9;
   white-space: pre-wrap;
+  /* 避免文字被裁切，给底部留点间距 */
+  padding-bottom: 16rpx;
+  display: block;
 }
 
 .footer {
   padding: 20rpx 32rpx 48rpx;
   border-top: 1rpx solid #f0f0f0;
   flex-shrink: 0;
+  /* 安全区适配（刘海屏 / 底部 Home 条） */
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom, 0px));
 }
 .hint { display: block; font-size: 22rpx; color: #aaa; text-align: center; margin-bottom: 20rpx; }
 

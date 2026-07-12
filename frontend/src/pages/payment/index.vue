@@ -1,186 +1,211 @@
 <template>
   <view class="page">
-    <!-- 订单信息 -->
-    <view class="order-card">
-      <text class="order-title">确认支付</text>
-      <view class="order-row" v-if="isActivity">
-        <text class="label">活动名称</text>
-        <text class="value">{{ activityName }}</text>
+
+    <!-- 订单摘要卡 -->
+    <view class="summary-card">
+      <view class="summary-badge">
+        <text class="summary-badge-text">{{ isActivity ? '活动报名' : '咨询预约' }}</text>
       </view>
+
+      <text class="summary-name" v-if="isActivity">{{ activityName }}</text>
       <template v-else>
-        <view class="order-row">
-          <text class="label">咨询师</text>
-          <text class="value">{{ consultantName }}</text>
-        </view>
-        <view class="order-row">
-          <text class="label">预约时间</text>
-          <text class="value">{{ slotTime }}</text>
-        </view>
+        <text class="summary-name">{{ consultantName }}</text>
+        <text class="summary-time">{{ slotTime }}</text>
       </template>
 
-      <!-- 退费须知（内嵌于订单卡片，仅预约支付显示） -->
-      <view class="refund-policy" v-if="!isActivity">
-        <view class="refund-title">
-          <text class="refund-icon">📋</text>
-          <text>退费须知 · 请提前3天预约</text>
+      <!-- 退费须知 -->
+      <view class="refund-block" v-if="!isActivity">
+        <text class="refund-label">退款政策</text>
+        <view class="refund-rules">
+          <view class="refund-rule">
+            <view class="rule-dot rule-dot--green" />
+            <text class="rule-text"><text class="rule-time">{{ refundDeadline48h }}</text> 前取消，全额退款</text>
+          </view>
+          <view class="refund-rule">
+            <view class="rule-dot rule-dot--amber" />
+            <text class="rule-text"><text class="rule-time">{{ refundDeadline24h }}</text> 前取消，退款 50%</text>
+          </view>
+          <view class="refund-rule">
+            <view class="rule-dot rule-dot--red" />
+            <text class="rule-text"><text class="rule-time">{{ refundDeadline24h }}</text> 后取消，不予退款</text>
+          </view>
         </view>
-        <view class="refund-row">
-          <text class="dot green">●</text>
-          <text><text class="tag green">{{ refundDeadline48h }}</text> 前取消：<text class="tag green">全额退款</text></text>
-        </view>
-        <view class="refund-row">
-          <text class="dot orange">●</text>
-          <text><text class="tag orange">{{ refundDeadline24h }}</text> 前取消：<text class="tag orange">退款50%</text></text>
-        </view>
-        <view class="refund-row">
-          <text class="dot red">●</text>
-          <text><text class="tag red">{{ refundDeadline24h }}</text> 后取消：<text class="tag red">不予退款</text></text>
-        </view>
-        <text class="refund-agree">点击「立即支付」即表示同意以上退费规则</text>
+        <text class="refund-consent">点击「立即支付」即表示同意以上退款规则</text>
       </view>
 
-      <view class="order-divider" />
-      <!-- 金额分层展示 -->
-      <view class="order-row amount-row">
-        <text class="label">应付金额</text>
-        <view class="amount-group">
-          <text class="original-price" v-if="discountRate < 1.0">
-            ¥{{ (amount / 100).toFixed(2) }}
-          </text>
-          <text class="amount">¥{{ (finalAmount / 100).toFixed(2) }}</text>
-          <text class="discount-tag" v-if="discountRate < 1.0">
-            {{ Math.round(discountRate * 10) }}折
-          </text>
+      <view class="summary-divider" />
+
+      <!-- 金额 -->
+      <view class="amount-section">
+        <text class="amount-label">应付金额</text>
+        <view class="amount-display">
+          <text class="amount-strike" v-if="discountRate < 1.0">¥{{ (amount / 100).toFixed(2) }}</text>
+          <view class="amount-main">
+            <text class="amount-currency">¥</text>
+            <text class="amount-value">{{ (finalAmount / 100).toFixed(2) }}</text>
+          </view>
+          <view class="discount-chip" v-if="discountRate < 1.0">
+            <text class="discount-chip-text">{{ Math.round(discountRate * 10) }}折</text>
+          </view>
         </view>
       </view>
-      <!-- 优惠券减免明细 -->
-      <view class="order-row savings-row" v-if="selectedCouponDiscount > 0 && !usePackage">
-        <text class="label">优惠券减免</text>
-        <text class="savings">-¥{{ (selectedCouponDiscount / 100).toFixed(2) }}</text>
+
+      <!-- 优惠券减免 -->
+      <view class="savings-row" v-if="selectedCouponDiscount > 0 && !usePackage">
+        <text class="savings-label">优惠券减免</text>
+        <text class="savings-value">-¥{{ (selectedCouponDiscount / 100).toFixed(2) }}</text>
       </view>
     </view>
 
     <!-- 倒计时 -->
-    <view class="timer-tip" v-if="countdown > 0">
-      <text class="timer-icon">⏱</text>
-      <text>请在 {{ timerText }} 内完成支付，超时订单自动取消</text>
+    <view class="timer-bar" v-if="countdown > 0">
+      <view class="timer-dot" />
+      <text class="timer-text">请在 <text class="timer-count">{{ timerText }}</text> 内完成支付</text>
     </view>
-    <view class="timer-tip expired" v-else-if="orderNo">
-      <text>订单已超时，请重新预约</text>
+    <view class="timer-bar timer-bar--expired" v-else-if="orderNo">
+      <view class="timer-dot" />
+      <text class="timer-text">订单已超时，请重新预约</text>
     </view>
 
     <!-- 支付方式 -->
-    <view class="pay-card">
-      <view
-        class="pay-item"
-        :class="{ active: payMethod === 'wechat' }"
-        @click="payMethod = 'wechat'"
-      >
-        <text class="pay-icon">💚</text>
-        <text class="pay-name">微信支付</text>
-        <text class="pay-check" v-if="payMethod === 'wechat'">✓</text>
-      </view>
-      <view
-        v-if="isH5"
-        class="pay-item"
-        :class="{ active: payMethod === 'alipay' }"
-        @click="payMethod = 'alipay'"
-      >
-        <text class="pay-icon">💙</text>
-        <text class="pay-name">支付宝</text>
-        <text class="pay-check" v-if="payMethod === 'alipay'">✓</text>
-      </view>
-    </view>
-
-    <!-- 优惠券选择（有可用券时显示，活动支付不用券） -->
-    <view class="pay-card" v-if="!isActivity && !usePackage && availableCoupons.length > 0">
-      <view class="pay-item coupon-header">
-        <text class="pay-icon">🎟️</text>
-        <text class="pay-name">优惠券</text>
-        <text class="coupon-count">{{ availableCoupons.length }} 张可用</text>
-      </view>
-      <view
-        v-for="uc in availableCoupons"
-        :key="uc.id"
-        class="pay-item"
-        :class="{ active: selectedCouponId === uc.id, disabled: !uc.applicable }"
-        @click="uc.applicable && selectCoupon(uc.id)"
-      >
-        <view class="coupon-info">
-          <text class="coupon-name">{{ uc.coupon.name }}</text>
-          <text class="coupon-desc" v-if="uc.coupon.description">{{ uc.coupon.description }}</text>
-          <text class="coupon-save green" v-if="uc.applicable && uc.discount > 0">
-            可省 ¥{{ (uc.discount / 100).toFixed(2) }}
-          </text>
-          <text class="coupon-save gray" v-else-if="!uc.applicable">
-            {{ uc.coupon.type === 'threshold'
-              ? `满¥${(uc.coupon.threshold/100).toFixed(0)}可用`
-              : '不适用当前订单' }}
-          </text>
+    <view class="section-block">
+      <text class="section-label">支付方式</text>
+      <view class="method-group">
+        <view
+          class="method-item"
+          :class="{ 'method-item--active': payMethod === 'wechat' }"
+          @click="payMethod = 'wechat'"
+        >
+          <view class="method-icon method-icon--wechat">
+            <text class="method-icon-text">微</text>
+          </view>
+          <text class="method-name">微信支付</text>
+          <view class="method-radio" :class="{ 'method-radio--on': payMethod === 'wechat' }">
+            <view class="method-radio-dot" v-if="payMethod === 'wechat'" />
+          </view>
         </view>
-        <text class="pay-check" v-if="selectedCouponId === uc.id">✓</text>
-      </view>
-      <!-- 不用券 -->
-      <view
-        class="pay-item"
-        :class="{ active: selectedCouponId === null }"
-        @click="selectedCouponId = null"
-      >
-        <text class="pay-icon">🚫</text>
-        <text class="pay-name">不使用优惠券</text>
-        <text class="pay-check" v-if="selectedCouponId === null">✓</text>
-      </view>
-    </view>
-
-    <!-- 套餐选项（有可用套餐时显示，活动支付不用套餐） -->
-    <view class="pay-card" v-if="!isActivity && activePackages.length > 0">
-      <view class="pay-item package-header">
-        <text class="pay-icon">🎁</text>
-        <text class="pay-name">使用套餐次数</text>
-      </view>
-      <view
-        v-for="up in activePackages"
-        :key="up.id"
-        class="pay-item"
-        :class="{ active: usePackage && selectedPackageId === up.id }"
-        @click="selectPackage(up.id)"
-      >
-        <view class="pkg-info">
-          <text class="pkg-name">{{ up.package.name }}</text>
-          <text class="pkg-remain">剩余 {{ up.totalSessions - up.usedSessions }} 次</text>
+        <view
+          v-if="isH5"
+          class="method-item"
+          :class="{ 'method-item--active': payMethod === 'alipay' }"
+          @click="payMethod = 'alipay'"
+        >
+          <view class="method-icon method-icon--alipay">
+            <text class="method-icon-text">支</text>
+          </view>
+          <text class="method-name">支付宝</text>
+          <view class="method-radio" :class="{ 'method-radio--on': payMethod === 'alipay' }">
+            <view class="method-radio-dot" v-if="payMethod === 'alipay'" />
+          </view>
         </view>
-        <text class="pay-check" v-if="usePackage && selectedPackageId === up.id">✓</text>
-      </view>
-      <!-- 不使用套餐 -->
-      <view
-        class="pay-item"
-        :class="{ active: !usePackage }"
-        @click="usePackage = false; selectedPackageId = null"
-      >
-        <text class="pay-icon">💳</text>
-        <text class="pay-name">不使用套餐，单次支付</text>
-        <text class="pay-check" v-if="!usePackage">✓</text>
       </view>
     </view>
 
-    <!-- 底部按钮 -->
+    <!-- 优惠券 -->
+    <view class="section-block" v-if="!isActivity && !usePackage && availableCoupons.length > 0">
+      <view class="section-header">
+        <text class="section-label">优惠券</text>
+        <text class="section-count">{{ availableCoupons.length }} 张可用</text>
+      </view>
+      <view class="coupon-group">
+        <view
+          v-for="uc in availableCoupons"
+          :key="uc.id"
+          class="coupon-item"
+          :class="{ 'coupon-item--active': selectedCouponId === uc.id, 'coupon-item--disabled': !uc.applicable }"
+          @click="uc.applicable && selectCoupon(uc.id)"
+        >
+          <view class="coupon-badge" :class="{ 'coupon-badge--dim': !uc.applicable }">
+            <text class="coupon-badge-text" v-if="uc.applicable && uc.discount > 0">省¥{{ (uc.discount / 100).toFixed(0) }}</text>
+            <text class="coupon-badge-text" v-else>券</text>
+          </view>
+          <view class="coupon-info">
+            <text class="coupon-name">{{ uc.coupon.name }}</text>
+            <text class="coupon-desc" v-if="uc.coupon.description">{{ uc.coupon.description }}</text>
+            <text class="coupon-unavail" v-if="!uc.applicable">
+              {{ uc.coupon.type === 'threshold' ? `满¥${(uc.coupon.threshold/100).toFixed(0)}可用` : '不适用当前订单' }}
+            </text>
+          </view>
+          <view class="method-radio" :class="{ 'method-radio--on': selectedCouponId === uc.id }">
+            <view class="method-radio-dot" v-if="selectedCouponId === uc.id" />
+          </view>
+        </view>
+        <view
+          class="coupon-item coupon-item--plain"
+          :class="{ 'coupon-item--active': selectedCouponId === null }"
+          @click="selectedCouponId = null"
+        >
+          <text class="coupon-none-text">不使用优惠券</text>
+          <view class="method-radio" :class="{ 'method-radio--on': selectedCouponId === null }">
+            <view class="method-radio-dot" v-if="selectedCouponId === null" />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 套餐 -->
+    <view class="section-block" v-if="!isActivity && activePackages.length > 0">
+      <text class="section-label">套餐次数</text>
+      <view class="method-group">
+        <view
+          v-for="up in activePackages"
+          :key="up.id"
+          class="method-item"
+          :class="{ 'method-item--active': usePackage && selectedPackageId === up.id }"
+          @click="selectPackage(up.id)"
+        >
+          <view class="pkg-info">
+            <text class="method-name">{{ up.package.name }}</text>
+            <text class="pkg-remain">剩余 {{ up.totalSessions - up.usedSessions }} 次</text>
+          </view>
+          <view class="method-radio" :class="{ 'method-radio--on': usePackage && selectedPackageId === up.id }">
+            <view class="method-radio-dot" v-if="usePackage && selectedPackageId === up.id" />
+          </view>
+        </view>
+        <view
+          class="method-item"
+          :class="{ 'method-item--active': !usePackage }"
+          @click="usePackage = false; selectedPackageId = null"
+        >
+          <text class="method-name">单次支付</text>
+          <view class="method-radio" :class="{ 'method-radio--on': !usePackage }">
+            <view class="method-radio-dot" v-if="!usePackage" />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部操作区 -->
     <view class="footer">
-      <button class="pay-btn" :disabled="loading || countdown <= 0" @click="doPay()">
-        <template v-if="loading">处理中...</template>
-        <template v-else-if="usePackage">使用套餐预约（免支付）</template>
-        <template v-else>立即支付 ¥{{ (finalAmount / 100).toFixed(2) }}</template>
+      <button
+        class="pay-btn"
+        :class="{ 'pay-btn--disabled': loading || countdown <= 0 }"
+        :disabled="loading || countdown <= 0"
+        @click="doPay()"
+      >
+        <text v-if="loading">处理中</text>
+        <text v-else-if="usePackage">使用套餐预约</text>
+        <text v-else>立即支付 ¥{{ (finalAmount / 100).toFixed(2) }}</text>
       </button>
       <text class="cancel-link" v-if="!isActivity" @click="cancel()">取消预约</text>
     </view>
-    <!-- 电脑端扫码弹窗 -->
-    <view v-if="showQrModal" class="qr-mask" @click.self="closeQrModal">
-      <view class="qr-box">
-        <text class="qr-title">{{ qrTitle }}</text>
-        <image class="qr-img" :src="qrDataUrl" mode="aspectFit" />
+
+    <!-- 二维码弹窗 -->
+    <view v-if="showQrModal" class="qr-overlay" @click.self="closeQrModal">
+      <view class="qr-panel">
+        <view class="qr-header">
+          <text class="qr-title">{{ qrTitle }}</text>
+          <view class="qr-close-btn" @click="closeQrModal">
+            <text class="qr-close-x">×</text>
+          </view>
+        </view>
+        <view class="qr-frame">
+          <image class="qr-img" :src="qrDataUrl" mode="aspectFit" />
+        </view>
         <text class="qr-hint">请使用微信扫码完成支付，支付成功后自动跳转</text>
-        <text class="qr-close" @click="closeQrModal()">取消</text>
       </view>
     </view>
+
   </view>
 </template>
 
@@ -360,7 +385,7 @@ async function doPay() {
       if (!isH5) {
         await doActivityWechatMiniApp();
       } else if (!isMobile()) {
-        payMethod.value === 'alipay' ? await doAlipayDesktop() : await doActivityWechatDesktop();
+        payMethod.value === 'alipay' ? await doActivityAlipayDesktop() : await doActivityWechatDesktop();
       } else {
         payMethod.value === 'alipay' ? await doActivityAlipay() : await doActivityWechatH5();
       }
@@ -441,12 +466,19 @@ async function doActivityWechatMiniApp() {
 async function doActivityWechatH5() {
   const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'native' });
   orderNo.value = data.orderNo;
+  qrDataUrl.value = await QRCode.toDataURL(data.codeUrl, { width: 220, margin: 1 });
+  qrTitle.value = '微信扫码支付';
   qrOrderNo.value = data.orderNo;
-  location.href = data.codeUrl;
+  showQrModal.value = true;
   startQrPoll(data.orderNo);
 }
 async function doActivityAlipay() {
   const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'alipay' });
+  orderNo.value = data.orderNo;
+  document.write(data.payUrl);
+}
+async function doActivityAlipayDesktop() {
+  const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'alipay-pc' });
   orderNo.value = data.orderNo;
   document.write(data.payUrl);
 }
@@ -500,7 +532,15 @@ async function doAlipayH5() {
 }
 
 function onPaySuccess() {
-  uni.showToast({ title: '支付成功', icon: 'success' });
+  if (isActivity.value && newsId.value) {
+    try {
+      const key = 'registeredActivities';
+      const stored = JSON.parse(uni.getStorageSync(key) || '[]');
+      if (!stored.includes(newsId.value)) stored.push(newsId.value);
+      uni.setStorageSync(key, JSON.stringify(stored));
+    } catch {}
+  }
+  uni.showToast({ title: '报名成功', icon: 'success' });
   clearInterval(timer);
   setTimeout(() => uni.navigateBack({ delta: 2 }), 1500);
 }
@@ -525,121 +565,561 @@ async function cancel() {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; background: #F5F7F6; padding-bottom: 160rpx; }
+$teal:        #4A8A7A;
+$teal-dark:   #3A7060;
+$teal-light:  #EFF7F5;
+$bg:          #F2F5F4;
+$surface:     #ffffff;
+$text-1:      #1C2A27;
+$text-2:      #617870;
+$text-3:      #9BBCB4;
+$border:      #E4EDEA;
+$amber:       #B87C0E;
+$red:         #C03030;
+$r-card:      20rpx;
+$r-inner:     14rpx;
 
-.order-card {
-  background: #fff; margin: 24rpx; border-radius: 20rpx; padding: 40rpx 36rpx;
-  .order-title { font-size: 36rpx; font-weight: 700; color: #1C2A27; display: block; margin-bottom: 32rpx; }
-  .order-row { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 0; }
-  .label { font-size: 28rpx; color: #8A9E97; }
-  .value { font-size: 28rpx; color: #1C2A27; }
-  .order-divider { height: 1rpx; background: #EEF2F0; margin: 16rpx 0; }
-  .amount-row { margin-top: 8rpx; align-items: flex-end; }
-  .amount-group { display: flex; align-items: baseline; gap: 10rpx; }
-  .amount { font-size: 48rpx; font-weight: 700; color: #4A8A7A; }
-  .original-price { font-size: 26rpx; color: #B0B8B5; text-decoration: line-through; }
-  .discount-tag {
-    font-size: 20rpx; font-weight: 600; color: #fff;
-    background: #E05A4A; border-radius: 8rpx; padding: 2rpx 10rpx;
-  }
+.page {
+  min-height: 100vh;
+  background: $bg;
+  padding: 48rpx 0 180rpx;
+}
 
-  .refund-policy {
-    margin: 16rpx 0 4rpx;
-    background: #F8FBFA; border-radius: 12rpx; padding: 20rpx 24rpx;
+/* ── Summary card ─────────────────────────────────────────────── */
+.summary-card {
+  margin: 0 24rpx 20rpx;
+  background: $surface;
+  border-radius: $r-card;
+  padding: 36rpx 36rpx 32rpx;
+  box-shadow: 0 4rpx 28rpx rgba(28,42,39,0.08);
+  position: relative;
+  overflow: hidden;
 
-    .refund-title {
-      display: flex; align-items: center; gap: 8rpx;
-      font-size: 22rpx; font-weight: 600; color: #4A5A55;
-      margin-bottom: 14rpx;
-      .refund-icon { font-size: 24rpx; }
-    }
-
-    .refund-row {
-      display: flex; align-items: center; gap: 10rpx;
-      font-size: 22rpx; color: #4A5A55; padding: 5rpx 0; line-height: 1.5;
-      .dot { font-size: 14rpx; flex-shrink: 0;
-        &.green  { color: #4A8A7A; }
-        &.orange { color: #C8821A; }
-        &.red    { color: #C83232; }
-      }
-      .tag { font-weight: 600;
-        &.green  { color: #4A8A7A; }
-        &.orange { color: #C8821A; }
-        &.red    { color: #C83232; }
-      }
-    }
-
-    .refund-agree {
-      margin-top: 12rpx; font-size: 20rpx; color: #A0AEA9; line-height: 1.5;
-    }
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4rpx;
+    background: linear-gradient(90deg, $teal 0%, #72C2AE 100%);
   }
 }
 
-.timer-tip {
-  display: flex; align-items: center; gap: 10rpx;
-  margin: 0 24rpx 16rpx; padding: 20rpx 28rpx;
-  background: #FFF8E6; border-radius: 12rpx;
-  font-size: 24rpx; color: #C8821A;
-  .timer-icon { font-size: 28rpx; }
-  &.expired { background: #FFF0F0; color: #C83232; }
+.summary-badge {
+  display: inline-flex;
+  background: $teal-light;
+  border-radius: 8rpx;
+  padding: 6rpx 18rpx;
+  margin-bottom: 20rpx;
 }
 
-.pay-card {
-  background: #fff; margin: 0 24rpx; border-radius: 20rpx; padding: 8rpx 0;
-  .pay-item {
-    display: flex; align-items: center; gap: 20rpx;
-    padding: 28rpx 36rpx;
-    border-bottom: 1rpx solid #F0F4F2;
-    &:last-child { border-bottom: none; }
-    .pay-icon { font-size: 44rpx; }
-    .pay-name { font-size: 30rpx; color: #1C2A27; flex: 1; }
-    .pay-check { font-size: 32rpx; color: #4A8A7A; font-weight: 700; }
-    &.active   { background: #F5FBF9; }
-    &.disabled { opacity: .45; }
-    &.package-header, &.coupon-header { background: #F5FBF9; border-radius: 20rpx 20rpx 0 0; }
-    .coupon-count { font-size: 22rpx; color: #4A8A7A; margin-left: auto; }
-    .coupon-info  { flex: 1; display: flex; flex-direction: column; gap: 4rpx; }
-    .coupon-name  { font-size: 28rpx; color: #1C2A27; font-weight: 500; }
-    .coupon-desc  { font-size: 20rpx; color: #8A9E97; }
-    .coupon-save  { font-size: 22rpx; font-weight: 600;
-      &.green { color: #4A8A7A; }
-      &.gray  { color: #B0B8B5; }
-    }
-    .pkg-info   { flex: 1; display: flex; flex-direction: column; gap: 6rpx; }
-    .pkg-name   { font-size: 28rpx; color: #1C2A27; font-weight: 500; }
-    .pkg-remain { font-size: 22rpx; color: #4A8A7A; }
+.summary-badge-text {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: $teal;
+  letter-spacing: 0.07em;
+}
+
+.summary-name {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: $text-1;
+  line-height: 1.4;
+  margin-bottom: 8rpx;
+}
+
+.summary-time {
+  display: block;
+  font-size: 26rpx;
+  color: $text-2;
+  margin-bottom: 4rpx;
+}
+
+/* Refund policy */
+.refund-block {
+  margin: 28rpx 0 0;
+  background: #F7FAF9;
+  border-radius: $r-inner;
+  border: 1rpx solid $border;
+  padding: 24rpx 28rpx;
+}
+
+.refund-label {
+  display: block;
+  font-size: 19rpx;
+  font-weight: 700;
+  color: $text-3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 16rpx;
+}
+
+.refund-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+}
+
+.refund-rule {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.rule-dot {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  &--green { background: $teal; }
+  &--amber { background: $amber; }
+  &--red   { background: $red; }
+}
+
+.rule-text {
+  font-size: 23rpx;
+  color: $text-2;
+  line-height: 1.5;
+}
+
+.rule-time {
+  font-weight: 600;
+  color: $text-1;
+}
+
+.refund-consent {
+  font-size: 20rpx;
+  color: $text-3;
+  line-height: 1.6;
+}
+
+/* Divider */
+.summary-divider {
+  height: 1rpx;
+  background: $border;
+  margin: 28rpx 0 24rpx;
+}
+
+/* Amount */
+.amount-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.amount-label {
+  font-size: 26rpx;
+  color: $text-2;
+  padding-bottom: 8rpx;
+}
+
+.amount-display {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.amount-strike {
+  font-size: 26rpx;
+  color: $text-3;
+  text-decoration: line-through;
+}
+
+.amount-main {
+  display: flex;
+  align-items: baseline;
+  gap: 2rpx;
+}
+
+.amount-currency {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: $teal;
+}
+
+.amount-value {
+  font-size: 64rpx;
+  font-weight: 800;
+  color: $teal;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.discount-chip {
+  background: #FEEFEC;
+  border-radius: 8rpx;
+  padding: 5rpx 14rpx;
+  align-self: center;
+}
+
+.discount-chip-text {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #C03A2A;
+}
+
+/* Coupon savings */
+.savings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx dashed $border;
+}
+
+.savings-label { font-size: 24rpx; color: $text-2; }
+.savings-value { font-size: 26rpx; font-weight: 700; color: #C03A2A; }
+
+/* ── Timer bar ────────────────────────────────────────────────── */
+.timer-bar {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin: 0 24rpx 20rpx;
+  padding: 18rpx 28rpx;
+  background: #FFFBF0;
+  border-radius: $r-inner;
+  border: 1rpx solid #F0DFA0;
+}
+
+.timer-dot {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: $amber;
+  flex-shrink: 0;
+}
+
+.timer-text {
+  font-size: 24rpx;
+  color: $amber;
+}
+
+.timer-count {
+  font-weight: 700;
+}
+
+.timer-bar--expired {
+  background: #FFF4F4;
+  border-color: #F5BABA;
+  .timer-dot { background: $red; }
+  .timer-text { color: $red; }
+}
+
+/* ── Section blocks ───────────────────────────────────────────── */
+.section-block {
+  margin: 0 24rpx 20rpx;
+  background: $surface;
+  border-radius: $r-card;
+  padding: 32rpx 36rpx;
+  box-shadow: 0 2rpx 16rpx rgba(28,42,39,0.05);
+}
+
+.section-label {
+  display: block;
+  font-size: 21rpx;
+  font-weight: 700;
+  color: $text-3;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin-bottom: 20rpx;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+
+  .section-label { margin-bottom: 0; }
+}
+
+.section-count {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: $teal;
+  background: $teal-light;
+  padding: 5rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+/* ── Method items (payment, package) ─────────────────────────── */
+.method-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.method-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 28rpx;
+  border-radius: $r-inner;
+  border: 2rpx solid $border;
+  background: $surface;
+
+  &--active {
+    border-color: $teal;
+    background: $teal-light;
   }
-  & + .pay-card { margin-top: 16rpx; }
+
+  &:active { opacity: 0.85; }
 }
 
-.order-card .savings-row { padding: 6rpx 0; }
-.order-card .savings { font-size: 26rpx; font-weight: 600; color: #E05A4A; }
+.method-icon {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 
-.qr-mask {
-  position: fixed; inset: 0; background: rgba(0,0,0,.55);
-  display: flex; align-items: center; justify-content: center; z-index: 999;
+  &--wechat { background: #07C160; }
+  &--alipay { background: #1677FF; }
 }
-.qr-box {
-  background: #fff; border-radius: 20rpx; padding: 48rpx 56rpx;
-  display: flex; flex-direction: column; align-items: center; gap: 24rpx;
-  min-width: 380rpx;
-}
-.qr-title { font-size: 32rpx; font-weight: 700; color: #1C2A27; }
-.qr-img   { width: 220px; height: 220px; }
-.qr-hint  { font-size: 22rpx; color: #8A9E97; text-align: center; line-height: 1.6; }
-.qr-close { font-size: 26rpx; color: #C83232; margin-top: 8rpx; cursor: pointer; }
 
+.method-icon-text {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+.method-name {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: $text-1;
+  flex: 1;
+}
+
+.pkg-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5rpx;
+}
+
+.pkg-remain {
+  font-size: 22rpx;
+  color: $teal;
+}
+
+/* Radio circle */
+.method-radio {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 2rpx solid $border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &--on { border-color: $teal; }
+}
+
+.method-radio-dot {
+  width: 22rpx;
+  height: 22rpx;
+  border-radius: 50%;
+  background: $teal;
+}
+
+/* ── Coupon items ─────────────────────────────────────────────── */
+.coupon-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.coupon-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: $r-inner;
+  border: 2rpx solid $border;
+
+  &--active {
+    border-color: $teal;
+    background: $teal-light;
+  }
+
+  &--disabled { opacity: 0.48; }
+
+  &--plain { padding: 24rpx 28rpx; }
+}
+
+.coupon-badge {
+  width: 88rpx;
+  height: 68rpx;
+  background: $teal;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &--dim { background: $text-3; }
+}
+
+.coupon-badge-text {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.coupon-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5rpx;
+}
+
+.coupon-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: $text-1;
+}
+
+.coupon-desc {
+  font-size: 21rpx;
+  color: $text-2;
+}
+
+.coupon-unavail {
+  font-size: 21rpx;
+  color: $text-3;
+}
+
+.coupon-none-text {
+  font-size: 28rpx;
+  color: $text-2;
+  flex: 1;
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
 .footer {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: #fff; padding: 24rpx 32rpx 48rpx;
-  display: flex; flex-direction: column; align-items: center; gap: 20rpx;
-  box-shadow: 0 -2rpx 20rpx rgba(0,0,0,.08);
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: $surface;
+  border-top: 1rpx solid $border;
+  box-shadow: 0 -8rpx 40rpx rgba(28,42,39,0.07);
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
 
-  .pay-btn {
-    width: 100%; background: #4A8A7A; color: #fff;
-    font-size: 32rpx; font-weight: 600; border-radius: 50rpx; height: 96rpx;
-    &[disabled] { background: #B0C9C4; }
+.pay-btn {
+  width: 100%;
+  height: 96rpx;
+  background: $teal;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 700;
+  border-radius: 48rpx;
+  letter-spacing: 0.04em;
+  border: none;
+
+  &--disabled,
+  &[disabled] {
+    background: #C0D0CD;
+    color: rgba(255,255,255,0.65);
   }
-  .cancel-link { font-size: 26rpx; color: #8A9E97; }
+
+  &:active:not([disabled]) {
+    opacity: 0.88;
+    transform: scale(0.99);
+  }
+}
+
+.cancel-link {
+  font-size: 26rpx;
+  color: $text-3;
+}
+
+/* ── QR overlay ───────────────────────────────────────────────── */
+.qr-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,18,16,0.58);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.qr-panel {
+  background: $surface;
+  border-radius: 24rpx;
+  padding: 40rpx 48rpx 44rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 420rpx;
+  box-shadow: 0 32rpx 80rpx rgba(10,18,16,0.30);
+}
+
+.qr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 32rpx;
+}
+
+.qr-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: $text-1;
+}
+
+.qr-close-btn {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  background: #F0F4F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &:active { opacity: 0.7; }
+}
+
+.qr-close-x {
+  font-size: 36rpx;
+  color: $text-2;
+  line-height: 1;
+  font-weight: 300;
+}
+
+.qr-frame {
+  padding: 16rpx;
+  border: 1rpx solid $border;
+  border-radius: 16rpx;
+  margin-bottom: 28rpx;
+}
+
+.qr-img {
+  width: 220px;
+  height: 220px;
+  display: block;
+}
+
+.qr-hint {
+  font-size: 22rpx;
+  color: $text-2;
+  text-align: center;
+  line-height: 1.7;
+  max-width: 340rpx;
 }
 </style>

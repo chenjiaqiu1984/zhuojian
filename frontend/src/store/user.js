@@ -25,7 +25,7 @@ export const useUserStore = defineStore('user', () => {
   async function login(username, password, rememberMe = false) { _save(await authApi.login({ username, password: await hashPassword(password), rememberMe })); }
   async function loginPhone(phone, code, rememberMe = false) { _save(await authApi.loginPhone(phone, code, rememberMe)); }
   async function loginWechat(code) { _save(await authApi.loginWechat(code)); }
-  async function loginPhoneWechat(code) { _save(await authApi.loginPhoneWechat(code)); }
+  async function loginPhoneWechat(code, loginCode) { _save(await authApi.loginPhoneWechat(code, loginCode)); }
 
   // 完善账号：提交昵称、密码、协议，后端将 status 改为 active 并返回新 token
   async function completeSetup(name, password, termsAccepted, username) {

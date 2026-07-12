@@ -72,6 +72,7 @@ function toNewsData(b) {
   if ('video_url' in d) { d.videoUrl = d.video_url; delete d.video_url; }
   if ('is_published' in d) { d.isPublished = d.is_published; delete d.is_published; }
   if ('is_paid' in d) { d.isPaid = d.is_paid ? 1 : 0; delete d.is_paid; }
+  if ('end_date' in d) { d.endDate = d.end_date || null; delete d.end_date; }
   // price 前端传元（如 0.01），后端存分
   if ('price' in d) d.price = Math.round((Number(d.price) || 0) * 100);
   delete d.id; delete d.created_at; delete d.createdAt;

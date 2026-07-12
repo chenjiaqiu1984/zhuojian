@@ -39,11 +39,11 @@
           <text class="q-num">{{i+1}}</text>
           <text class="q-text">{{q}}</text>
         </view>
-        <textarea class="note-input" v-model="note" placeholder="写下你的感受..." maxlength="500" />
+        <textarea class="note-input" v-model="note" placeholder="写下你的感受..." placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
-          <u-button type="primary" @click="save()">保存记录</u-button>
-          <u-button plain @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</u-button>
-          <u-button plain @click="uni.navigateBack()">返回抽卡菜单</u-button>
+          <view class="btn btn-primary" @click="save()">保存记录</view>
+          <view class="btn btn-ghost" @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</view>
+          <view class="btn btn-ghost" @click="uni.navigateBack()">返回抽卡菜单</view>
         </view>
       </view>
     </view>
@@ -66,15 +66,8 @@ const step = ref(0), sel = ref(null), cards = ref([]), note = ref(''), fsUrl = r
 const allFlipped = computed(() => cards.value.length > 0 && cards.value.every(c => c.flipped));
 function fullUrl(u) { return u?.startsWith('http') ? u : SERVER + u; }
 
-const CAT_STYLE = {
-  'OH图卡':'linear-gradient(135deg,#4A7BBA,#7B68EE)','OH字卡':'linear-gradient(135deg,#0f2044,#1a3a6b)',
-  '孩童卡·人像':'linear-gradient(135deg,#7B68EE,#B580E0)','孩童卡·情况':'linear-gradient(135deg,#6A5ACD,#9370DB)',
-  '路标卡':'linear-gradient(135deg,#5A6EA0,#3A6E80)','彩虹卡':'linear-gradient(135deg,#E07040,#F5A623)',
-  '伴侣卡':'linear-gradient(135deg,#C06090,#E06090)',
-  '中国神话卡':'linear-gradient(135deg,#8A5A7A,#C06090)','抽象卡':'linear-gradient(135deg,#4A4A6A,#6A6A8A)',
-  '英雄之旅故事卡':'linear-gradient(135deg,#5A6EA0,#8A5A7A)',
-};
-function catStyle(cat) { return CAT_STYLE[cat] || 'linear-gradient(135deg,#4A7BBA,#7B68EE)'; }
+const CAT_BACK = 'linear-gradient(135deg,#4A8A7A,#3A6E80)';
+function catStyle(cat) { return CAT_BACK; }
 
 const SCENES = ref([
   { id:1, icon:'⚡', color:'#F5A623', title:'今天想获得能量',
@@ -171,43 +164,47 @@ function reset() { step.value = 0; sel.value = null; cards.value = []; note.valu
 </script>
 
 <style scoped lang="scss">
-.page { min-height:100vh; background:#F5F7F6; padding:24rpx; }
-.page-hint { font-size:24rpx; color:#999; display:block; margin-bottom:20rpx; text-align:center; }
+.page { min-height:100vh; background:#F5F7F6; padding:36rpx 28rpx 64rpx; }
+.page-hint { font-size:24rpx; color:#9BBCB4; display:block; margin-bottom:28rpx; text-align:center; letter-spacing:1rpx; }
 .list { display:flex; flex-direction:column; gap:16rpx; }
-.scene-card { background:#fff; border-radius:20rpx; padding:24rpx 28rpx; display:flex; align-items:center; gap:20rpx; }
-.sc-icon { width:72rpx; height:72rpx; border-radius:18rpx; display:flex; align-items:center; justify-content:center; font-size:32rpx; flex-shrink:0; }
+.scene-card { background:#FFFFFF; border:1rpx solid #E8EFED; border-radius:20rpx; padding:28rpx 30rpx; display:flex; align-items:center; gap:20rpx; box-shadow:0 4rpx 18rpx rgba(28,42,39,0.04); }
+.sc-icon { width:80rpx; height:80rpx; border-radius:22rpx; display:flex; align-items:center; justify-content:center; font-size:36rpx; flex-shrink:0; background:#EDF4F0 !important; }
 .sc-title { font-size:30rpx; font-weight:600; color:#1C2A27; display:block; }
-.sc-tags { font-size:21rpx; color:#aaa; display:block; margin-top:4rpx; }
+.sc-tags { font-size:21rpx; color:#9BBCB4; display:block; margin-top:6rpx; }
 .sc-info { flex:1; }
-.arrow { font-size:40rpx; color:#ccc; }
+.arrow { font-size:40rpx; color:#C4D2CD; }
 
-.draw { }
-.draw-head { text-align:center; margin-bottom:24rpx; }
-.draw-title { font-size:32rpx; font-weight:700; color:#1C2A27; display:block; }
-.draw-tip { font-size:22rpx; color:#999; display:block; margin-top:8rpx; }
-.cards-wrap { display:flex; flex-wrap:wrap; gap:16rpx; padding:0 8rpx 16rpx; margin-bottom:12rpx; }
+.draw-head { text-align:center; margin-bottom:32rpx; }
+.draw-title { font-size:34rpx; font-weight:600; color:#1C2A27; display:block; font-family:"Noto Serif SC",serif; }
+.draw-tip { font-size:22rpx; color:#9BBCB4; display:block; margin-top:12rpx; }
+.cards-wrap { display:flex; flex-wrap:wrap; padding:0 8rpx 16rpx; margin-bottom:12rpx; }
 
-.card-item { display:flex; flex-direction:column; align-items:center; width:calc((100% - 32rpx) / 3); max-width: 160px; }
-.card-label { font-size:20rpx; color:#666; margin-bottom:8rpx; text-align:center; line-height:1.4; height:56rpx; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.card-item { display:flex; flex-direction:column; align-items:center; width:31.5%; margin-right:2.75%; margin-bottom:16rpx; }
+.card-item:nth-child(3n) { margin-right:0; }
+.card-label { font-size:20rpx; color:#617870; margin-bottom:10rpx; text-align:center; line-height:1.4; height:56rpx; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 .flip-card { width:100%; aspect-ratio: 5/7; position:relative; border-radius:14rpx; will-change: transform; }
 .card-back, .card-front { width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
-.card-back { background:linear-gradient(135deg,#4A7BBA,#7B68EE); }
-.back-txt { color:rgba(255,255,255,.8); font-size:20rpx; }
-.card-front { background:#fff; box-shadow:0 4rpx 16rpx rgba(0,0,0,.12); overflow:hidden; }
-.word-front { background:linear-gradient(160deg,#0f2044,#1a3a6b) !important; }
+.card-back { background:linear-gradient(135deg,#4A8A7A,#3A6E80); box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
+.back-txt { color:rgba(255,255,255,.9); font-size:20rpx; }
+.card-front { background:#fff; box-shadow:0 8rpx 26rpx rgba(28,42,39,.12); overflow:hidden; }
+.word-front { background:linear-gradient(160deg,#1E3A34,#2C5249) !important; }
 .card-img { width:100%; height:100%; }
-.word-frame { width:80%; height:80%; border:3rpx solid #c8a84b; border-radius:10rpx; display:flex; align-items:center; justify-content:center; }
+.word-frame { width:80%; height:80%; border:3rpx solid #C8A84B; border-radius:10rpx; display:flex; align-items:center; justify-content:center; }
 .word-char { font-size:56rpx; font-weight:bold; color:#fff; }
-.cat-name { font-size:20rpx; color:#aaa; margin-top:8rpx; }
+.cat-name { font-size:20rpx; color:#B7C6C1; margin-top:8rpx; }
 
-.qs-section { background:#fff; border-radius:20rpx; padding:28rpx; }
-.qs-title { font-size:28rpx; font-weight:700; color:#333; display:block; margin-bottom:20rpx; }
-.q-item { display:flex; gap:14rpx; margin-bottom:18rpx; }
-.q-num { width:36rpx; height:36rpx; border-radius:50%; background:#4A7BBA; color:#fff; font-size:22rpx; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.q-text { font-size:26rpx; color:#555; line-height:1.6; flex:1; }
-.note-input { width:100%; min-height:120rpx; background:#F8F9FA; border:2rpx solid #eee; border-radius:12rpx; padding:16rpx; font-size:26rpx; color:#333; box-sizing:border-box; margin-top:16rpx; }
-.btn-group { display:flex; flex-direction:column; gap:16rpx; margin-top:24rpx; }
+.qs-section { background:#FFFFFF; border:1rpx solid #E8EFED; border-radius:24rpx; padding:34rpx 30rpx; }
+.qs-title { font-size:28rpx; font-weight:600; color:#1C2A27; display:block; margin-bottom:24rpx; font-family:"Noto Serif SC",serif; }
+.q-item { display:flex; gap:14rpx; margin-bottom:20rpx; }
+.q-num { width:38rpx; height:38rpx; border-radius:50%; background:linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-size:22rpx; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.q-text { font-size:26rpx; color:#4A5751; line-height:1.65; flex:1; }
+.note-input { width:100%; min-height:120rpx; background:#F5F7F6; border:1rpx solid #E8EFED; border-radius:16rpx; padding:20rpx 24rpx; font-size:26rpx; color:#1C2A27; box-sizing:border-box; margin-top:16rpx; }
+.note-ph { color: #9BBCB4; }
+.btn-group { display:flex; flex-direction:column; gap:16rpx; margin-top:28rpx; }
+.btn { text-align:center; font-size:28rpx; padding:26rpx 0; border-radius:16rpx; letter-spacing:2rpx; }
+.btn-primary { background: linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-weight:600; box-shadow: 0 8rpx 22rpx rgba(74,138,122,0.24); }
+.btn-ghost { background: #FFFFFF; color: #617870; border:1rpx solid #E8EFED; }
 
-.fs-overlay { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.92); display:flex; align-items:center; justify-content:center; }
+.fs-overlay { position:fixed; inset:0; z-index:9999; background:rgba(20,32,29,.94); display:flex; align-items:center; justify-content:center; }
 .fs-img { width:100vw; height:90vh; }
 </style>

@@ -30,9 +30,11 @@
 
       <view v-if="flipped" class="save-section">
         <text class="section-label">此刻感受</text>
-        <textarea class="note-input" v-model="note" placeholder="写下你的感想..." maxlength="500" />
-        <u-button type="primary" @click="save()" style="margin-top:20rpx">保存记录</u-button>
-        <u-button plain @click="reset()" style="margin-top:12rpx">重新抽卡</u-button>
+        <textarea class="note-input" v-model="note" placeholder="写下你的感想..." placeholder-class="note-ph" maxlength="500" />
+        <view class="btn-group">
+          <view class="btn btn-primary" @click="save()">保存记录</view>
+          <view class="btn btn-ghost" @click="reset()">重新抽卡</view>
+        </view>
       </view>
     </view>
 
@@ -121,23 +123,23 @@ function reset() {
 </script>
 
 <style scoped lang="scss">
-.page { padding: 32rpx; min-height: 100vh; background: #F5F7FA; }
-.title { font-size: 32rpx; font-weight: bold; color: #333; display: block; margin: 32rpx 0 16rpx; }
-.section-label { font-size: 26rpx; font-weight: 600; color: #555; display: block; margin-bottom: 16rpx; }
+.page { padding: 44rpx 32rpx 64rpx; min-height: 100vh; background: #F5F7F6; }
+.title { font-size: 32rpx; font-weight: 600; color: #1C2A27; display: block; margin: 44rpx 0 22rpx; font-family: "Noto Serif SC", serif; }
+.section-label { font-size: 26rpx; font-weight: 600; color: #617870; display: block; margin-bottom: 16rpx; letter-spacing: 0.04em; }
 
-.intro-box { background: linear-gradient(135deg,#4A8A7A,#3A6E80); border-radius: 20rpx; padding: 40rpx 36rpx; margin-bottom: 32rpx; }
-.intro-title { color: #fff; font-size: 32rpx; font-weight: bold; display: block; margin-bottom: 12rpx; }
-.intro-body { color: rgba(255,255,255,.85); font-size: 26rpx; line-height: 1.7; display: block; }
+.intro-box { position: relative; overflow: hidden; background: linear-gradient(135deg,#4A8A7A,#3A6E80); border-radius: 24rpx; padding: 40rpx 36rpx; margin-bottom: 40rpx; }
+.intro-title { color: #FFFFFF; font-size: 32rpx; font-weight: 600; display: block; margin-bottom: 14rpx; font-family: "Noto Serif SC", serif; }
+.intro-body { color: rgba(255,255,255,0.85); font-size: 26rpx; line-height: 1.8; display: block; }
 
-.deck-list { display: flex; flex-direction: column; gap: 20rpx; }
-.deck-item { padding: 28rpx 32rpx; background: #fff; border: 3rpx solid #eee; border-radius: 16rpx; }
-.deck-item.active { border-color: #4A8A7A; background: #EBF5F2; }
-.deck-name { font-size: 30rpx; font-weight: 600; color: #333; display: block; }
-.deck-desc { font-size: 24rpx; color: #999; display: block; margin-top: 8rpx; }
+.deck-list { display: flex; flex-direction: column; gap: 16rpx; }
+.deck-item { padding: 30rpx 32rpx; background: #FFFFFF; border: 1rpx solid #E8EFED; border-radius: 20rpx; }
+.deck-item.active { border-color: rgba(74,138,122,0.55); background: #EDF4F0; }
+.deck-name { font-size: 30rpx; font-weight: 600; color: #1C2A27; display: block; }
+.deck-desc { font-size: 24rpx; color: #9BBCB4; display: block; margin-top: 8rpx; }
 
-.reflect-hint { display: block; text-align: center; font-size: 24rpx; color: #888; margin-bottom: 36rpx; }
+.reflect-hint { display: block; text-align: center; font-size: 24rpx; color: #9BBCB4; margin-bottom: 48rpx; letter-spacing: 1rpx; }
 
-.card-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 32rpx; }
+.card-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 44rpx; }
 .card {
   width: 280rpx; height: 390rpx;
   transform-style: preserve-3d; transition: transform 0.6s;
@@ -148,17 +150,23 @@ function reset() {
   position: absolute; inset: 0; backface-visibility: hidden;
   border-radius: 20rpx; display: flex; align-items: center; justify-content: center;
 }
-.card-back { background: linear-gradient(135deg, #4A8A7A, #3A6E80); }
-.back-text { color: #fff; font-size: 26rpx; }
-.card-front { background: #fff; box-shadow: 0 8rpx 32rpx rgba(0,0,0,.15); transform: rotateY(180deg); overflow: hidden; }
+.card-back { background: linear-gradient(135deg, #4A8A7A, #3A6E80); box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
+.back-text { color: rgba(255,255,255,0.9); font-size: 26rpx; letter-spacing: 2rpx; }
+.card-front { background: #fff; box-shadow: 0 12rpx 36rpx rgba(28,42,39,.14); transform: rotateY(180deg); overflow: hidden; }
 .card-img { width: 100%; height: 100%; }
 
-.swap-btn { font-size: 24rpx; color: #4A8A7A; padding: 10rpx 28rpx; border: 2rpx solid #4A8A7A; border-radius: 32rpx; background: #fff; margin-top: 20rpx; }
+.swap-btn { font-size: 24rpx; color: #4A8A7A; padding: 12rpx 30rpx; border: 1rpx solid rgba(74,138,122,0.5); border-radius: 32rpx; background: #FFFFFF; margin-top: 24rpx; }
 
-.save-section { background: #fff; border-radius: 20rpx; padding: 28rpx; }
-.note-input { width: 100%; min-height: 150rpx; background: #F8F9FA; border: 2rpx solid #eee; border-radius: 12rpx; padding: 16rpx; font-size: 28rpx; color: #333; box-sizing: border-box; }
+.save-section { background: #FFFFFF; border-radius: 24rpx; padding: 34rpx 30rpx; border: 1rpx solid #E8EFED; }
+.note-input { width: 100%; min-height: 150rpx; background: #F5F7F6; border: 1rpx solid #E8EFED; border-radius: 16rpx; padding: 20rpx 24rpx; font-size: 28rpx; color: #1C2A27; box-sizing: border-box; }
+.note-ph { color: #9BBCB4; }
 
-.fs-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.92); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.btn-group { display:flex; flex-direction:column; gap:16rpx; margin-top:24rpx; }
+.btn { text-align:center; font-size:28rpx; padding:26rpx 0; border-radius:16rpx; letter-spacing:2rpx; }
+.btn-primary { background: linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-weight:600; box-shadow: 0 8rpx 22rpx rgba(74,138,122,0.24); }
+.btn-ghost { background: #FFFFFF; color: #617870; border:1rpx solid #E8EFED; }
+
+.fs-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(20,32,29,.94); display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .fs-img { width: 100vw; height: 90vh; }
 .fs-hint { color: rgba(255,255,255,.5); font-size: 22rpx; margin-top: 20rpx; }
 </style>

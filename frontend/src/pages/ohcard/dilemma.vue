@@ -46,8 +46,8 @@
       </view>
 
       <view class="action-section">
-        <u-button type="primary" @click="start()">开始抽卡</u-button>
-        <u-button plain @click="uni.navigateTo({url:'/pages/ohcard/record'})" style="margin-top:16rpx">查看历史记录</u-button>
+        <view class="btn btn-primary" @click="start()">开始抽卡</view>
+        <view class="btn btn-ghost" style="margin-top:16rpx" @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看历史记录</view>
       </view>
     </view>
 
@@ -76,11 +76,11 @@
           <text class="q-num">{{i+1}}</text>
           <text class="q-text">{{q}}</text>
         </view>
-        <textarea class="note-input" v-model="note" placeholder="写下你的感受..." maxlength="500" />
+        <textarea class="note-input" v-model="note" placeholder="写下你的感受..." placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
-          <u-button type="primary" @click="save()">保存记录</u-button>
-          <u-button plain @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</u-button>
-          <u-button plain @click="uni.navigateBack()">返回抽卡菜单</u-button>
+          <view class="btn btn-primary" @click="save()">保存记录</view>
+          <view class="btn btn-ghost" @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</view>
+          <view class="btn btn-ghost" @click="uni.navigateBack()">返回抽卡菜单</view>
         </view>
       </view>
     </view>
@@ -103,20 +103,8 @@ const id = ref(0), step = ref(0), cards = ref([]), note = ref(''), fsUrl = ref('
 const allFlipped = computed(() => cards.value.length > 0 && cards.value.every(c => c.flipped));
 function fullUrl(u) { return u?.startsWith('http') ? u : SERVER + u; }
 
-const CAT_STYLE = {
-  'OH图卡':      'linear-gradient(135deg,#4A7BBA,#7B68EE)',
-  'OH字卡':      'linear-gradient(135deg,#0f2044,#1a3a6b)',
-  '孩童卡·人像': 'linear-gradient(135deg,#7B68EE,#B580E0)',
-  '孩童卡·情况': 'linear-gradient(135deg,#6A5ACD,#9370DB)',
-  '路标卡':      'linear-gradient(135deg,#5A6EA0,#3A6E80)',
-  '彩虹卡':      'linear-gradient(135deg,#E07040,#F5A623)',
-  '伴侣卡':      'linear-gradient(135deg,#C06090,#E06090)',
-  '亲子互动卡':  'linear-gradient(135deg,#4A8A7A,#3A6E80)',
-  '中国神话卡':  'linear-gradient(135deg,#8A5A7A,#C06090)',
-  '抽象卡':      'linear-gradient(135deg,#4A4A6A,#6A6A8A)',
-  '英雄之旅卡':  'linear-gradient(135deg,#5A6EA0,#8A5A7A)',
-};
-function catStyle(cat) { return CAT_STYLE[cat] || 'linear-gradient(135deg,#4A7BBA,#7B68EE)'; }
+const CAT_BACK = 'linear-gradient(135deg,#4A8A7A,#3A6E80)';
+function catStyle(cat) { return CAT_BACK; }
 
 let _pendingId = null;
 onLoad(opts => { if (opts?.id) _pendingId = Number(opts.id); });
@@ -391,58 +379,63 @@ async function save() {
 <style scoped lang="scss">
 .page { min-height:100vh; background:#F5F7F6; }
 
-.detail { padding:24rpx; padding-bottom:60rpx; display:flex; flex-direction:column; gap:16rpx; }
-.det-card { background:#fff; border-radius:20rpx; padding:28rpx; }
+.detail { padding:36rpx 28rpx 64rpx; display:flex; flex-direction:column; gap:16rpx; }
+.det-card { background:#FFFFFF; border:1rpx solid #E8EFED; border-radius:24rpx; padding:32rpx 30rpx; box-shadow:0 4rpx 18rpx rgba(28,42,39,0.04); }
 .det-head { display:flex; align-items:flex-start; gap:16rpx; }
-.det-icon { width:72rpx; height:72rpx; border-radius:18rpx; display:flex; align-items:center; justify-content:center; font-size:32rpx; flex-shrink:0; }
-.det-title { font-size:28rpx; font-weight:700; color:#1C2A27; display:block; margin-bottom:8rpx; line-height:1.4; }
-.det-core { font-size:22rpx; color:#999; display:block; line-height:1.5; }
-.det-label { font-size:24rpx; color:#999; font-weight:600; display:block; margin-bottom:12rpx; }
-.det-text { font-size:26rpx; color:#444; line-height:1.8; display:block; }
+.det-icon { width:80rpx; height:80rpx; border-radius:22rpx; display:flex; align-items:center; justify-content:center; font-size:36rpx; flex-shrink:0; background:#EDF4F0 !important; }
+.det-title { font-size:29rpx; font-weight:600; color:#1C2A27; display:block; margin-bottom:8rpx; line-height:1.4; font-family:"Noto Serif SC",serif; }
+.det-core { font-size:22rpx; color:#9BBCB4; display:block; line-height:1.5; }
+.det-label { font-size:24rpx; color:#4A8A7A; font-weight:600; display:block; margin-bottom:14rpx; letter-spacing:1rpx; }
+.det-text { font-size:26rpx; color:#617870; line-height:1.8; display:block; }
 .slot-list { display:flex; flex-wrap:wrap; gap:16rpx; }
 .slot-item { display:flex; flex-direction:column; align-items:center; width:128rpx; }
-.slot-preview { width:128rpx; height:88rpx; border-radius:12rpx; display:flex; align-items:center; justify-content:center; padding:8rpx; box-sizing:border-box; }
-.slot-cat-txt { font-size:18rpx; color:rgba(255,255,255,.9); text-align:center; line-height:1.4; }
-.slot-label-txt { font-size:18rpx; color:#666; margin-top:8rpx; text-align:center; line-height:1.3; width:128rpx; }
-.det-play { font-size:28rpx; font-weight:700; color:#333; display:block; margin-bottom:20rpx; }
+.slot-preview { width:128rpx; height:88rpx; border-radius:12rpx; display:flex; align-items:center; justify-content:center; padding:8rpx; box-sizing:border-box; box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.15); }
+.slot-cat-txt { font-size:18rpx; color:rgba(255,255,255,.94); text-align:center; line-height:1.4; }
+.slot-label-txt { font-size:18rpx; color:#8A9E98; margin-top:8rpx; text-align:center; line-height:1.3; width:128rpx; }
+.det-play { font-size:28rpx; font-weight:600; color:#1C2A27; display:block; margin-bottom:22rpx; font-family:"Noto Serif SC",serif; }
 .step-row { display:flex; gap:16rpx; margin-bottom:24rpx; align-items:flex-start; }
-.step-num { width:40rpx; height:40rpx; border-radius:50%; background:#4A7BBA; color:#fff; font-size:22rpx; flex-shrink:0; text-align:center; line-height:40rpx; }
+.step-num { width:42rpx; height:42rpx; border-radius:50%; background:linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-size:22rpx; flex-shrink:0; text-align:center; line-height:42rpx; }
 .step-body { flex:1; }
-.step-text { font-size:26rpx; color:#333; line-height:1.7; display:block; margin-bottom:12rpx; }
-.guides { background:#F8F9FA; border-radius:12rpx; padding:16rpx 20rpx; display:flex; flex-direction:column; gap:10rpx; }
-.guide { font-size:24rpx; color:#666; line-height:1.7; display:block; }
-.det-insight { background:#FFF8F0; border-radius:20rpx; padding:28rpx; border-left:6rpx solid #E07040; }
-.insight-label { font-size:24rpx; color:#E07040; font-weight:600; display:block; margin-bottom:10rpx; }
-.insight-text { font-size:26rpx; color:#444; line-height:1.8; display:block; }
-.action-section { }
+.step-text { font-size:26rpx; color:#3B4742; line-height:1.7; display:block; margin-bottom:12rpx; }
+.guides { background:#F5F7F6; border:1rpx solid #E8EFED; border-radius:12rpx; padding:16rpx 20rpx; display:flex; flex-direction:column; gap:10rpx; }
+.guide { font-size:24rpx; color:#617870; line-height:1.7; display:block; }
+.det-insight { background:#FFF4EC; border-radius:24rpx; padding:30rpx 28rpx; border-left:6rpx solid #C08A4E; }
+.insight-label { font-size:24rpx; color:#A06830; font-weight:600; display:block; margin-bottom:12rpx; letter-spacing:1rpx; }
+.insight-text { font-size:26rpx; color:#7A5E44; line-height:1.8; display:block; }
+.action-section { margin-top:12rpx; }
 
-.draw { padding:24rpx; }
-.draw-head { text-align:center; margin-bottom:24rpx; }
-.draw-title { font-size:28rpx; font-weight:700; color:#1C2A27; display:block; }
-.draw-tip { font-size:22rpx; color:#999; display:block; margin-top:8rpx; }
-.cards-wrap { display:flex; flex-wrap:wrap; gap:16rpx; padding:0 8rpx 16rpx; margin-bottom:12rpx; }
+.draw { padding:36rpx 28rpx 64rpx; }
+.draw-head { text-align:center; margin-bottom:32rpx; }
+.draw-title { font-size:29rpx; font-weight:600; color:#1C2A27; display:block; font-family:"Noto Serif SC",serif; }
+.draw-tip { font-size:22rpx; color:#9BBCB4; display:block; margin-top:12rpx; }
+.cards-wrap { display:flex; flex-wrap:wrap; padding:0 8rpx 16rpx; margin-bottom:12rpx; }
 
-.card-item { display:flex; flex-direction:column; align-items:center; width:calc((100% - 32rpx) / 3); max-width: 160px; }
-.card-label { font-size:20rpx; color:#666; margin-bottom:8rpx; text-align:center; line-height:1.4; height:56rpx; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.card-item { display:flex; flex-direction:column; align-items:center; width:31.5%; margin-right:2.75%; margin-bottom:16rpx; }
+.card-item:nth-child(3n) { margin-right:0; }
+.card-label { font-size:20rpx; color:#617870; margin-bottom:10rpx; text-align:center; line-height:1.4; height:56rpx; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 .flip-card { width:100%; aspect-ratio: 5/7; position:relative; border-radius:14rpx; will-change: transform; }
 .card-back, .card-front { width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
-.card-back { background:linear-gradient(135deg,#4A7BBA,#7B68EE); }
-.back-txt { color:rgba(255,255,255,.8); font-size:20rpx; }
-.card-front { background:#fff; box-shadow:0 4rpx 16rpx rgba(0,0,0,.12); overflow:hidden; }
-.word-front { background:linear-gradient(160deg,#0f2044,#1a3a6b) !important; }
+.card-back { background:linear-gradient(135deg,#4A8A7A,#3A6E80); box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
+.back-txt { color:rgba(255,255,255,.9); font-size:20rpx; }
+.card-front { background:#fff; box-shadow:0 8rpx 26rpx rgba(28,42,39,.12); overflow:hidden; }
+.word-front { background:linear-gradient(160deg,#1E3A34,#2C5249) !important; }
 .card-img { width:100%; height:100%; }
-.word-frame { width:80%; height:80%; border:3rpx solid #c8a84b; border-radius:10rpx; display:flex; align-items:center; justify-content:center; }
+.word-frame { width:80%; height:80%; border:3rpx solid #C8A84B; border-radius:10rpx; display:flex; align-items:center; justify-content:center; }
 .word-char { font-size:56rpx; font-weight:bold; color:#fff; }
-.cat-name { font-size:20rpx; color:#aaa; margin-top:8rpx; }
+.cat-name { font-size:20rpx; color:#B7C6C1; margin-top:8rpx; }
 
-.qs-section { background:#fff; border-radius:20rpx; padding:28rpx; }
-.qs-title { font-size:28rpx; font-weight:700; color:#333; display:block; margin-bottom:20rpx; }
-.q-item { display:flex; gap:14rpx; margin-bottom:18rpx; }
-.q-num { width:36rpx; height:36rpx; border-radius:50%; background:#4A7BBA; color:#fff; font-size:22rpx; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.q-text { font-size:26rpx; color:#555; line-height:1.6; flex:1; }
-.note-input { width:100%; min-height:120rpx; background:#F8F9FA; border:2rpx solid #eee; border-radius:12rpx; padding:16rpx; font-size:26rpx; color:#333; box-sizing:border-box; margin-top:16rpx; }
-.btn-group { display:flex; flex-direction:column; gap:16rpx; margin-top:24rpx; }
+.qs-section { background:#FFFFFF; border:1rpx solid #E8EFED; border-radius:24rpx; padding:34rpx 30rpx; }
+.qs-title { font-size:28rpx; font-weight:600; color:#1C2A27; display:block; margin-bottom:24rpx; font-family:"Noto Serif SC",serif; }
+.q-item { display:flex; gap:14rpx; margin-bottom:20rpx; }
+.q-num { width:38rpx; height:38rpx; border-radius:50%; background:linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-size:22rpx; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.q-text { font-size:26rpx; color:#4A5751; line-height:1.65; flex:1; }
+.note-input { width:100%; min-height:120rpx; background:#F5F7F6; border:1rpx solid #E8EFED; border-radius:16rpx; padding:20rpx 24rpx; font-size:26rpx; color:#1C2A27; box-sizing:border-box; margin-top:16rpx; }
+.note-ph { color: #9BBCB4; }
+.btn-group { display:flex; flex-direction:column; gap:16rpx; margin-top:28rpx; }
+.btn { text-align:center; font-size:28rpx; padding:26rpx 0; border-radius:16rpx; letter-spacing:2rpx; }
+.btn-primary { background: linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-weight:600; box-shadow: 0 8rpx 22rpx rgba(74,138,122,0.24); }
+.btn-ghost { background: #FFFFFF; color: #617870; border:1rpx solid #E8EFED; }
 
-.fs-overlay { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.92); display:flex; align-items:center; justify-content:center; }
+.fs-overlay { position:fixed; inset:0; z-index:9999; background:rgba(20,32,29,.94); display:flex; align-items:center; justify-content:center; }
 .fs-img { width:100vw; height:90vh; }
 </style>

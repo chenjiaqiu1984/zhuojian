@@ -38,9 +38,11 @@ router.get('/my', authMiddleware, async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: '无效的ID' });
   const min48h = new Date(Date.now() + 48 * 3600000).toISOString();
   const c = await prisma.consultant.findUnique({
-    where: { id: Number(req.params.id) },
+    where: { id },
     include: { slots: { where: { startTime: { gt: min48h } }, orderBy: { startTime: 'asc' }, include: { booking: { select: { status: true } }, secondBookings: { select: { status: true } } } } }
   });
   if (!c) return res.status(404).json({ error: '未找到' });
