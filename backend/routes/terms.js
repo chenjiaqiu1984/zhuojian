@@ -16,18 +16,21 @@ router.get('/current', async (req, res) => {
 });
 
 // POST /api/terms/accept — 用户接受当前版本
+// body: { type: 'terms' | 'privacy' }，不传默认 'terms'
 router.post('/accept', authMiddleware, async (req, res) => {
+  const type = req.body.type === 'privacy' ? 'privacy' : 'terms';
   const current = await prisma.termsVersion.findFirst({
-    where: { isDraft: 0, type: 'terms' },
+    where: { isDraft: 0, type },
     orderBy: { publishedAt: 'desc' },
   });
   if (!current) return res.status(404).json({ error: '暂无已发布协议' });
 
-  await prisma.user.update({
-    where: { id: req.user.id },
-    data: { termsAcceptedAt: new Date() },
-  });
-  res.json({ ok: true, version: current.version, acceptedAt: new Date() });
+  const field = type === 'privacy' ? 'privacyVersion' : 'termsVersion';
+  const data = { [field]: current.version };
+  if (type === 'terms') data.termsAcceptedAt = new Date();
+
+  await prisma.user.update({ where: { id: req.user.id }, data });
+  res.json({ ok: true, type, version: current.version });
 });
 
 // ── Admin 接口 ────────────────────────────────────────────────────

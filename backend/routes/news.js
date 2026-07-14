@@ -5,7 +5,8 @@ const { requireRole, optionalAuth } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', optionalAuth, async (req, res) => {
-  const { type, page = 1, limit = 10, q } = req.query;
+  const { type, page = 1, limit, pageSize, q } = req.query;
+  const take = Number(pageSize || limit || 10);
   const showDraft = (req.user?.role === 'admin' || req.user?.role === 'super_admin') && req.query.includeDraft === '1';
   const where = {
     ...(showDraft ? {} : { isPublished: 1 }),
@@ -14,7 +15,7 @@ router.get('/', optionalAuth, async (req, res) => {
   };
   const [total, list] = await Promise.all([
     prisma.news.count({ where }),
-    prisma.news.findMany({ where, orderBy: { createdAt: 'desc' }, take: Number(limit), skip: (Number(page) - 1) * Number(limit) }),
+    prisma.news.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip: (Number(page) - 1) * take }),
   ]);
   const items = await Promise.all(list.map(async n => {
     const [likeCount, favoriteCount] = await Promise.all([

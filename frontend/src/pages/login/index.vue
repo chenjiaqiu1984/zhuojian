@@ -216,9 +216,7 @@ function goPrivacy() { uni.navigateTo({ url: '/pages/legal/privacy' }); }
 // #endif
 
 // #ifdef MP-WEIXIN
-function onBtnTap() {
-  console.log('[login] button tapped');
-}
+function onBtnTap() {}
 // #endif
 
 // #ifdef MP-WEIXIN

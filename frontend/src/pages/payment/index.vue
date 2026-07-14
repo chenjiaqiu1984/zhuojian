@@ -8,6 +8,34 @@
       </view>
 
       <text class="summary-name" v-if="isActivity">{{ activityName }}</text>
+
+      <!-- 活动退款须知 -->
+      <view class="refund-block" v-if="isActivity">
+        <text class="refund-label">退款政策</text>
+        <view class="refund-rules" v-if="activityRefund.isPermanent">
+          <view class="refund-rule">
+            <view class="rule-dot rule-dot--green" />
+            <text class="rule-text">长期有效活动，随时可全额退款</text>
+          </view>
+        </view>
+        <view class="refund-rules" v-else>
+          <view class="refund-rule">
+            <view class="rule-dot rule-dot--green" />
+            <text class="rule-text"><text class="rule-time">{{ activityRefund.deadline48h }}</text> 前取消，全额退款</text>
+          </view>
+          <view class="refund-rule">
+            <view class="rule-dot rule-dot--amber" />
+            <text class="rule-text"><text class="rule-time">{{ activityRefund.deadline24h }}</text> 前取消，退款 50%</text>
+          </view>
+          <view class="refund-rule">
+            <view class="rule-dot rule-dot--red" />
+            <text class="rule-text"><text class="rule-time">{{ activityRefund.deadline24h }}</text> 后取消，不予退款</text>
+          </view>
+        </view>
+        <text class="refund-consent">如有特殊情况请联系客服：345958875@qq.com</text>
+        <text class="refund-consent">点击「立即支付」即表示同意以上退款规则</text>
+      </view>
+
       <template v-else>
         <text class="summary-name">{{ consultantName }}</text>
         <text class="summary-time">{{ slotTime }}</text>
@@ -30,6 +58,7 @@
             <text class="rule-text"><text class="rule-time">{{ refundDeadline24h }}</text> 后取消，不予退款</text>
           </view>
         </view>
+        <text class="refund-consent">如有特殊情况请联系客服：345958875@qq.com</text>
         <text class="refund-consent">点击「立即支付」即表示同意以上退款规则</text>
       </view>
 
@@ -220,6 +249,7 @@ import { requireActive } from '../../utils/requireActive';
 const bookingId      = ref(0);
 const newsId         = ref(0);          // 活动支付时使用
 const activityName   = ref('');
+const activityEndDate = ref('');        // 活动截止日期，空=长期有效
 const consultantName = ref('');
 const slotTime       = ref('');
 const amount         = ref(0);
@@ -305,8 +335,21 @@ function fmtDatetime(d) {
   return `${d.getFullYear()}年${pad(d.getMonth() + 1)}月${pad(d.getDate())}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// 退款截止时间（基于预约时间向前推）
-const refundDeadline48h = computed(() => {
+// 活动退款规则：基于 endDate 计算截止时间
+const activityRefund = computed(() => {
+  if (!activityEndDate.value) {
+    // 长期有效
+    return { isPermanent: true, lines: [] };
+  }
+  const base = new Date(activityEndDate.value);
+  const d48 = new Date(base.getTime() - 48 * 3600 * 1000);
+  const d24 = new Date(base.getTime() - 24 * 3600 * 1000);
+  return {
+    isPermanent: false,
+    deadline48h: fmtDatetime(d48),
+    deadline24h: fmtDatetime(d24),
+  };
+});
   const d = parseSlotTime(slotTime.value);
   if (!d) return '';
   return fmtDatetime(new Date(d.getTime() - 48 * 60 * 60 * 1000));
@@ -330,12 +373,31 @@ onMounted(async () => {
     if (p.bookingId)      bookingId.value      = Number(p.bookingId);
     if (p.newsId)         newsId.value         = Number(p.newsId);
     if (p.activityName)   activityName.value   = decodeURIComponent(p.activityName);
+    if (p.endDate)        activityEndDate.value = decodeURIComponent(p.endDate);
     if (p.consultantName) consultantName.value = decodeURIComponent(p.consultantName);
     if (p.slotTime)       slotTime.value       = decodeURIComponent(p.slotTime);
     if (p.amount)         amount.value         = Number(p.amount);
     if (p.discountRate)   discountRate.value   = Number(p.discountRate);
   }
   startCountdown();
+  // H5 兜底：从 hash URL 直接读参数（应对 $page/options 读取失败的场景）
+  // #ifdef H5
+  if (!newsId.value && !bookingId.value) {
+    const hash = window.location.hash;
+    const q = hash.indexOf('?');
+    if (q !== -1) {
+      const hp = new URLSearchParams(hash.slice(q + 1));
+      if (hp.get('newsId'))         newsId.value         = Number(hp.get('newsId'));
+      if (hp.get('bookingId'))      bookingId.value      = Number(hp.get('bookingId'));
+      if (hp.get('activityName'))   activityName.value   = decodeURIComponent(hp.get('activityName'));
+      if (hp.get('endDate'))        activityEndDate.value = decodeURIComponent(hp.get('endDate'));
+      if (hp.get('consultantName')) consultantName.value = decodeURIComponent(hp.get('consultantName'));
+      if (hp.get('slotTime'))       slotTime.value       = decodeURIComponent(hp.get('slotTime'));
+      if (hp.get('amount'))         amount.value         = Number(hp.get('amount'));
+      if (hp.get('discountRate'))   discountRate.value   = Number(hp.get('discountRate'));
+    }
+  }
+  // #endif
   // 并行加载套餐和优惠券（静默失败）
   try {
     const [pkgs, coupons] = await Promise.all([

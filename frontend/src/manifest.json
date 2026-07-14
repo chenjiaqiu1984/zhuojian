@@ -7,8 +7,13 @@
   "transformPx": false,
   "mp-weixin": {
     "appid": "wxd7c62acc12b303dc",
-    "setting": { "urlCheck": false },
-    "usingComponents": true
+    "setting": {
+      "urlCheck": false,
+      "minified": true,
+      "es6": true
+    },
+    "usingComponents": true,
+    "lazyCodeLoading": "requiredComponents"
   },
   "h5": {
     "title": "卓见心理",

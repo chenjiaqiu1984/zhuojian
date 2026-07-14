@@ -36,7 +36,7 @@ function makeToken(u, rememberMe = false) {
 
 function safeUser(u) {
   const role = ROLE_MAP[u.role] || u.role;
-  return { id: u.id, username: u.username, phone: u.phone, email: u.email, role, status: u.status || 'active', name: u.name, avatar: u.avatar, termsAcceptedAt: u.termsAcceptedAt, hasPassword: !!u.password };
+  return { id: u.id, username: u.username, phone: u.phone, email: u.email, role, status: u.status || 'active', name: u.name, avatar: u.avatar, termsAcceptedAt: u.termsAcceptedAt, termsVersion: u.termsVersion || '1.0', privacyVersion: u.privacyVersion || '1.0', hasPassword: !!u.password };
 }
 
 router.get('/captcha', (req, res) => {
@@ -63,7 +63,7 @@ router.post('/register', async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: '参数不完整' });
     const data = {
       username, password: bcrypt.hashSync(password, 10), name, phone,
-      ...(termsAccepted ? { termsAcceptedAt: new Date() } : {})
+      ...(termsAccepted ? { termsAcceptedAt: new Date(), termsVersion: '1.0', privacyVersion: '1.0' } : {})
     };
     const user = await prisma.user.create({ data });
     grantWelcomeCoupon(user.id); // 注册送8折券（静默，不影响注册响应）
@@ -201,6 +201,8 @@ router.put('/complete-setup', require('../middleware/auth').authMiddleware, asyn
       name: name.trim(),
       password: bcrypt.hashSync(password, 10),
       termsAcceptedAt: new Date(),
+      termsVersion: '1.0',
+      privacyVersion: '1.0',
       status: 'active',
     };
     if (username && username.trim()) {

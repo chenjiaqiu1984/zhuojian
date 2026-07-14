@@ -142,9 +142,9 @@ function contentImgs(n) {
 
 function regBtnTxt(n) {
   if (isExpired(n)) return '已截止';
+  if (n.price > 0) return `¥${priceFmt(n)} 立即报名`;
   if (registeredIds.value.includes(n.id)) return '报名成功';
-  if (!n.isPaid) return '免费报名';
-  return `立即报名 ¥${priceFmt(n)}`;
+  return '免费报名';
 }
 
 function nav(id) {
@@ -152,10 +152,25 @@ function nav(id) {
 }
 
 function register(n) {
-  if (isExpired(n) || registeredIds.value.includes(n.id)) return;
+  if (isExpired(n)) return;
   if (!store.isLoggedIn()) return uni.navigateTo({ url: '/pages/login/index' });
-  const title = encodeURIComponent(n.title || '活动报名');
-  uni.navigateTo({ url: `/pages/payment/index?newsId=${n.id}&activityName=${title}&amount=${n.price || 1}` });
+  if (n.price > 0) {
+    const title = encodeURIComponent(n.title || '活动报名');
+    const endDate = n.endDate ? encodeURIComponent(n.endDate) : '';
+    uni.navigateTo({ url: `/pages/payment/index?newsId=${n.id}&activityName=${title}&amount=${n.price}&endDate=${endDate}` });
+    return;
+  }
+  if (registeredIds.value.includes(n.id)) return;
+  try {
+    const key = 'registeredActivities';
+    const ids = JSON.parse(uni.getStorageSync(key) || '[]');
+    if (!ids.includes(n.id)) {
+      ids.push(n.id);
+      uni.setStorageSync(key, JSON.stringify(ids));
+      registeredIds.value = [...ids];
+    }
+  } catch {}
+  uni.showToast({ title: '报名成功', icon: 'success' });
 }
 </script>
 

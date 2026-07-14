@@ -1,54 +1,104 @@
 {
+  "easycom": {
+    "mp-html": "@/components/mp-html/mp-html.vue"
+  },
   "pages": [
-    { "path": "pages/index/index", "style": { "navigationBarTitleText": "卓见心理" } },
-    { "path": "pages/about/index", "style": { "navigationBarTitleText": "关于我们" } },
-    { "path": "pages/consultants/index", "style": { "navigationBarTitleText": "咨询师" } },
-    { "path": "pages/consultants/detail", "style": { "navigationBarTitleText": "咨询师详情" } },
-    { "path": "pages/consultants/schedule", "style": { "navigationBarTitleText": "排班管理" } },
-    { "path": "pages/booking/index", "style": { "navigationBarTitleText": "我的预约" } },
-    { "path": "pages/news/index", "style": { "navigationBarTitleText": "新闻活动" } },
-    { "path": "pages/news/detail", "style": { "navigationBarTitleText": "详情" } },
-    { "path": "pages/ohcard/index", "style": { "navigationBarTitleText": "心理图卡" } },
-    { "path": "pages/ohcard/classic", "style": { "navigationBarTitleText": "随机抽卡" } },
-    { "path": "pages/ohcard/imgonly",  "style": { "navigationBarTitleText": "心理图卡" } },
-    { "path": "pages/ohcard/combo",   "style": { "navigationBarTitleText": "跨卡牌组合" } },
-    { "path": "pages/ohcard/scene",   "style": { "navigationBarTitleText": "场景选卡" } },
-    { "path": "pages/ohcard/sort", "style": { "navigationBarTitleText": "图卡排序" } },
-    { "path": "pages/ohcard/match", "style": { "navigationBarTitleText": "图字匹配" } },
-    { "path": "pages/ohcard/room", "style": { "navigationBarTitleText": "房间抽卡" } },
-    { "path": "pages/ohcard/record", "style": { "navigationBarTitleText": "抽卡记录" } },
-    { "path": "pages/ohcard/dilemma", "style": { "navigationBarTitleText": "人生困境玩法" } },
-    { "path": "pages/profile/index", "style": { "navigationBarTitleText": "我的" } },
-    { "path": "pages/login/index", "style": { "navigationBarTitleText": "登录" } },
-    { "path": "pages/login/register", "style": { "navigationBarTitleText": "注册账号" } },
-    { "path": "pages/login/reset", "style": { "navigationBarTitleText": "找回密码" } },
-    { "path": "pages/login/complete", "style": { "navigationBarTitleText": "完善账户信息" } },
-    { "path": "pages/assessment/index", "style": { "navigationBarTitleText": "心理测评" } },
-    { "path": "pages/assessment/detail", "style": { "navigationBarTitleText": "开始测评" } },
-    { "path": "pages/assessment/result", "style": { "navigationBarTitleText": "测评结果" } },
-    { "path": "pages/assessment/results", "style": { "navigationBarTitleText": "测评记录" } },
-    { "path": "pages/assessment/my", "style": { "navigationBarTitleText": "我的测评" } },
-    { "path": "pages/profile/settings", "style": { "navigationBarTitleText": "设置" } },
-    { "path": "pages/profile/vouchers", "style": { "navigationBarTitleText": "我的券码" } },
-    { "path": "pages/activity/index", "style": { "navigationBarTitleText": "活动报名" } },
-    { "path": "pages/learning/index", "style": { "navigationBarTitleText": "学习进阶" } },
-    { "path": "pages/payment/index",  "style": { "navigationBarTitleText": "确认支付" } },
-    { "path": "pages/payment/result", "style": { "navigationBarTitleText": "支付结果" } },
-    { "path": "pages/legal/terms", "style": { "navigationBarTitleText": "用户服务协议" } },
-    { "path": "pages/legal/privacy", "style": { "navigationBarTitleText": "隐私政策" } },
-    { "path": "pages/homework/index",   "style": { "navigationBarTitleText": "咨询工具" } },
-    { "path": "pages/homework/mood",    "style": { "navigationBarTitleText": "情绪日记" } },
-    { "path": "pages/homework/cbt",     "style": { "navigationBarTitleText": "认知记录表" } },
-    { "path": "pages/homework/dream",   "style": { "navigationBarTitleText": "梦的工作记录" } },
-    { "path": "pages/homework/iceberg", "style": { "navigationBarTitleText": "冰山模型" } },
-    { "path": "pages/homework/rule",    "style": { "navigationBarTitleText": "规条转换" } },
-    { "path": "pages/homework/help",    "style": { "navigationBarTitleText": "申请解读" } },
-    { "path": "pages/profile/packages", "style": { "navigationBarTitleText": "我的套餐" } },
-    { "path": "pages/admin/packages",   "style": { "navigationBarTitleText": "套餐管理" } },
-    { "path": "pages/profile/coupons",  "style": { "navigationBarTitleText": "我的优惠券" } },
-    { "path": "pages/admin/coupons",    "style": { "navigationBarTitleText": "优惠券管理" } },
-    { "path": "pages/admin/users",      "style": { "navigationBarTitleText": "用户管理" } },
-    { "path": "pages/orders/index",     "style": { "navigationBarTitleText": "我的订单" } }
+    { "path": "pages/index/index",         "style": { "navigationBarTitleText": "卓见心理" } },
+    { "path": "pages/consultants/index",   "style": { "navigationBarTitleText": "咨询师" } },
+    { "path": "pages/consultants/detail",  "style": { "navigationBarTitleText": "咨询师详情" } },
+    { "path": "pages/consultants/schedule","style": { "navigationBarTitleText": "排班管理" } },
+    { "path": "pages/ohcard/index",        "style": { "navigationBarTitleText": "心理图卡" } },
+    { "path": "pages/ohcard/classic",      "style": { "navigationBarTitleText": "随机抽卡" } },
+    { "path": "pages/ohcard/imgonly",      "style": { "navigationBarTitleText": "心理图卡" } },
+    { "path": "pages/ohcard/combo",        "style": { "navigationBarTitleText": "跨卡牌组合" } },
+    { "path": "pages/ohcard/scene",        "style": { "navigationBarTitleText": "场景选卡" } },
+    { "path": "pages/ohcard/sort",         "style": { "navigationBarTitleText": "图卡排序" } },
+    { "path": "pages/ohcard/match",        "style": { "navigationBarTitleText": "图字匹配" } },
+    { "path": "pages/ohcard/room",         "style": { "navigationBarTitleText": "房间抽卡" } },
+    { "path": "pages/ohcard/record",       "style": { "navigationBarTitleText": "抽卡记录" } },
+    { "path": "pages/ohcard/dilemma",      "style": { "navigationBarTitleText": "人生困境玩法" } },
+    { "path": "pages/assessment/index",    "style": { "navigationBarTitleText": "心理测评" } },
+    { "path": "pages/assessment/detail",   "style": { "navigationBarTitleText": "开始测评" } },
+    { "path": "pages/assessment/result",   "style": { "navigationBarTitleText": "测评结果" } },
+    { "path": "pages/assessment/results",  "style": { "navigationBarTitleText": "测评记录" } },
+    { "path": "pages/assessment/my",       "style": { "navigationBarTitleText": "我的测评" } },
+    { "path": "pages/profile/index",       "style": { "navigationBarTitleText": "我的" } },
+    { "path": "pages/profile/settings",    "style": { "navigationBarTitleText": "设置" } },
+    { "path": "pages/profile/vouchers",    "style": { "navigationBarTitleText": "我的券码" } },
+    { "path": "pages/profile/packages",    "style": { "navigationBarTitleText": "我的套餐" } },
+    { "path": "pages/profile/coupons",     "style": { "navigationBarTitleText": "我的优惠券" } },
+    { "path": "pages/login/index",         "style": { "navigationBarTitleText": "登录" } },
+    { "path": "pages/login/register",      "style": { "navigationBarTitleText": "注册账号" } },
+    { "path": "pages/login/reset",         "style": { "navigationBarTitleText": "找回密码" } },
+    { "path": "pages/login/complete",      "style": { "navigationBarTitleText": "完善账户信息" } },
+    { "path": "pages/about/index",         "style": { "navigationBarTitleText": "关于我们" } }
+  ],
+  "subPackages": [
+    {
+      "root": "pages/news",
+      "pages": [
+        { "path": "index",  "style": { "navigationBarTitleText": "新闻活动" } },
+        { "path": "detail", "style": { "navigationBarTitleText": "详情" } }
+      ]
+    },
+    {
+      "root": "pages/activity",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "活动报名" } }
+      ]
+    },
+    {
+      "root": "pages/booking",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "我的预约" } }
+      ]
+    },
+    {
+      "root": "pages/payment",
+      "pages": [
+        { "path": "index",  "style": { "navigationBarTitleText": "确认支付" } },
+        { "path": "result", "style": { "navigationBarTitleText": "支付结果" } }
+      ]
+    },
+    {
+      "root": "pages/orders",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "我的订单" } }
+      ]
+    },
+    {
+      "root": "pages/homework",
+      "pages": [
+        { "path": "index",   "style": { "navigationBarTitleText": "咨询工具" } },
+        { "path": "mood",    "style": { "navigationBarTitleText": "情绪日记" } },
+        { "path": "cbt",     "style": { "navigationBarTitleText": "认知记录表" } },
+        { "path": "dream",   "style": { "navigationBarTitleText": "梦的工作记录" } },
+        { "path": "iceberg", "style": { "navigationBarTitleText": "冰山模型" } },
+        { "path": "rule",    "style": { "navigationBarTitleText": "规条转换" } },
+        { "path": "help",    "style": { "navigationBarTitleText": "申请解读" } }
+      ]
+    },
+    {
+      "root": "pages/admin",
+      "pages": [
+        { "path": "packages", "style": { "navigationBarTitleText": "套餐管理" } },
+        { "path": "coupons",  "style": { "navigationBarTitleText": "优惠券管理" } },
+        { "path": "users",    "style": { "navigationBarTitleText": "用户管理" } }
+      ]
+    },
+    {
+      "root": "pages/legal",
+      "pages": [
+        { "path": "terms",   "style": { "navigationBarTitleText": "用户服务协议" } },
+        { "path": "privacy", "style": { "navigationBarTitleText": "隐私政策" } }
+      ]
+    },
+    {
+      "root": "pages/learning",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "学习进阶" } }
+      ]
+    }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "white",
@@ -62,11 +112,11 @@
     "borderStyle": "white",
     "backgroundColor": "#fff",
     "list": [
-      { "pagePath": "pages/index/index",      "text": "首页",  "iconPath": "static/icons/home.png",       "selectedIconPath": "static/icons/home-active.png" },
-      { "pagePath": "pages/consultants/index","text": "咨询师","iconPath": "static/icons/consultant.png", "selectedIconPath": "static/icons/consultant-active.png" },
-      { "pagePath": "pages/ohcard/index",     "text": "心理图卡",  "iconPath": "static/icons/card.png",       "selectedIconPath": "static/icons/card-active.png" },
-      { "pagePath": "pages/assessment/index", "text": "测评",  "iconPath": "static/icons/news.png",       "selectedIconPath": "static/icons/news-active.png" },
-      { "pagePath": "pages/profile/index",    "text": "我的",  "iconPath": "static/icons/profile.png",    "selectedIconPath": "static/icons/profile-active.png" }
+      { "pagePath": "pages/index/index",      "text": "首页",    "iconPath": "static/icons/home.png",            "selectedIconPath": "static/icons/home-active.png" },
+      { "pagePath": "pages/consultants/index","text": "咨询师",  "iconPath": "static/icons/consultant.png",      "selectedIconPath": "static/icons/consultant-active.png" },
+      { "pagePath": "pages/ohcard/index",     "text": "心理图卡","iconPath": "static/icons/card.png",            "selectedIconPath": "static/icons/card-active.png" },
+      { "pagePath": "pages/assessment/index", "text": "测评",    "iconPath": "static/icons/news.png",            "selectedIconPath": "static/icons/news-active.png" },
+      { "pagePath": "pages/profile/index",    "text": "我的",    "iconPath": "static/icons/profile.png",         "selectedIconPath": "static/icons/profile-active.png" }
     ]
   }
 }

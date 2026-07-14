@@ -63,9 +63,25 @@
     </view>
 
     <!-- 从业经历 -->
-    <view class="card" v-if="consultant.work_experience">
+    <view class="card" v-if="consultant.workExperience">
       <text class="card-title">从业经历</text>
-      <text class="bio">{{consultant.work_experience}}</text>
+      <text class="bio">{{consultant.workExperience}}</text>
+    </view>
+
+    <!-- 资质证书图片 -->
+    <view class="card" v-if="certImages.length">
+      <text class="card-title">证书原件</text>
+      <view class="cert-img-row">
+        <image
+          v-for="(img, i) in certImages"
+          :key="i"
+          class="cert-thumb"
+          :src="fullUrl(img)"
+          mode="aspectFill"
+          @click="previewCertImg(i)"
+        />
+      </view>
+      <text class="cert-img-tip">点击可查看大图</text>
     </view>
 
     <!-- 可预约时间 -->
@@ -135,6 +151,15 @@ const certifications = computed(() =>
 const credentials = computed(() =>
   consultant.value?.education ? consultant.value.education.split('\n').map(s => s.trim()).filter(Boolean) : []
 );
+
+const certImages = computed(() => {
+  if (!consultant.value?.certificationImages) return [];
+  try { return JSON.parse(consultant.value.certificationImages); } catch { return []; }
+});
+
+function previewCertImg(index) {
+  uni.previewImage({ urls: certImages.value.map(img => fullUrl(img)), current: index });
+}
 
 const DAYS = ['日','一','二','三','四','五','六'];
 
@@ -333,6 +358,10 @@ async function book() {
 .wg-cell-active .wg-cell-txt { color: #fff; font-weight: 600; }
 .empty-text { font-size: 26rpx; color: #9BBCB4; }
 .loading { text-align: center; padding: 100rpx; color: #9BBCB4; }
+
+.cert-img-row { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 8rpx; }
+.cert-thumb { width: 200rpx; height: 200rpx; border-radius: 12rpx; background: #f0f0f0; }
+.cert-img-tip { font-size: 22rpx; color: #9BBCB4; display: block; }
 
 .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 24rpx 32rpx; box-shadow: 0 -1rpx 0 rgba(0,0,0,.06); }
 .book-btn { background: #4A8A7A; color: #fff; font-size: 32rpx; font-weight: 600; border-radius: 50rpx; border: none; padding: 22rpx 0; width: 100%; }

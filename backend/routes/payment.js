@@ -54,7 +54,9 @@ router.post('/booking/:bookingId', authMiddleware, async (req, res) => {
   try {
     const bookingId = Number(req.params.bookingId);
     const userId = req.user.id;
-    const openid = req.user.wechatOpenid;
+
+    const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { wechatOpenid: true } });
+    const openid = dbUser?.wechatOpenid;
 
     if (!openid) return res.status(400).json({ error: '需要微信登录才能支付' });
 
@@ -163,15 +165,17 @@ router.post('/notify', async (req, res) => {
 router.get('/orders', authMiddleware, async (req, res) => {
   const where = req.user.role === 'admin' || req.user.role === 'super_admin'
     ? {}
-    : { userId: req.user.id, status: 'paid' };
+    : { userId: req.user.id };
   const orders = await prisma.order.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     select: {
       id: true, orderNo: true, amount: true, status: true,
       payType: true, transactionId: true, paidAt: true, createdAt: true,
+      newsId: true, bookingId: true, expireAt: true,
       user:    { select: { id: true, name: true, username: true } },
-      booking: { select: { id: true, slot: { select: { startTime: true } }, consultant: { select: { name: true } } } }
+      booking: { select: { id: true, slot: { select: { startTime: true } }, consultant: { select: { id: true, name: true } } } },
+      news:    { select: { id: true, title: true, endDate: true } }
     }
   });
   res.json(orders);
@@ -534,7 +538,7 @@ router.post('/activity/:newsId', authMiddleware, async (req, res) => {
     const expireAt = new Date(Date.now() + 15 * 60 * 1000);
 
     const isAlipay = payMethod === 'alipay' || payMethod === 'alipay-pc';
-    await prisma.order.create({ data: { orderNo, userId, amount, expireAt, payType: isAlipay ? 'alipay' : 'wxpay' } });
+    await prisma.order.create({ data: { orderNo, userId, newsId, amount, expireAt, payType: isAlipay ? 'alipay' : 'wxpay' } });
 
     const base = process.env.PAY_NOTIFY_BASE || `http://localhost:${process.env.PORT || 3000}`;
     const desc  = `活动报名 - ${news.title}`;
@@ -557,7 +561,8 @@ router.post('/activity/:newsId', authMiddleware, async (req, res) => {
       return res.json({ orderNo, mwebUrl });
     }
     // 小程序 jsapi
-    const openid = req.user.wechatOpenid;
+    const dbUser2 = await prisma.user.findUnique({ where: { id: userId }, select: { wechatOpenid: true } });
+    const openid = dbUser2?.wechatOpenid;
     if (!openid) return res.status(400).json({ error: '需要微信登录才能支付' });
     const { prepayId, payParams } = await createJsapiOrder({ orderNo, amount, desc, openid, notifyUrl: notifyUrl() });
     await prisma.order.update({ where: { orderNo }, data: { prepayId } });

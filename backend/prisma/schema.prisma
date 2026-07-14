@@ -21,6 +21,8 @@ model User {
   name         String?
   avatar       String?
   termsAcceptedAt DateTime? @map("terms_accepted_at")
+  termsVersion    String    @default("1.0") @map("terms_version")
+  privacyVersion  String    @default("1.0") @map("privacy_version")
   createdAt    DateTime  @default(now()) @map("created_at")
   bookings     Booking[]
   ohRecords    OhCardRecord[]
@@ -77,6 +79,7 @@ model Consultant {
   consultHours      Int         @default(0) @map("consult_hours")
   supervisionHours  Int         @default(0) @map("supervision_hours")
   certifications    String?
+  certificationImages String? @map("certification_images")
   workExperience String?     @map("work_experience")
   price          Int         @default(0)
   discountRate   Float       @default(1.0) @map("discount_rate")  // 折扣率：1.0=无折扣, 0.8=八折
@@ -131,6 +134,7 @@ model News {
   isPublished Int       @default(1) @map("is_published")
   endDate     DateTime? @map("end_date")              // 报名截止日期，null=长期
   createdAt   DateTime  @default(now()) @map("created_at")
+  orders      Order[]
 }
 
 model OhCardCategory {
@@ -575,9 +579,11 @@ model Order {
   userPackageId  Int?     @map("user_package_id")              // 套餐购买订单关联
   userCouponId   Int?     @map("user_coupon_id")               // 使用的优惠券
   couponDiscount Int      @default(0) @map("coupon_discount")  // 优惠券减免金额（分）
+  newsId      Int?     @map("news_id")                         // 活动报名订单关联
   createdAt   DateTime @default(now()) @map("created_at")
   user        User     @relation(fields: [userId], references: [id])
   booking     Booking? @relation(fields: [bookingId], references: [id])
+  news        News?    @relation(fields: [newsId], references: [id])
   userPackage UserPackage? @relation(fields: [userPackageId], references: [id])
   userCoupon  UserCoupon?  @relation(fields: [userCouponId], references: [id])
   @@map("orders")

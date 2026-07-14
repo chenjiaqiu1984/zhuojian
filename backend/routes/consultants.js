@@ -4,6 +4,19 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 
+function buildConsultantData(body) {
+  const b = body;
+  const data = {};
+  const scalars = ['name', 'title', 'avatar', 'bio', 'specialties', 'education', 'certifications', 'certificationImages', 'price', 'discountRate', 'autoConfirm', 'weeklyTemplate'];
+  scalars.forEach(k => { if (b[k] !== undefined) data[k] = b[k]; });
+  const pick = (camel, snake) => { const v = b[camel] ?? b[snake]; if (v !== undefined) data[camel] = v; };
+  pick('yearsExp', 'years_exp');
+  pick('workExperience', 'work_experience');
+  pick('consultHours', 'consult_hours');
+  pick('supervisionHours', 'supervision_hours');
+  return data;
+}
+
 router.get('/', async (req, res) => {
   const { q, page = 1, pageSize = 20 } = req.query;
   const pageNum = Math.max(1, parseInt(page) || 1);
@@ -50,7 +63,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', ...requireRole('admin'), async (req, res) => {
-  const c = await prisma.consultant.create({ data: req.body });
+  const c = await prisma.consultant.create({ data: buildConsultantData(req.body) });
   res.json({ id: c.id });
 });
 
@@ -58,7 +71,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
   const c = await prisma.consultant.findUnique({ where: { id: Number(req.params.id) } });
   if (!c) return res.status(404).json({ error: '未找到' });
   if (req.user.role !== 'admin' && req.user.role !== 'super_admin' && c.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
-  await prisma.consultant.update({ where: { id: c.id }, data: req.body });
+  await prisma.consultant.update({ where: { id: c.id }, data: buildConsultantData(req.body) });
   res.json({ ok: true });
 });
 

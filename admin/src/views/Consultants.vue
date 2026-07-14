@@ -24,7 +24,7 @@
     <el-table :data="list" border v-loading="loading">
       <el-table-column prop="name" label="姓名" width="120" />
       <el-table-column prop="title" label="职称" width="150" />
-      <el-table-column prop="years_exp" label="年限" width="80" />
+      <el-table-column prop="yearsExp" label="年限" width="80" />
       <el-table-column label="收费/次" width="100">
         <template #default="{row}">
           {{ row.price ? '¥' + (row.price / 100).toFixed(2) : '免费' }}
@@ -56,14 +56,29 @@
         <el-form-item label="姓名"><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="职称"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="头像URL"><el-input v-model="form.avatar" /></el-form-item>
-        <el-form-item label="年限"><el-input-number v-model="form.years_exp" :min="0" /></el-form-item>
-        <el-form-item label="收费"><el-input-number v-model="form.price" :min="0" /></el-form-item>
+        <el-form-item label="年限"><el-input-number v-model="form.yearsExp" :min="0" /></el-form-item>
+        <el-form-item label="收费"><el-input-number v-model="form.price" :min="0" :precision="2" :step="0.01" /></el-form-item>
         <el-form-item label="擅长领域"><el-input v-model="form.specialties" /></el-form-item>
         <el-form-item label="教育背景"><el-input v-model="form.education" placeholder="每行一条，如：北京大学心理学硕士" type="textarea" :rows="3" /></el-form-item>
         <el-form-item label="执业资质">
           <el-input v-model="form.certifications" placeholder="每行一条，如：国家二级心理咨询师（证书编号：XXXXXX）" type="textarea" :rows="3" />
         </el-form-item>
-        <el-form-item label="从业经历"><el-input v-model="form.work_experience" placeholder="每行一条，如：XX心理咨询中心 2018-2023" type="textarea" :rows="3" /></el-form-item>
+        <el-form-item label="从业经历"><el-input v-model="form.workExperience" placeholder="每行一条，如：XX心理咨询中心 2018-2023" type="textarea" :rows="3" /></el-form-item>
+        <el-form-item label="证书图片">
+          <div class="cert-upload-wrap">
+            <div v-for="(img, i) in certImageList" :key="i" class="cert-thumb-item">
+              <img :src="img" style="width:80px;height:80px;object-fit:cover;border-radius:6px;display:block;" />
+              <el-button size="small" type="danger" text style="width:80px;padding:2px 0;" @click="removeCertImg(i)">删除</el-button>
+            </div>
+            <div class="cert-upload-btn" @click="triggerImgUpload">
+              <div v-if="uploading" style="font-size:12px;color:#999">上传中…</div>
+              <div v-else style="font-size:24px;color:#ccc;line-height:1">+</div>
+              <div style="font-size:12px;color:#999;margin-top:4px">上传图片</div>
+            </div>
+            <input ref="imgInputRef" type="file" accept="image/*" style="display:none" @change="handleImgUpload" />
+          </div>
+          <div style="font-size:12px;color:#aaa;margin-top:4px">选填，用户可在详情页点击查看原图</div>
+        </el-form-item>
         <el-form-item label="简介"><el-input v-model="form.bio" type="textarea" :rows="4" /></el-form-item>
       </el-form>
       <template #footer>
@@ -89,7 +104,10 @@ const searchQ = ref('');
 const loading = ref(true);
 const dlg = ref(false);
 const saving = ref(false);
+const uploading = ref(false);
 const form = ref({});
+const certImageList = ref([]);
+const imgInputRef = ref(null);
 
 async function load() {
   loading.value = true;
@@ -114,16 +132,21 @@ onMounted(load);
 function openDialog(row = {}) {
   form.value = {
     ...row,
-    years_exp: row.years_exp || 0,
+    yearsExp: row.yearsExp || 0,
     price: row.price ? row.price / 100 : 0  // 分→元
   };
+  certImageList.value = row.certificationImages ? JSON.parse(row.certificationImages) : [];
   dlg.value = true;
 }
 
 async function save() {
   saving.value = true;
   try {
-    const payload = { ...form.value, price: Math.round((form.value.price || 0) * 100) }; // 元→分
+    const payload = {
+      ...form.value,
+      price: Math.round((form.value.price || 0) * 100), // 元→分
+      certificationImages: certImageList.value.length ? JSON.stringify(certImageList.value) : null
+    };
     if (payload.id) await api.put(`/consultants/${payload.id}`, payload);
     else await api.post('/consultants', payload);
     ElMessage.success('保存成功');
@@ -136,6 +159,27 @@ async function save() {
   }
 }
 
+function triggerImgUpload() { imgInputRef.value?.click(); }
+
+async function handleImgUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  uploading.value = true;
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await api.post('/upload', fd);
+    certImageList.value.push(res.url);
+  } catch {
+    ElMessage.error('图片上传失败');
+  } finally {
+    uploading.value = false;
+    e.target.value = '';
+  }
+}
+
+function removeCertImg(i) { certImageList.value.splice(i, 1); }
+
 async function del(row) {
   await ElMessageBox.confirm(`确认删除 ${row.name}？`);
   try {
@@ -147,3 +191,14 @@ async function del(row) {
 
 function manageSlots(row) { router.push(`/consultants/${row.id}/slots`); }
 </script>
+
+<style scoped>
+.cert-upload-wrap { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+.cert-thumb-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.cert-upload-btn {
+  width: 80px; height: 80px; border: 2px dashed #ddd; border-radius: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; background: #fafafa;
+}
+.cert-upload-btn:hover { border-color: #409eff; }
+</style>
