@@ -103,6 +103,27 @@ import { assessmentApi } from '../../api/index.js';
 import { useUserStore } from '../../store/user.js';
 import CrisisAlert from '../../components/CrisisAlert.vue';
 
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    const pages = getCurrentPages();
+    const name = pages[pages.length - 1]?.$vm?.scaleName;
+    const title = name
+      ? `我完成了「${name}」测评，快来试试`
+      : '我完成了一项心理测评，快来试试';
+    return { title, path: `/pages/assessment/index` };
+  },
+  onShareTimeline() {
+    const pages = getCurrentPages();
+    const name = pages[pages.length - 1]?.$vm?.scaleName;
+    const title = name
+      ? `我完成了「${name}」测评 — 卓见心理`
+      : '卓见心理测评 — 了解真实的自己';
+    return { title };
+  },
+});
+// #endif
+
 const store = useUserStore();
 const isLoggedIn = computed(() => store.isLoggedIn());
 const crisisRef = ref(null);

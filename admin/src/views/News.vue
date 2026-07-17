@@ -66,9 +66,10 @@
           <el-tag v-else type="success" size="small">免费</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="状态" width="90">
+      <el-table-column label="状态" width="130">
         <template #default="{row}">
           <el-tag :type="row.is_published?'success':'info'">{{row.is_published?'已发布':'草稿'}}</el-tag>
+          <el-tag v-if="row.is_testing" type="warning" size="small" style="margin-left:4px">测试中</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="created_at" label="时间" width="160" />
@@ -134,6 +135,11 @@
         </el-form-item>
         <el-form-item label="发布">
           <el-switch v-model="form.is_published" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+        <el-form-item label="灰度测试">
+          <el-switch v-model="form.is_testing" :active-value="1" :inactive-value="0" active-color="#E6A23C" />
+          <span style="margin-left:10px;font-size:13px;color:#E6A23C" v-if="form.is_testing">开启后仅管理员可见，普通用户不可见</span>
+          <span style="margin-left:10px;font-size:13px;color:#999" v-else>关闭后所有已发布内容对用户可见</span>
         </el-form-item>
         <el-form-item label="付费活动">
           <el-switch v-model="form.is_paid" :active-value="1" :inactive-value="0" />
@@ -232,6 +238,7 @@ function normalize(n) {
     ...n,
     is_published: n.isPublished ?? n.is_published ?? 0,
     is_paid: n.isPaid ?? n.is_paid ?? 0,
+    is_testing: n.isTesting ?? n.is_testing ?? 0,
     cover_image: n.coverImage ?? n.cover_image ?? '',
     video_url: n.videoUrl ?? n.video_url ?? '',
     created_at: n.createdAt ?? n.created_at ?? '',
@@ -263,7 +270,7 @@ onMounted(() => load(1));
 
 function openDialog(row = {}) {
   form.value = {
-    type: 'news', is_published: 1, is_paid: 0, price: 0, end_date: '',
+    type: 'news', is_published: 1, is_paid: 0, is_testing: 0, price: 0, end_date: '',
     ...row,
     price: row.price ? row.price / 100 : 0,  // 分→元
   };

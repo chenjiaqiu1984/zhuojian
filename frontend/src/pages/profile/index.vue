@@ -34,8 +34,9 @@
 
 <script setup>
 import { computed, onMounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '../../store/user';
-import { authApi } from '../../api/index';
+import { authApi, bookingApi, paymentApi } from '../../api/index';
 import { SERVER } from '../../config';
 import { track } from '../../utils/track';
 
@@ -43,7 +44,31 @@ const BASE_URL = SERVER;
 const store = useUserStore();
 const roleLabel = { user: '用户', consultant: '咨询师', admin: '管理员' };
 
-onMounted(() => track('page_view', '/pages/profile/index'));
+onMounted(() => {
+  track('page_view', '/pages/profile/index');
+  if (store.isLoggedIn()) updateBadge();
+});
+
+onShow(() => {
+  if (store.isLoggedIn()) updateBadge();
+});
+
+async function updateBadge() {
+  try {
+    const [bookings, orders] = await Promise.all([
+      bookingApi.list(),
+      paymentApi.listOrders(),
+    ]);
+    const pendingBookings = bookings.filter(b => b.status === 'pending').length;
+    const paidOrders = orders.filter(o => o.status === 'paid').length;
+    const total = pendingBookings + paidOrders;
+    if (total > 0) {
+      uni.setTabBarBadge({ index: 4, text: String(total) });
+    } else {
+      uni.removeTabBarBadge({ index: 4 });
+    }
+  } catch {}
+}
 
 function menuClick(m) {
   track('menu_click', '/pages/profile/index', { menu: m.label });

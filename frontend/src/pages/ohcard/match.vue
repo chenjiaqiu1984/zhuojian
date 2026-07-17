@@ -3,7 +3,7 @@
     <view v-if="!drawn">
       <text class="title">图字随机匹配</text>
       <text class="desc">随机抽取图卡与字卡，用直觉为图卡配上字卡</text>
-      <u-button type="primary" @click="drawCards()" style="margin-top:40rpx">开始抽卡</u-button>
+      <view class="action-btn action-btn--primary" @click="drawCards()" style="margin-top:40rpx"><text class="action-btn-text">开始抽卡</text></view>
     </view>
     <view v-else>
       <text class="title">为每张图卡选择一张字卡</text>
@@ -20,8 +20,8 @@
           </view>
         </scroll-view>
       </view>
-      <u-button type="primary" :disabled="!allMatched" @click="save()" style="margin-top:32rpx">保存匹配</u-button>
-      <u-button plain @click="drawn=false" style="margin-top:16rpx">重新抽卡</u-button>
+      <view class="action-btn action-btn--primary" :class="{'action-btn--disabled': !allMatched}" @click="allMatched && save()" style="margin-top:32rpx"><text class="action-btn-text">保存匹配</text></view>
+      <view class="action-btn action-btn--plain" @click="drawn=false" style="margin-top:16rpx"><text class="action-btn-text">重新抽卡</text></view>
     </view>
   </view>
 </template>
@@ -84,4 +84,15 @@ onMounted(() => track('page_view', '/pages/ohcard/match'));
 .word-scroll { flex: 1; white-space: nowrap; }
 .word-chip { display: inline-block; padding: 10rpx 20rpx; border: 2rpx solid #ddd; border-radius: 30rpx; margin-right: 12rpx; font-size: 26rpx; color: #555; }
 .word-chip.selected { border-color: #4A7BBA; background: #EBF2FF; color: #4A7BBA; font-weight: 600; }
+.action-btn {
+  display: block; text-align: center; padding: 22rpx 0; border-radius: 14rpx;
+  &--primary     { background: #4A7BBA; }
+  &--plain       { border: 1.5rpx solid #ccc; background: #fff; }
+  &--disabled    { opacity: 0.5; }
+}
+.action-btn-text {
+  font-size: 28rpx; font-weight: 600;
+  .action-btn--primary & { color: #fff; }
+  .action-btn--plain &   { color: #555; }
+}
 </style>

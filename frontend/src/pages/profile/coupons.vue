@@ -7,11 +7,7 @@
     <view v-else>
       <view v-if="filtered.length === 0" class="empty-wrap">
         <u-empty text="暂无优惠券" mode="coupon" />
-        <u-button v-if="tab === 0" type="primary" size="small"
-          style="margin-top:32rpx"
-          @click="uni.navigateTo({ url: '/pages/profile/coupon-activity' })">
-          去领取活动券
-        </u-button>
+        <view v-if="tab === 0" class="action-btn action-btn--primary" style="margin-top:32rpx" @click="uni.navigateTo({ url: '/pages/profile/coupon-activity' })"><text class="action-btn-text">去领取活动券</text></view>
       </view>
 
       <view v-else class="list">
@@ -63,7 +59,7 @@
 
           <!-- 可用时显示使用按钮 -->
           <view v-if="uc.status === 'available'" class="use-btn-wrap">
-            <u-button type="primary" size="mini" @click="goUse()">去使用</u-button>
+            <view class="action-btn action-btn--mini action-btn--primary" @click="goUse()"><text class="action-btn-text">去使用</text></view>
           </view>
         </view>
       </view>
@@ -82,9 +78,7 @@
         <text class="modal-title">输入兑换码</text>
         <u-input v-model="claimCode" placeholder="请输入优惠码" clearable
           style="margin:16rpx 0" />
-        <u-button type="primary" block :loading="claiming" @click="doClaim()">
-          立即领取
-        </u-button>
+        <view class="action-btn action-btn--primary action-btn--block" @click="doClaim()"><text class="action-btn-text">{{ claiming ? '领取中...' : '立即领取' }}</text></view>
       </view>
     </u-popup>
   </view>
@@ -142,66 +136,122 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; background: #F5F7F6; padding-bottom: 40rpx; }
+$primary: #4A8A7A;
+$primary-grad: linear-gradient(135deg, #4A8A7A, #6AADA0);
+$bg: #F0F4F3;
+$text-main: #1C2A27;
+$text-muted: #9BBCB4;
+$text-sub: #8A9E97;
+
+.page { min-height: 100vh; background: $bg; padding-bottom: 40rpx; }
+
 .empty-wrap { display: flex; flex-direction: column; align-items: center; padding: 100rpx 32rpx; }
+.action-btn {
+  text-align: center; padding: 20rpx 40rpx; border-radius: 14rpx;
+  &--primary { background: #4A8A7A; }
+  &--block   { width: 100%; box-sizing: border-box; }
+  &--mini    { padding: 12rpx 24rpx; }
+}
+.action-btn-text { font-size: 28rpx; font-weight: 600; color: #fff; }
 
 .list { padding: 20rpx 24rpx; display: flex; flex-direction: column; gap: 20rpx; }
 
 .coupon-card {
-  display: flex; align-items: stretch; background: #fff;
-  border-radius: 20rpx; overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
   position: relative;
+  box-shadow: 0 2rpx 16rpx rgba(74,138,122,0.08);
 
   &.used, &.expired { opacity: .55; }
 
   .coupon-left {
-    width: 180rpx; flex-shrink: 0;
-    background: linear-gradient(135deg, #4A8A7A, #6AADA0);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 24rpx 16rpx;
-    .coupon-unit  { font-size: 28rpx; color: rgba(255,255,255,.8); }
-    .coupon-value { font-size: 56rpx; font-weight: 700; color: #fff; line-height: 1; }
+    width: 188rpx;
+    flex-shrink: 0;
+    background: $primary-grad;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28rpx 16rpx;
+
+    .coupon-unit  { font-size: 26rpx; color: rgba(255,255,255,.75); }
+    .coupon-value { font-size: 60rpx; font-weight: 800; color: #fff; line-height: 1; }
     .coupon-value.activity { font-size: 36rpx; }
-    .coupon-type-label { font-size: 20rpx; color: rgba(255,255,255,.85); margin-top: 4rpx; }
+    .coupon-type-label { font-size: 20rpx; color: rgba(255,255,255,.85); margin-top: 6rpx; letter-spacing: 0.04em; }
   }
 
   .coupon-divider {
-    width: 2rpx; background: repeating-linear-gradient(
+    width: 2rpx;
+    background: repeating-linear-gradient(
       to bottom, transparent 0, transparent 8rpx, #EEF2F0 8rpx, #EEF2F0 16rpx
     );
     flex-shrink: 0;
   }
 
   .coupon-right {
-    flex: 1; padding: 24rpx 28rpx; display: flex; flex-direction: column; gap: 6rpx;
-    .coupon-name      { font-size: 28rpx; font-weight: 600; color: #1C2A27; }
-    .coupon-desc      { font-size: 22rpx; color: #8A9E97; }
-    .coupon-threshold { font-size: 22rpx; color: #C8821A; }
-    .coupon-meta      { display: flex; justify-content: space-between; align-items: center; margin-top: 8rpx; }
-    .meta-expire      { font-size: 20rpx; color: #B0B8B5; }
+    flex: 1;
+    padding: 24rpx 28rpx 24rpx 24rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 6rpx;
+
+    .coupon-name      { font-size: 28rpx; font-weight: 700; color: $text-main; }
+    .coupon-desc      { font-size: 22rpx; color: $text-sub; line-height: 1.5; }
+    .coupon-threshold { font-size: 22rpx; color: #C8821A; background: #FFF8EC; padding: 4rpx 12rpx; border-radius: 8rpx; display: inline-block; margin-top: 2rpx; }
+
+    .coupon-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10rpx;
+    }
+
+    .meta-expire { font-size: 20rpx; color: $text-muted; }
+
     .status-tag {
-      font-size: 20rpx; padding: 2rpx 12rpx; border-radius: 16rpx;
-      &.available { background: #E8F5F1; color: #4A8A7A; }
-      &.used      { background: #F0F0F0; color: #8A9E97; }
+      font-size: 20rpx;
+      padding: 4rpx 14rpx;
+      border-radius: 20rpx;
+      font-weight: 600;
+      &.available { background: #E8F5F1; color: $primary; }
+      &.used      { background: #F0F0F0; color: $text-sub; }
       &.expired   { background: #FFF0EE; color: #E07050; }
     }
   }
 
   .use-btn-wrap {
-    position: absolute; bottom: 24rpx; right: 24rpx;
+    position: absolute;
+    bottom: 24rpx;
+    right: 24rpx;
   }
 }
 
 .activity-banner {
-  margin: 24rpx; padding: 28rpx 32rpx;
-  background: #fff; border-radius: 16rpx;
-  display: flex; align-items: center; gap: 16rpx;
+  margin: 20rpx 24rpx 0;
+  padding: 28rpx 32rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  box-shadow: 0 1rpx 8rpx rgba(74,138,122,0.06);
+
   .activity-icon { font-size: 36rpx; }
-  .activity-text { flex: 1; font-size: 28rpx; color: #1C2A27; }
+  .activity-text { flex: 1; font-size: 28rpx; color: $text-main; font-weight: 500; }
 }
 
 .modal-body {
-  padding: 40rpx 32rpx;
-  .modal-title { font-size: 30rpx; font-weight: 700; color: #1C2A27; display: block; margin-bottom: 8rpx; }
+  padding: 44rpx 32rpx 56rpx;
+
+  .modal-title {
+    font-size: 32rpx;
+    font-weight: 700;
+    color: $text-main;
+    display: block;
+    margin-bottom: 24rpx;
+  }
 }
 </style>

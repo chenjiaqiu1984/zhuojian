@@ -7,6 +7,12 @@ const { calcDiscount } = require('./coupons');
 
 const router = express.Router();
 
+// 全局请求日志
+router.use((req, res, next) => {
+  console.log(`[payment] ${req.method} ${req.path} userId=${req.user?.id ?? '(no auth)'}`);
+  next();
+});
+
 // 生成商户订单号：时间戳 + 用户ID + 随机4位
 function genOrderNo(userId) {
   const ts = Date.now().toString();
@@ -53,10 +59,12 @@ async function consumeCoupon(userId, userCouponId, amount) {
 router.post('/booking/:bookingId', authMiddleware, async (req, res) => {
   try {
     const bookingId = Number(req.params.bookingId);
+    if (!bookingId) return res.status(400).json({ error: '无效的预约ID' });
     const userId = req.user.id;
 
     const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { wechatOpenid: true } });
     const openid = dbUser?.wechatOpenid;
+    console.log(`[payment/booking] bookingId=${bookingId} userId=${userId} openid=${openid ? '✓' : 'null'}`);
 
     if (!openid) return res.status(400).json({ error: '需要微信登录才能支付' });
 
@@ -64,6 +72,7 @@ router.post('/booking/:bookingId', authMiddleware, async (req, res) => {
       where: { id: bookingId },
       include: { consultant: true }
     });
+    console.log(`[payment] bookingId=${bookingId} userId=${userId} found=${!!booking} booking.userId=${booking?.userId}`);
     if (!booking) return res.status(404).json({ error: '预约不存在' });
     if (booking.userId !== userId) return res.status(403).json({ error: '权限不足' });
 
@@ -187,19 +196,27 @@ router.get('/admin/orders', authMiddleware, async (req, res) => {
   if (req.user.role !== 'admin' && req.user.role !== 'super_admin')
     return res.status(403).json({ error: '权限不足' });
 
-  const { q, status, page = 1, pageSize = 20 } = req.query;
+  const { q, status, type, consultant, activity, page = 1, pageSize = 20 } = req.query;
   const take = Math.min(Number(pageSize) || 20, 100);
   const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
 
   const where = {};
 
-  if (status) {
-    where.status = status;
-  }
+  if (status) where.status = status;
+
+  // 类别筛选：consult=咨询，activity=活动
+  if (type === 'consult')   where.bookingId = { not: null };
+  if (type === 'activity')  where.newsId    = { not: null };
+
+  // 咨询师名搜索
+  if (consultant) where.booking = { consultant: { name: { contains: consultant } } };
+
+  // 活动名搜索
+  if (activity) where.news = { title: { contains: activity } };
 
   if (q) {
     where.OR = [
-      { orderNo: { contains: q } },
+      { orderNo:  { contains: q } },
       { user: { name:     { contains: q } } },
       { user: { username: { contains: q } } },
       { user: { phone:    { contains: q } } },
@@ -209,8 +226,10 @@ router.get('/admin/orders', authMiddleware, async (req, res) => {
   const select = {
     id: true, orderNo: true, amount: true, status: true,
     payType: true, transactionId: true, paidAt: true, createdAt: true,
+    newsId: true, bookingId: true,
     user:    { select: { id: true, name: true, username: true, phone: true } },
-    booking: { select: { id: true, slot: { select: { startTime: true } }, consultant: { select: { name: true } } } }
+    booking: { select: { id: true, slot: { select: { startTime: true } }, consultant: { select: { name: true } } } },
+    news:    { select: { id: true, title: true } },
   };
 
   const [total, items] = await Promise.all([
@@ -380,6 +399,7 @@ router.post('/refund/:orderNo', authMiddleware, async (req, res) => {
 router.post('/h5/:bookingId', authMiddleware, async (req, res) => {
   try {
     const bookingId = Number(req.params.bookingId);
+    if (!bookingId) return res.status(400).json({ error: '无效的预约ID' });
     const userId    = req.user.id;
     // 获取客户端 IP（微信 H5 必填）
     const clientIp  = req.headers['x-forwarded-for']?.split(',')[0].trim()
@@ -397,7 +417,7 @@ router.post('/h5/:bookingId', authMiddleware, async (req, res) => {
       where: { bookingId, status: { in: ['pending', 'paid'] } }
     });
     if (existing?.status === 'paid') return res.status(400).json({ error: '该预约已支付' });
-    if (existing?.status === 'pending') {
+    if (existing?.status === 'pending' && existing.expireAt > new Date()) {
       await prisma.order.update({ where: { id: existing.id }, data: { status: 'cancelled' } });
     }
 
@@ -439,6 +459,7 @@ router.post('/h5/:bookingId', authMiddleware, async (req, res) => {
 router.post('/alipay/:bookingId', authMiddleware, async (req, res) => {
   try {
     const bookingId = Number(req.params.bookingId);
+    if (!bookingId) return res.status(400).json({ error: '无效的预约ID' });
     const userId    = req.user.id;
 
     const booking = await prisma.booking.findUnique({
@@ -452,7 +473,7 @@ router.post('/alipay/:bookingId', authMiddleware, async (req, res) => {
       where: { bookingId, status: { in: ['pending', 'paid'] } }
     });
     if (existing?.status === 'paid') return res.status(400).json({ error: '该预约已支付' });
-    if (existing?.status === 'pending') {
+    if (existing?.status === 'pending' && existing.expireAt > new Date()) {
       await prisma.order.update({ where: { id: existing.id }, data: { status: 'cancelled' } });
     }
 
@@ -528,6 +549,7 @@ router.post('/activity/:newsId', authMiddleware, async (req, res) => {
     const newsId   = Number(req.params.newsId);
     const userId   = req.user.id;
     const { payMethod } = req.body;
+    console.log(`[payment/activity] newsId=${newsId} userId=${userId} payMethod=${payMethod}`);
 
     const news = await prisma.news.findUnique({ where: { id: newsId } });
     if (!news) return res.status(404).json({ error: '活动不存在' });
@@ -536,6 +558,7 @@ router.post('/activity/:newsId', authMiddleware, async (req, res) => {
     const amount   = (news.isPaid && news.price > 0) ? news.price : 1;
     const orderNo  = genOrderNo(userId);
     const expireAt = new Date(Date.now() + 15 * 60 * 1000);
+    console.log(`[payment/activity] amount=${amount} orderNo=${orderNo}`);
 
     const isAlipay = payMethod === 'alipay' || payMethod === 'alipay-pc';
     await prisma.order.create({ data: { orderNo, userId, newsId, amount, expireAt, payType: isAlipay ? 'alipay' : 'wxpay' } });
@@ -563,12 +586,14 @@ router.post('/activity/:newsId', authMiddleware, async (req, res) => {
     // 小程序 jsapi
     const dbUser2 = await prisma.user.findUnique({ where: { id: userId }, select: { wechatOpenid: true } });
     const openid = dbUser2?.wechatOpenid;
+    console.log(`[payment/activity] jsapi openid=${openid ? '✓' : 'null'}`);
     if (!openid) return res.status(400).json({ error: '需要微信登录才能支付' });
     const { prepayId, payParams } = await createJsapiOrder({ orderNo, amount, desc, openid, notifyUrl: notifyUrl() });
     await prisma.order.update({ where: { orderNo }, data: { prepayId } });
+    console.log(`[payment/activity] jsapi ok prepayId=${prepayId}`);
     res.json({ orderNo, payParams });
   } catch (err) {
-    console.error('[payment] activity order error:', err.message);
+    console.error('[payment/activity] error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -624,6 +649,7 @@ router.get('/query/:orderNo', authMiddleware, async (req, res) => {
 router.post('/native/:bookingId', authMiddleware, async (req, res) => {
   try {
     const bookingId = Number(req.params.bookingId);
+    if (!bookingId) return res.status(400).json({ error: '无效的预约ID' });
     const userId    = req.user.id;
     const booking   = await prisma.booking.findUnique({ where: { id: bookingId }, include: { consultant: true } });
     if (!booking)              return res.status(404).json({ error: '预约不存在' });
@@ -659,6 +685,7 @@ router.post('/native/:bookingId', authMiddleware, async (req, res) => {
 router.post('/alipay-pc/:bookingId', authMiddleware, async (req, res) => {
   try {
     const bookingId = Number(req.params.bookingId);
+    if (!bookingId) return res.status(400).json({ error: '无效的预约ID' });
     const userId    = req.user.id;
     const booking   = await prisma.booking.findUnique({ where: { id: bookingId }, include: { consultant: true } });
     if (!booking)              return res.status(404).json({ error: '预约不存在' });
@@ -666,7 +693,7 @@ router.post('/alipay-pc/:bookingId', authMiddleware, async (req, res) => {
 
     const existing = await prisma.order.findFirst({ where: { bookingId, status: { in: ['pending', 'paid'] } } });
     if (existing?.status === 'paid') return res.status(400).json({ error: '该预约已支付' });
-    if (existing?.status === 'pending') {
+    if (existing?.status === 'pending' && existing.expireAt > new Date()) {
       await prisma.order.update({ where: { id: existing.id }, data: { status: 'cancelled' } });
     }
 

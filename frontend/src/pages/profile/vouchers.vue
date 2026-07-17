@@ -49,18 +49,75 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page { background: #F5F7F6; min-height: 100vh; padding: 12px; }
-.empty { text-align: center; padding: 80px; color: #9BBCB4; font-size: 14px; }
-.list { display: flex; flex-direction: column; gap: 12px; }
-.card { background: #fff; border-radius: 14px; padding: 16px; border-left: 4px solid #4A8A7A; }
-.card.used { border-left-color: #ccc; opacity: .7; }
-.card.expired { border-left-color: #E07050; opacity: .7; }
-.card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.scale-name { font-size: 15px; font-weight: 600; color: #1C2A27; }
-.status-tag { font-size: 12px; padding: 2px 10px; border-radius: 10px; background: #EDF4F0; color: #4A8A7A; }
-.status-tag.used { background: #F0F0F0; color: #999; }
+.page { background: #F0F4F3; min-height: 100vh; padding: 24rpx; }
+
+.empty {
+  text-align: center;
+  padding: 80px;
+  color: #9BBCB4;
+  font-size: 14px;
+}
+
+.list { display: flex; flex-direction: column; gap: 16rpx; }
+
+.card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx 28rpx 24rpx;
+  border-left: 6rpx solid #4A8A7A;
+  box-shadow: 0 2rpx 12rpx rgba(74,138,122,0.07);
+}
+
+.card.used {
+  border-left-color: #C8D4D0;
+  opacity: .65;
+}
+
+.card.expired {
+  border-left-color: #E07050;
+  opacity: .65;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14rpx;
+}
+
+.scale-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1C2A27;
+}
+
+.status-tag {
+  font-size: 22rpx;
+  padding: 4rpx 18rpx;
+  border-radius: 20rpx;
+  background: #EAF5F1;
+  color: #4A8A7A;
+  font-weight: 600;
+}
+
+.status-tag.used { background: #F0F0F0; color: #8A9E97; }
 .status-tag.expired { background: #FFF0EE; color: #E07050; }
-.code { font-size: 20px; font-weight: 700; letter-spacing: 4px; color: #3A6E80; display: block; margin: 8px 0; }
-.card-bottom { display: flex; gap: 16px; }
-.meta { font-size: 12px; color: #9BBCB4; }
+
+.code {
+  font-size: 40rpx;
+  font-weight: 700;
+  letter-spacing: 8rpx;
+  color: #3A6E80;
+  display: block;
+  margin: 10rpx 0 16rpx;
+}
+
+.card-bottom {
+  display: flex;
+  gap: 24rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid #F0F4F3;
+}
+
+.meta { font-size: 22rpx; color: #9BBCB4; }
 </style>

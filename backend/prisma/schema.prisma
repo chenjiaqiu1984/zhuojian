@@ -132,6 +132,7 @@ model News {
   isPaid      Int       @default(0) @map("is_paid")   // 0=免费 1=付费
   price       Int       @default(0)                    // 单位：分
   isPublished Int       @default(1) @map("is_published")
+  isTesting   Int       @default(0) @map("is_testing") // 1=灰度测试，仅管理员可见
   endDate     DateTime? @map("end_date")              // 报名截止日期，null=长期
   createdAt   DateTime  @default(now()) @map("created_at")
   orders      Order[]
@@ -197,6 +198,7 @@ model AssessmentScale {
   totalQuestions   Int
   estimatedMinutes Int      @default(10)
   isActive         Boolean  @default(true)
+  isTesting        Boolean  @default(false) // 灰度测试，仅管理员可见
   usageCount       Int      @default(0)
   scoringRule      String
   scenarios        String   @default("[]")

@@ -44,12 +44,12 @@
         <text class="guide-text">请根据最近两周的真实感受作答，选择第一反应最符合的选项。</text>
       </view>
 
-      <view class="q-card">
+      <view class="q-card" :key="questions[current].id">
         <text class="q-text">{{ questions[current].content }}</text>
         <view class="options">
           <view
-            v-for="opt in JSON.parse(questions[current].options)"
-            :key="opt.value"
+            v-for="(opt, optIdx) in JSON.parse(questions[current].options)"
+            :key="questions[current].id + '_' + optIdx"
             :class="['option', answers[questions[current].id] === opt.value && 'selected', optionsLocked && 'locked']"
             @click="select(questions[current].id, opt.value)"
           >
@@ -119,10 +119,12 @@ const questions = ref([]);
 const answers = ref({});
 const current = ref(0);
 const optionsLocked = ref(false);
+let lockTimer = null;
 watch(current, () => {
+  if (lockTimer) clearTimeout(lockTimer);
   optionsLocked.value = true;
-  setTimeout(() => optionsLocked.value = false, 500);
-}, { immediate: true });
+  lockTimer = setTimeout(() => optionsLocked.value = false, 500);
+});
 const loading = ref(true);
 const submitting = ref(false);
 const showPayModal = ref(false);
@@ -171,12 +173,13 @@ const allAnswered = computed(() => questions.value.every(q => answers.value[q.id
 
 function select(qId, val) {
   if (optionsLocked.value) return;
+  optionsLocked.value = true;
   answers.value = { ...answers.value, [qId]: val };
   if (isFlow.value) {
     const q = questions.value[current.value];
     const opts = JSON.parse(q.options);
     const opt = opts.find(o => o.value === val);
-    if (!opt?.next) return;
+    if (!opt?.next) { setTimeout(() => optionsLocked.value = false, 500); return; }
     if (/^[A-Z]$/.test(opt.next)) {
       setTimeout(() => doSubmit(), 300);
     } else {

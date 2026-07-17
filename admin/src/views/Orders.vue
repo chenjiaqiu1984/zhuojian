@@ -42,16 +42,36 @@
           v-model="filters.q"
           placeholder="订单号 / 用户名 / 手机"
           clearable
-          style="width:240px"
+          style="width:200px"
           @keyup.enter="onSearch"
           @clear="onSearch"
         />
-        <el-select v-model="filters.status" placeholder="全部状态" clearable style="width:140px" @change="onSearch">
+        <el-select v-model="filters.status" placeholder="全部状态" clearable style="width:120px" @change="onSearch">
           <el-option label="待支付" value="pending" />
           <el-option label="已支付" value="paid" />
           <el-option label="已取消" value="cancelled" />
           <el-option label="已退款" value="refunded" />
         </el-select>
+        <el-select v-model="filters.type" placeholder="全部类别" clearable style="width:120px" @change="onSearch">
+          <el-option label="咨询预约" value="consult" />
+          <el-option label="活动报名" value="activity" />
+        </el-select>
+        <el-input
+          v-model="filters.consultant"
+          placeholder="咨询师名"
+          clearable
+          style="width:140px"
+          @keyup.enter="onSearch"
+          @clear="onSearch"
+        />
+        <el-input
+          v-model="filters.activity"
+          placeholder="活动名"
+          clearable
+          style="width:160px"
+          @keyup.enter="onSearch"
+          @clear="onSearch"
+        />
         <el-date-picker
           v-model="filters.dateRange"
           type="daterange"
@@ -59,7 +79,7 @@
           start-placeholder="开始日期"
           end-placeholder="结束日期"
           value-format="YYYY-MM-DD"
-          style="width:260px"
+          style="width:240px"
           @change="onSearch"
           @clear="onSearch"
         />
@@ -74,33 +94,45 @@
       <span style="color:#909399;font-size:13px">共 {{ total }} 条</span>
     </div>
 
-    <el-table :data="list" border v-loading="loading" row-key="_id">
+    <el-table :data="list" border v-loading="loading" row-key="id">
       <el-table-column prop="orderNo" label="订单号" min-width="180" show-overflow-tooltip />
-      <el-table-column label="用户" width="120">
+      <el-table-column label="类别" width="100">
+        <template #default="{row}">
+          <el-tag :type="row.newsId ? 'warning' : 'primary'" size="small">
+            {{ row.newsId ? '活动报名' : '咨询预约' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="用户" width="110">
         <template #default="{row}">{{ row.user?.name || row.user?.username || '-' }}</template>
       </el-table-column>
       <el-table-column label="手机" width="130">
         <template #default="{row}">{{ row.user?.phone || '-' }}</template>
       </el-table-column>
-      <el-table-column label="咨询师" width="120">
-        <template #default="{row}">{{ row.booking?.consultant?.name || '-' }}</template>
+      <el-table-column label="咨询师 / 活动" min-width="140" show-overflow-tooltip>
+        <template #default="{row}">
+          {{ row.news?.title || row.booking?.consultant?.name || '-' }}
+        </template>
       </el-table-column>
-      <el-table-column label="预约时间" width="160">
+      <el-table-column label="预约时间" width="155">
         <template #default="{row}">{{ fmt(row.booking?.slot?.startTime) }}</template>
       </el-table-column>
-      <el-table-column label="金额" width="100">
+      <el-table-column label="金额" width="90">
         <template #default="{row}">¥{{ (row.amount / 100).toFixed(2) }}</template>
       </el-table-column>
-      <el-table-column label="支付方式" width="100">
-        <template #default="{row}">{{ row.payType === 'alipay' ? '支付宝' : '微信支付' }}</template>
+      <el-table-column label="支付方式" width="90">
+        <template #default="{row}">{{ row.payType === 'alipay' ? '支付宝' : '微信' }}</template>
       </el-table-column>
-      <el-table-column label="状态" width="100">
+      <el-table-column label="状态" width="90">
         <template #default="{row}">
           <el-tag :type="tagType[row.status]">{{ label[row.status] || row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="支付时间" width="160">
+      <el-table-column label="支付时间" width="155">
         <template #default="{row}">{{ fmt(row.paidAt) }}</template>
+      </el-table-column>
+      <el-table-column label="下单时间" width="155">
+        <template #default="{row}">{{ fmt(row.createdAt) }}</template>
       </el-table-column>
       <el-table-column label="操作" width="120" fixed="right">
         <template #default="{row}">
@@ -155,28 +187,27 @@ import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '../api/index';
 
-// 列表状态
 const list     = ref([]);
 const loading  = ref(false);
 const total    = ref(0);
 const page     = ref(1);
 const pageSize = ref(20);
 
-// 筛选条件
 const filters = reactive({
-  q:         '',
-  status:    '',
-  dateRange: null,
+  q:          '',
+  status:     '',
+  type:       '',
+  consultant: '',
+  activity:   '',
+  dateRange:  null,
 });
 
-// 退款弹窗
 const dlg         = ref(false);
 const submitting  = ref(false);
 const cur         = ref(null);
 const refundRatio = ref(1);
 const reason      = ref('');
 
-// 查询支付状态
 const queryNo     = ref('');
 const querying    = ref(false);
 const queryResult = ref(null);
@@ -188,20 +219,17 @@ async function load() {
   loading.value = true;
   try {
     const params = { page: page.value, pageSize: pageSize.value };
-    if (filters.q)            params.q         = filters.q.trim();
-    if (filters.status)       params.status     = filters.status;
-    if (filters.dateRange?.[0]) params.startDate = filters.dateRange[0];
-    if (filters.dateRange?.[1]) params.endDate   = filters.dateRange[1];
+    if (filters.q)              params.q          = filters.q.trim();
+    if (filters.status)         params.status      = filters.status;
+    if (filters.type)           params.type        = filters.type;
+    if (filters.consultant)     params.consultant  = filters.consultant.trim();
+    if (filters.activity)       params.activity    = filters.activity.trim();
+    if (filters.dateRange?.[0]) params.startDate   = filters.dateRange[0];
+    if (filters.dateRange?.[1]) params.endDate     = filters.dateRange[1];
 
     const res = await api.get('/payment/admin/orders', { params });
-    // 兼容 { list, total } / { orders, total } / 直接数组 三种响应格式
-    if (Array.isArray(res)) {
-      list.value  = res;
-      total.value = res.length;
-    } else {
-      list.value  = res.list ?? res.orders ?? [];
-      total.value = res.total ?? list.value.length;
-    }
+    list.value  = res.items ?? [];
+    total.value = res.total ?? 0;
   } catch (e) {
     ElMessage.error(e?.error || '加载订单失败');
   } finally {
@@ -211,20 +239,16 @@ async function load() {
 
 onMounted(load);
 
-function onSearch() {
-  page.value = 1;
-  load();
-}
-
-function onSizeChange() {
-  page.value = 1;
-  load();
-}
+function onSearch() { page.value = 1; load(); }
+function onSizeChange() { page.value = 1; load(); }
 
 function resetFilters() {
-  filters.q         = '';
-  filters.status    = '';
-  filters.dateRange = null;
+  filters.q          = '';
+  filters.status     = '';
+  filters.type       = '';
+  filters.consultant = '';
+  filters.activity   = '';
+  filters.dateRange  = null;
   onSearch();
 }
 

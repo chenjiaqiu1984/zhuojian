@@ -35,9 +35,10 @@
               <span v-else>{{row.price}}</span>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="80">
+          <el-table-column label="状态" width="130">
             <template #default="{row}">
               <el-switch :model-value="row.isActive" @change="v=>toggleScale(row,v)" />
+              <el-tag v-if="row.isTesting" type="warning" size="small" style="margin-left:6px">测试中</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="200">
@@ -233,6 +234,11 @@
             <el-form-item label="收费">
               <el-switch v-model="editForm.isPaid" />
               <el-input-number v-if="editForm.isPaid" v-model="editForm.price" :min="0" style="margin-left:12px" placeholder="分" />
+            </el-form-item>
+            <el-form-item label="灰度测试">
+              <el-switch v-model="editForm.isTesting" active-color="#E6A23C" />
+              <span style="margin-left:10px;font-size:13px;color:#E6A23C" v-if="editForm.isTesting">开启后仅管理员可见，普通用户不可见</span>
+              <span style="margin-left:10px;font-size:13px;color:#999" v-else>关闭后所有用户可见</span>
             </el-form-item>
           </el-form>
         </el-tab-pane>
@@ -436,6 +442,7 @@ async function openEdit(row) {
     editForm.value = {
       id: null, code: '', name: '', description: '', category: 'diagnostic',
       isPaid: false, price: 0, estimatedMinutes: 5, scenariosText: '',
+      isTesting: false,
       scoringMethod: 'sum', questions: [], levels: []
     };
   } else {
@@ -445,6 +452,7 @@ async function openEdit(row) {
       id: data.id, name: data.name, description: data.description,
       category: data.category, isPaid: data.isPaid, price: data.price,
       estimatedMinutes: data.estimatedMinutes,
+      isTesting: data.isTesting ?? false,
       scenariosText: (() => { try { return JSON.parse(data.scenarios||'[]').join(','); } catch { return ''; } })(),
       scoringMethod: rule.method || 'sum',
       questions: (data.questions || []).map(q => ({
@@ -486,6 +494,7 @@ async function saveScale() {
   const payload = {
     name: f.name, description: f.description, category: f.category,
     isPaid: f.isPaid, price: f.price, estimatedMinutes: f.estimatedMinutes,
+    isTesting: f.isTesting ?? false,
     scenarios: JSON.stringify((f.scenariosText||'').split(',').map(s=>s.trim()).filter(Boolean)),
     questions,
     scoringRule: { method: f.scoringMethod, levels: f.levels }

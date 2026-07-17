@@ -5,10 +5,7 @@
     </view>
     <view v-else-if="list.length === 0" class="empty-wrap">
       <u-empty text="暂无套餐，快去购买吧" mode="data" />
-      <u-button type="primary" size="small" style="margin-top:32rpx"
-        @click="uni.navigateTo({ url: '/pages/admin/packages' })">
-        查看套餐
-      </u-button>
+      <view class="action-btn action-btn--primary" style="margin-top:32rpx" @click="uni.navigateTo({ url: '/pages/admin/packages' })"><text class="action-btn-text">查看套餐</text></view>
     </view>
     <view v-else>
       <view class="pkg-card" v-for="up in list" :key="up.id">
@@ -78,43 +75,93 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; background: #F5F7F6; padding: 24rpx; }
+$primary: #4A8A7A;
+$bg: #F0F4F3;
+$text-main: #1C2A27;
+$text-muted: #9BBCB4;
+$text-sub: #8A9E97;
+
+.page { min-height: 100vh; background: $bg; padding: 24rpx; }
 
 .loading-wrap, .empty-wrap {
   display: flex; flex-direction: column; align-items: center; padding: 120rpx 0;
 }
+.action-btn {
+  text-align: center; padding: 20rpx 40rpx; border-radius: 14rpx;
+  &--primary { background: #4A8A7A; }
+}
+.action-btn-text { font-size: 28rpx; font-weight: 600; color: #fff; }
 
 .pkg-card {
-  background: #fff; border-radius: 20rpx; padding: 36rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 36rpx 32rpx;
   margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 16rpx rgba(74,138,122,0.07);
 
   .pkg-header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 24rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28rpx;
   }
-  .pkg-name { font-size: 30rpx; font-weight: 700; color: #1C2A27; }
+
+  .pkg-name {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $text-main;
+    letter-spacing: 0.02em;
+  }
+
   .pkg-status {
-    font-size: 22rpx; padding: 4rpx 16rpx; border-radius: 20rpx;
-    &.active    { background: #E8F5F1; color: #4A8A7A; }
-    &.exhausted { background: #F0F0F0; color: #8A9E97; }
+    font-size: 22rpx;
+    padding: 6rpx 18rpx;
+    border-radius: 20rpx;
+    font-weight: 600;
+    &.active    { background: #E8F5F1; color: $primary; }
+    &.exhausted { background: #F0F0F0; color: $text-sub; }
     &.expired   { background: #FFF0F0; color: #C83232; }
   }
 
   .progress-row {
-    display: flex; align-items: center; gap: 16rpx; margin-bottom: 16rpx;
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    margin-bottom: 20rpx;
+
     .progress-bar {
-      flex: 1; height: 12rpx; background: #EEF2F0; border-radius: 6rpx; overflow: hidden;
-      .progress-fill { height: 100%; border-radius: 6rpx; transition: width .3s; }
+      flex: 1;
+      height: 10rpx;
+      background: #EEF4F2;
+      border-radius: 8rpx;
+      overflow: hidden;
+
+      .progress-fill {
+        height: 100%;
+        border-radius: 8rpx;
+        transition: width .4s ease;
+      }
     }
-    .progress-text { font-size: 22rpx; color: #8A9E97; flex-shrink: 0; }
+
+    .progress-text { font-size: 22rpx; color: $text-sub; flex-shrink: 0; }
   }
 
   .detail-row {
-    display: flex; gap: 32rpx; margin-bottom: 12rpx;
-    .detail-item { font-size: 24rpx; color: #8A9E97; }
-    .highlight { color: #4A8A7A; font-weight: 700; }
+    display: flex;
+    gap: 32rpx;
+    margin-bottom: 14rpx;
+    padding-top: 4rpx;
+
+    .detail-item { font-size: 24rpx; color: $text-sub; }
+    .highlight { color: $primary; font-weight: 700; font-size: 28rpx; }
   }
 
-  .paid-tip { font-size: 22rpx; color: #B0B8B5; }
+  .paid-tip {
+    font-size: 22rpx;
+    color: $text-muted;
+    padding-top: 12rpx;
+    border-top: 1rpx solid #F0F4F3;
+    margin-top: 4rpx;
+  }
 }
 </style>

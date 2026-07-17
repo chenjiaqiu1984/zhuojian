@@ -1,23 +1,38 @@
 <template>
   <view class="page">
-    <view class="form">
-      <view v-for="f in fields" :key="f.key" class="field">
-        <text class="label">{{f.label}}<text v-if="f.required" class="req">*</text></text>
-        <text v-if="f.hint" class="hint">{{f.hint}}</text>
-        <textarea class="input" v-model="form[f.key]" :placeholder="f.placeholder" />
-      </view>
-      <text class="save-btn" @click="save()">保存记录</text>
+    <view class="page-header">
+      <view class="hdr-glow" />
+      <text class="hdr-icon">📜</text>
+      <text class="hdr-title">规条转换练习</text>
+      <text class="hdr-desc">将刚性规条改写为有弹性的生活原则</text>
     </view>
 
-    <view v-if="list.length" class="history-section">
-      <text class="history-title">历史记录</text>
-      <view class="record" v-for="r in list" :key="r.id" @click="view(r)">
-        <view class="rec-header">
-          <text class="rec-title">{{r.originalRule}}</text>
-          <text class="rec-date">{{fmt(r.createdAt)}}</text>
-          <text class="del-btn" @click.stop="del(r.id)">×</text>
+    <view class="content">
+      <view class="form-card">
+        <view v-for="f in fields" :key="f.key" class="field">
+          <text class="field-label">{{f.label}}<text v-if="f.required" class="req">*</text></text>
+          <text v-if="f.hint" class="field-hint">{{f.hint}}</text>
+          <textarea class="field-input" v-model="form[f.key]" :placeholder="f.placeholder" />
         </view>
-        <text v-if="r.newRule" class="rec-sub">→ {{r.newRule}}</text>
+        <text class="save-btn" @click="save()">保存记录</text>
+      </view>
+
+      <view v-if="list.length">
+        <view class="history-header">
+          <view class="history-bar" />
+          <text class="history-title">历史记录</text>
+        </view>
+        <view class="entry" v-for="r in list" :key="r.id" @click="view(r)">
+          <view class="entry-header">
+            <text class="entry-title">{{r.originalRule}}</text>
+            <text class="entry-date">{{fmt(r.createdAt)}}</text>
+            <text class="del-btn" @click.stop="del(r.id)">×</text>
+          </view>
+          <view v-if="r.newRule" class="transform-row">
+            <text class="transform-arrow">→</text>
+            <text class="transform-text">{{r.newRule}}</text>
+          </view>
+        </view>
       </view>
     </view>
 
@@ -132,34 +147,217 @@ function fmt(d) {
 </script>
 
 <style scoped lang="scss">
-.page { padding: 24rpx; background: #F5F7F6; min-height: 100vh; }
-.form { background: #fff; border-radius: 20rpx; padding: 30rpx; margin-bottom: 24rpx; }
-.field { margin-bottom: 24rpx; }
-.label { font-size: 28rpx; font-weight: 600; color: #1C2A27; display: block; margin-bottom: 4rpx; }
-.req { color: #e74c3c; margin-left: 4rpx; }
-.hint { display: block; font-size: 22rpx; color: #9BBCB4; margin-bottom: 8rpx; }
-.input { width: 100%; min-height: 96rpx; background: #f9f9f9; border-radius: 12rpx; padding: 16rpx; font-size: 28rpx; box-sizing: border-box; }
-.save-btn { background: #4A8A7A; color: #fff; text-align: center; padding: 24rpx; border-radius: 12rpx; font-size: 30rpx; font-weight: 600; margin-top: 8rpx; }
-.history-section { margin-top: 8rpx; }
-.history-title { font-size: 26rpx; color: #9BBCB4; display: block; margin-bottom: 16rpx; }
-.record { background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
-.rec-header { display: flex; align-items: flex-start; gap: 12rpx; margin-bottom: 8rpx; }
-.rec-title { flex: 1; font-size: 30rpx; font-weight: 600; color: #1C2A27; line-height: 1.4; }
-.rec-date { font-size: 22rpx; color: #9BBCB4; flex-shrink: 0; }
-.del-btn { font-size: 36rpx; color: #ccc; flex-shrink: 0; }
-.rec-sub { font-size: 26rpx; color: #4A8A7A; line-height: 1.5; }
-.popup-view { background: #fff; border-radius: 32rpx 32rpx 0 0; padding: 40rpx 30rpx 60rpx; max-height: 85vh; overflow-y: auto; }
-.popup-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28rpx; }
-.popup-title { font-size: 34rpx; font-weight: 700; color: #1C2A27; }
-.popup-close { font-size: 44rpx; color: #ccc; }
-.detail-item { margin-bottom: 24rpx; }
-.detail-label { font-size: 24rpx; color: #9BBCB4; display: block; margin-bottom: 8rpx; }
-.detail-val { font-size: 28rpx; color: #1C2A27; line-height: 1.7; }
-.notes-section { border-top: 1rpx solid #f0f0f0; padding-top: 24rpx; margin-top: 8rpx; }
-.note-item { background: #f9f9f9; border-radius: 12rpx; padding: 16rpx; margin-bottom: 12rpx; }
-.note-date { font-size: 22rpx; color: #9BBCB4; display: block; margin-bottom: 6rpx; }
-.note-text { font-size: 28rpx; color: #1C2A27; line-height: 1.6; }
-.note-input-row { display: flex; gap: 16rpx; align-items: flex-end; margin-top: 12rpx; }
-.note-input { flex: 1; min-height: 80rpx; background: #f9f9f9; border-radius: 12rpx; padding: 14rpx; font-size: 28rpx; box-sizing: border-box; }
-.note-add-btn { background: #4A8A7A; color: #fff; padding: 18rpx 24rpx; border-radius: 12rpx; font-size: 28rpx; white-space: nowrap; flex-shrink: 0; }
+$primary: #7A4A3A;
+$bg: #F5F7F6;
+$surface: #FAF7F5;
+$text-main: #1C2A27;
+$text-sub: #617870;
+$text-muted: #9BBCB4;
+
+.page {
+  min-height: 100vh;
+  background: $bg;
+  padding-bottom: 60rpx;
+}
+
+/* Page Header */
+.page-header {
+  position: relative;
+  overflow: hidden;
+  padding: 56rpx 36rpx 44rpx;
+  background: linear-gradient(155deg, #8E5E4E 0%, #5A2E1E 100%);
+}
+
+.hdr-glow {
+  position: absolute;
+  top: -100rpx;
+  right: -80rpx;
+  width: 360rpx;
+  height: 320rpx;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.14) 0%, transparent 66%);
+  pointer-events: none;
+}
+
+.hdr-icon { display: block; font-size: 52rpx; margin-bottom: 16rpx; position: relative; z-index: 1; }
+
+.hdr-title {
+  display: block;
+  font-size: 46rpx;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.05em;
+  font-family: "Noto Serif SC", serif;
+  margin-bottom: 12rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.hdr-desc {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.7;
+  position: relative;
+  z-index: 1;
+}
+
+/* Content */
+.content { padding: 28rpx; }
+
+.form-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(28,42,39,0.06);
+  border: 1rpx solid #EDF2F0;
+}
+
+.field { margin-bottom: 26rpx; }
+
+.field-label {
+  font-size: 27rpx;
+  font-weight: 700;
+  color: $text-main;
+  display: block;
+  margin-bottom: 4rpx;
+  letter-spacing: 0.02em;
+}
+
+.req { color: #D95C4A; margin-left: 4rpx; }
+
+.field-hint {
+  display: block;
+  font-size: 22rpx;
+  color: $text-muted;
+  margin-bottom: 10rpx;
+  line-height: 1.5;
+}
+
+.field-input {
+  width: 100%;
+  min-height: 96rpx;
+  background: $surface;
+  border-radius: 14rpx;
+  padding: 18rpx;
+  font-size: 27rpx;
+  box-sizing: border-box;
+  color: $text-main;
+  line-height: 1.6;
+}
+
+.save-btn {
+  display: block;
+  background: linear-gradient(135deg, $primary, #5A2E1E);
+  color: #fff;
+  text-align: center;
+  padding: 26rpx;
+  border-radius: 18rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 12rpx;
+}
+
+/* History */
+.history-header {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin: 36rpx 0 20rpx;
+}
+
+.history-bar {
+  width: 5rpx;
+  height: 28rpx;
+  border-radius: 3rpx;
+  background: $primary;
+  flex-shrink: 0;
+}
+
+.history-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-main;
+  letter-spacing: 0.03em;
+}
+
+.entry {
+  background: #fff;
+  border-radius: 18rpx;
+  padding: 22rpx 24rpx;
+  margin-bottom: 14rpx;
+  box-shadow: 0 2rpx 12rpx rgba(28,42,39,0.05);
+  border: 1rpx solid #EDF2F0;
+}
+
+.entry-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  margin-bottom: 10rpx;
+}
+
+.entry-title {
+  flex: 1;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: $text-main;
+  line-height: 1.5;
+}
+
+.entry-date {
+  font-size: 21rpx;
+  color: $text-muted;
+  flex-shrink: 0;
+  padding-top: 3rpx;
+}
+
+.del-btn { font-size: 38rpx; color: #E8D8D4; flex-shrink: 0; }
+
+.transform-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10rpx;
+}
+
+.transform-arrow {
+  font-size: 24rpx;
+  color: $primary;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 3rpx;
+}
+
+.transform-text {
+  font-size: 24rpx;
+  color: $primary;
+  line-height: 1.55;
+  flex: 1;
+}
+
+/* Popup */
+.popup-view {
+  background: #fff;
+  border-radius: 36rpx 36rpx 0 0;
+  padding: 44rpx 32rpx 72rpx;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.popup-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 36rpx; }
+.popup-title { font-size: 34rpx; font-weight: 700; color: $text-main; }
+.popup-close { font-size: 44rpx; color: #D8C8C4; line-height: 1; }
+
+.detail-item { margin-bottom: 28rpx; }
+.detail-label { font-size: 21rpx; color: $text-muted; display: block; margin-bottom: 8rpx; font-weight: 600; letter-spacing: 0.06em; }
+.detail-val { font-size: 28rpx; color: $text-main; line-height: 1.75; }
+
+.notes-section { border-top: 1rpx solid #F0F4F3; padding-top: 28rpx; margin-top: 12rpx; }
+.note-item { background: $surface; border-radius: 12rpx; padding: 16rpx 18rpx; margin-bottom: 12rpx; }
+.note-date { font-size: 20rpx; color: $text-muted; display: block; margin-bottom: 6rpx; }
+.note-text { font-size: 27rpx; color: $text-main; line-height: 1.65; }
+.note-input-row { display: flex; gap: 14rpx; align-items: flex-end; margin-top: 14rpx; }
+.note-input { flex: 1; min-height: 80rpx; background: $surface; border-radius: 14rpx; padding: 16rpx; font-size: 27rpx; box-sizing: border-box; }
+.note-add-btn { background: $primary; color: #fff; padding: 20rpx 28rpx; border-radius: 14rpx; font-size: 27rpx; white-space: nowrap; flex-shrink: 0; }
 </style>

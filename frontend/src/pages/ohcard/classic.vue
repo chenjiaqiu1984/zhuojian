@@ -57,6 +57,13 @@
             </view>
           </view>
         </template>
+        <view v-if="deckGuides.length" class="guides-wrap">
+          <text class="section-label" style="margin-top:28rpx">翻开卡牌后</text>
+          <view class="q-item" v-for="(q, i) in deckGuides" :key="i">
+            <text class="q-num">{{i+1}}</text>
+            <text class="q-text">{{q}}</text>
+          </view>
+        </view>
         <text class="section-label" style="margin-top:28rpx">此刻感受</text>
         <textarea class="note-input" v-model="note" placeholder="写下你的感想..." placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
@@ -70,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick , watch } from 'vue';
+import { ref, computed, onMounted, nextTick , watch } from 'vue';
 import { onBackPress, onLoad } from '@dcloudio/uni-app';
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
@@ -267,6 +274,30 @@ function reset() {
   note.value = ''; compositeUrl.value = ''; saving.value = false;
   startDraw(selDeck.value);
 }
+
+const DECK_GUIDES = {
+  '心理图卡': [
+    '这张图，你第一眼注意到的是什么？',
+    '如果图里有一种情绪或氛围，那是什么？',
+    '这张卡和你现在的处境，有什么让你意外的联系？'
+  ],
+  '心理图卡+字卡': [
+    '图和字放在一起，你注意到什么？',
+    '如果图是一个场景，字是其中一个声音，那会是什么声音？',
+    '这个组合让你联想到什么？'
+  ],
+  '伴侣卡': [
+    '这张卡里的人，让你想到谁，或者什么样的关系？',
+    '这个人的表情和姿态，让你有什么感受？',
+    '如果这张卡代表一段关系或一种相处方式，那是什么样的？'
+  ],
+  '孩童卡·人像': [
+    '这个孩子大概多大？他的神情让你想到什么？',
+    '如果这是小时候的你，那一刻他可能在想什么？',
+    '看着这张卡，你身体有什么感觉？'
+  ],
+};
+const deckGuides = computed(() => DECK_GUIDES[selDeck.value?.name] || []);
 </script>
 
 <style scoped lang="scss">
@@ -326,6 +357,10 @@ function reset() {
 
 /* Composite */
 .composite-section { background: #FFFFFF; border-radius: 24rpx; padding: 34rpx 30rpx; border: 1rpx solid #E8EFED; }
+.guides-wrap { margin-top: 8rpx; margin-bottom: 8rpx; }
+.q-item { display: flex; gap: 14rpx; margin-bottom: 20rpx; }
+.q-num { width: 38rpx; height: 38rpx; border-radius: 50%; background: linear-gradient(135deg, #4A8A7A, #3A6E80); color: #fff; font-size: 22rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.q-text { font-size: 26rpx; color: #4A5751; line-height: 1.65; flex: 1; }
 .note-input {
   width: 100%; min-height: 150rpx; background: #F5F7F6;
   border: 1rpx solid #E8EFED; border-radius: 16rpx;

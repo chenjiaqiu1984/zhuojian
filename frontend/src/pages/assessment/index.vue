@@ -152,6 +152,17 @@ import { assessmentApi } from '../../api/index.js';
 import { useUserStore } from '../../store/user.js';
 import { track } from '../../utils/track.js';
 
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    return { title: '卓见心理测评中心 — 了解真实的自己', path: '/pages/assessment/index' };
+  },
+  onShareTimeline() {
+    return { title: '卓见心理测评 — 让测评成为认识自己的镜子' };
+  },
+});
+// #endif
+
 const TOP_GRADS = [
   'linear-gradient(135deg, #4A8A7A, #3A6E80)',
   'linear-gradient(135deg, #3A6E80, #4A7BBA)',

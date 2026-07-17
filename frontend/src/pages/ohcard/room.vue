@@ -4,14 +4,14 @@
       <text class="title">房间抽卡</text>
       <text class="desc">输入房间号加入，或创建新房间</text>
       <u-input v-model="roomInput" placeholder="输入房间号" type="number" style="margin:32rpx 0" />
-      <u-button type="primary" @click="joinRoom()">加入房间</u-button>
-      <u-button plain @click="createRoom()" style="margin-top:16rpx">创建新房间</u-button>
+      <view class="action-btn action-btn--primary" @click="joinRoom()"><text class="action-btn-text">加入房间</text></view>
+      <view class="action-btn action-btn--plain" @click="createRoom()" style="margin-top:16rpx"><text class="action-btn-text">创建新房间</text></view>
     </view>
 
     <view v-else class="room">
       <view class="room-header">
         <text class="room-id">房间号：{{roomId}}</text>
-        <u-button size="mini" @click="dealCards()">发牌</u-button>
+        <view class="action-btn action-btn--mini" @click="dealCards()"><text class="action-btn-text">发牌</text></view>
       </view>
       <view class="members">
         <view class="member" v-for="m in members" :key="m.socketId">
@@ -42,9 +42,9 @@
         </scroll-view>
       </view>
       <view class="actions">
-        <u-button type="primary" @click="setReady()" :disabled="isReady">{{isReady ? '已准备' : '准备好了'}}</u-button>
-        <u-button :type="isShared ? 'warning' : 'success'" @click="toggleShare()">{{isShared ? '取消分享' : '分享给大家'}}</u-button>
-        <u-button type="error" plain @click="leaveRoom()">离开房间</u-button>
+        <view class="action-btn" :class="isReady ? 'action-btn--disabled' : 'action-btn--primary'" @click="!isReady && setReady()"><text class="action-btn-text">{{isReady ? '已准备' : '准备好了'}}</text></view>
+        <view class="action-btn" :class="isShared ? 'action-btn--warning' : 'action-btn--success'" @click="toggleShare()"><text class="action-btn-text">{{isShared ? '取消分享' : '分享给大家'}}</text></view>
+        <view class="action-btn action-btn--danger-plain" @click="leaveRoom()"><text class="action-btn-text">离开房间</text></view>
       </view>
     </view>
   </view>
@@ -134,4 +134,21 @@ onMounted(() => track('page_view', '/pages/ohcard/room'));
 .card-img { width: 100%; height: 100%; }
 .card-word { font-size: 32rpx; font-weight: bold; color: #4A7BBA; }
 .actions { display: flex; flex-direction: column; gap: 16rpx; margin-top: 24rpx; }
+.action-btn {
+  text-align: center; padding: 22rpx 0; border-radius: 14rpx;
+  &--primary     { background: #4A8A7A; }
+  &--warning     { background: #C88A2A; }
+  &--success     { background: #3A8A5A; }
+  &--danger-plain { border: 1.5rpx solid #C03030; background: #FFF5F5; }
+  &--plain       { border: 1.5rpx solid #ccc; background: #fff; }
+  &--mini        { padding: 12rpx 24rpx; }
+  &--disabled    { opacity: 0.5; }
+}
+.action-btn-text {
+  font-size: 28rpx; font-weight: 600;
+  .action-btn--primary &, .action-btn--warning &, .action-btn--success & { color: #fff; }
+  .action-btn--danger-plain & { color: #C03030; }
+  .action-btn--plain & { color: #555; }
+  .action-btn--mini & { font-size: 24rpx; }
+}
 </style>

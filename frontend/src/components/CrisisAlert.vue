@@ -1,5 +1,5 @@
 <template>
-  <view v-if="visible" class="overlay" @click.stop>
+  <view v-if="visible" class="overlay">
     <view class="modal">
       <view class="icon-row"><text class="icon">💙</text></view>
 
@@ -7,16 +7,19 @@
       <text class="subtitle">你不需要独自面对，我们的咨询师随时可以陪伴你</text>
 
       <view class="btn-row">
-        <text class="btn-consult" @click="goConsult()">预约咨询师</text>
-        <text class="btn-close" @click="close()">我知道了</text>
+        <view class="btn-consult" @click="goConsult()">
+          <text class="btn-consult-text">预约咨询师</text>
+        </view>
+        <view class="btn-close" @click="close()">
+          <text class="btn-close-text">我知道了</text>
+        </view>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import {ref, watch } from 'vue';
-
+import { ref } from 'vue';
 
 const visible = ref(false);
 
@@ -63,13 +66,15 @@ defineExpose({ show });
 
 .btn-row { display: flex; flex-direction: column; gap: 16rpx; }
 .btn-consult {
-  background: #4A8A7A; color: #fff;
+  background: #4A8A7A;
   text-align: center; padding: 24rpx;
-  border-radius: 14rpx; font-size: 28rpx; font-weight: 600;
+  border-radius: 14rpx;
 }
+.btn-consult-text { color: #fff; font-size: 28rpx; font-weight: 600; }
 .btn-close {
-  border: 2rpx solid #ddd; color: #999;
+  border: 2rpx solid #ddd;
   text-align: center; padding: 22rpx;
-  border-radius: 14rpx; font-size: 26rpx;
+  border-radius: 14rpx;
 }
+.btn-close-text { color: #999; font-size: 26rpx; }
 </style>

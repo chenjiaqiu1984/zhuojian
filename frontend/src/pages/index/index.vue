@@ -67,7 +67,7 @@
             <text v-if="c.title" class="c-title-tag">{{c.title}}</text>
             <view class="c-price-row">
               <text class="c-price-sym">¥</text>
-              <text class="c-price-num">{{ ((c.price || 1000) / 100).toFixed(0) }}</text>
+              <text class="c-price-num">{{ (c.price != null ? c.price : 1000) / 100 }}</text>
               <text class="c-price-unit">/ 次</text>
             </view>
             <view :class="['c-btn', !c.hasAvailableSlots && 'c-btn--full']">
@@ -113,6 +113,17 @@ import {ref, onMounted, watch } from 'vue';
 import { consultantApi, newsApi, aboutApi } from '../../api/index';
 import { SERVER } from '../../config';
 import TermsConfirmModal from '../../components/TermsConfirmModal.vue';
+
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    return { title: '卓见心理 — 专业心理服务平台', path: '/pages/index/index' };
+  },
+  onShareTimeline() {
+    return { title: '卓见心理 — 一对一咨询 · 心理测评 · 自助工具' };
+  },
+});
+// #endif
 
 
 const consultants = ref([]);

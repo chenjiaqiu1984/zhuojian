@@ -53,7 +53,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { assessmentApi } from '../../api/index.js';
+import { useUserStore } from '../../store/user.js';
 
+const store = useUserStore();
 const pushed = ref([]);
 const favorites = ref([]);
 
@@ -69,8 +71,8 @@ function go(s) {
 
 onMounted(async () => {
   const [avail, favIds, scales] = await Promise.allSettled([
-    assessmentApi.myAvailable(),
-    assessmentApi.getFavorites(),
+    store.isLoggedIn() ? assessmentApi.myAvailable() : Promise.resolve([]),
+    store.isLoggedIn() ? assessmentApi.getFavorites() : Promise.resolve([]),
     assessmentApi.getScales(),
   ]);
   if (avail.status === 'fulfilled')

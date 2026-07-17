@@ -243,105 +243,180 @@ function confirmDelete(orderNo) {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; background: #F5F7F6; padding: 24rpx; padding-bottom: 60rpx; }
+$primary: #4A8A7A;
+$bg: #F0F4F3;
+$text-main: #1C2A27;
+$text-sub: #8A9E97;
+$text-muted: #9BBCB4;
+$divider: #EEF4F2;
+
+.page { min-height: 100vh; background: $bg; padding: 24rpx; padding-bottom: 60rpx; }
 
 .empty { display: flex; flex-direction: column; align-items: center; padding: 120rpx 32rpx; gap: 20rpx; }
 .empty-icon { font-size: 80rpx; }
-.empty-text { font-size: 28rpx; color: #9BBCB4; }
+.empty-text { font-size: 28rpx; color: $text-muted; }
 
 .list { display: flex; flex-direction: column; gap: 20rpx; }
 
 .order-card {
-  background: #fff; border-radius: 16rpx; padding: 28rpx 24rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx 28rpx;
+  box-shadow: 0 2rpx 16rpx rgba(74,138,122,0.07);
 
   .order-head {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    margin-bottom: 20rpx; padding-bottom: 16rpx; border-bottom: 1rpx solid #F0F4F2;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20rpx;
+    padding-bottom: 20rpx;
+    border-bottom: 1rpx solid $divider;
     gap: 16rpx;
   }
 
   .order-title-row {
-    display: flex; flex-direction: column; gap: 8rpx; flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 10rpx; flex: 1; min-width: 0;
   }
 
   .order-type-tag {
-    display: inline-flex; align-self: flex-start;
-    padding: 4rpx 14rpx; border-radius: 8rpx;
-    &.tag--activity { background: #EAF4EE; }
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 5rpx 16rpx;
+    border-radius: 10rpx;
+    &.tag--activity { background: #E8F5EE; }
     &.tag--consult  { background: #EEF0FA; }
   }
+
   .tag-text {
-    font-size: 20rpx; font-weight: 600;
+    font-size: 20rpx;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     .tag--activity & { color: #3A8A5A; }
     .tag--consult &  { color: #4A5AA8; }
   }
 
   .order-name {
-    font-size: 28rpx; font-weight: 600; color: #1C2A27;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $text-main;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .status-badge {
-    flex-shrink: 0; padding: 4rpx 16rpx; border-radius: 20rpx;
-    &.status--paid     { background: #EDF4F0; }
+    flex-shrink: 0;
+    padding: 6rpx 18rpx;
+    border-radius: 20rpx;
+    font-weight: 600;
+    &.status--paid     { background: #E8F5F1; }
     &.status--pending  { background: #FFF8E6; }
-    &.status--refunded { background: #F5F0FF; }
-    &.status--dead     { background: #F2F2F2; }
+    &.status--refunded { background: #F3F0FF; }
+    &.status--dead     { background: #F2F4F3; }
   }
+
   .status-text {
     font-size: 22rpx;
-    .status--paid &     { color: #4A8A7A; }
+    .status--paid &     { color: $primary; }
     .status--pending &  { color: #C88A2A; }
     .status--refunded & { color: #7A4AC8; }
-    .status--dead &     { color: #999; }
+    .status--dead &     { color: #AABAB5; }
   }
 
   .order-row {
-    display: flex; justify-content: space-between; align-items: center; padding: 10rpx 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12rpx 0;
+    border-bottom: 1rpx solid #F8FAF9;
+    &:last-of-type { border-bottom: none; }
   }
-  .label { font-size: 26rpx; color: #8A9E97; }
-  .value { font-size: 26rpx; color: #1C2A27; }
-  .amount { color: #4A8A7A; font-weight: 600; }
-  .order-no { font-size: 22rpx; color: #B0B8B5; }
 
-  /* 退款规则块 */
+  .label { font-size: 26rpx; color: $text-sub; }
+  .value { font-size: 26rpx; color: $text-main; }
+  .amount { color: $primary; font-weight: 700; font-size: 28rpx; }
+  .order-no { font-size: 22rpx; color: $text-muted; font-family: monospace; }
+
   .refund-policy {
-    margin: 16rpx 0 0;
-    padding: 20rpx 24rpx;
-    background: #F7FAF9;
-    border-radius: 12rpx;
-    border: 1rpx solid #E4EDEA;
+    margin: 20rpx 0 0;
+    padding: 22rpx 24rpx;
+    background: #F5FAF8;
+    border-radius: 16rpx;
+    border: 1rpx solid #DCF0EA;
   }
-  .refund-policy-title { margin-bottom: 14rpx; }
+
+  .refund-policy-title { margin-bottom: 16rpx; }
+
   .refund-policy-title-text {
-    font-size: 20rpx; font-weight: 700; color: #9BBCB4;
-    letter-spacing: 0.08em; text-transform: uppercase;
+    font-size: 20rpx;
+    font-weight: 700;
+    color: $text-muted;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
+
   .refund-rule-row {
-    display: flex; align-items: center; gap: 12rpx; margin-bottom: 10rpx;
+    display: flex; align-items: flex-start; gap: 14rpx; margin-bottom: 12rpx;
   }
+
   .rule-dot {
-    width: 8rpx; height: 8rpx; border-radius: 50%; flex-shrink: 0;
-    &--green { background: #4A8A7A; }
-    &--amber { background: #B87C0E; }
+    width: 10rpx; height: 10rpx; border-radius: 50%; flex-shrink: 0; margin-top: 8rpx;
+    &--green { background: $primary; }
+    &--amber { background: #C8921A; }
     &--red   { background: #C03030; }
   }
-  .refund-rule-text { font-size: 23rpx; color: #617870; line-height: 1.5; }
+
+  .refund-rule-text { font-size: 24rpx; color: #617870; line-height: 1.6; flex: 1; }
+
   .refund-contact {
-    display: block; margin-top: 14rpx;
-    font-size: 21rpx; color: #9BBCB4; line-height: 1.6;
+    display: block;
+    margin-top: 16rpx;
+    font-size: 22rpx;
+    color: $text-muted;
+    line-height: 1.7;
   }
+
   .refund-email {
-    display: block; font-size: 23rpx; color: #4A8A7A;
-    font-weight: 600; margin-top: 4rpx;
+    display: block;
+    font-size: 24rpx;
+    color: $primary;
+    font-weight: 700;
+    margin-top: 4rpx;
   }
 
   .order-footer {
-    margin-top: 16rpx; padding-top: 16rpx; border-top: 1rpx solid #F0F4F2;
-    display: flex; justify-content: flex-end; gap: 24rpx;
+    margin-top: 20rpx;
+    padding-top: 20rpx;
+    border-top: 1rpx solid $divider;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8rpx;
   }
-  .action-btn { font-size: 26rpx; color: #4A8A7A; padding: 8rpx 20rpx; }
-  .refund-btn { font-size: 26rpx; color: #C83232; padding: 8rpx 20rpx; }
-  .delete-btn { font-size: 26rpx; color: #B0B8B5; padding: 8rpx 20rpx; }
+
+  .action-btn {
+    font-size: 26rpx;
+    color: $primary;
+    padding: 10rpx 24rpx;
+    border: 1.5rpx solid rgba($primary, 0.4);
+    border-radius: 12rpx;
+    background: #F5FAF8;
+  }
+
+  .refund-btn {
+    font-size: 26rpx;
+    color: #C03030;
+    padding: 10rpx 24rpx;
+    border: 1.5rpx solid rgba(192,48,48,0.3);
+    border-radius: 12rpx;
+    background: #FFF5F5;
+  }
+
+  .delete-btn {
+    font-size: 26rpx;
+    color: $text-muted;
+    padding: 10rpx 24rpx;
+    border-radius: 12rpx;
+  }
 }
 </style>

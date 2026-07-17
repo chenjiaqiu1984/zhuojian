@@ -158,21 +158,24 @@ function getDetail(score, scoringRule, interpretations, dimension = null) {
 }
 
 // GET /api/assessment/scales
-router.get('/scales', async (req, res) => {
+router.get('/scales', optionalAuth, async (req, res) => {
+  const isAdmin = req.user?.role === 'admin' || req.user?.role === 'super_admin';
   const scales = await prisma.assessmentScale.findMany({
-    where: { isActive: true },
-    select: { id: true, code: true, name: true, category: true, description: true, introduction: true, isPaid: true, price: true, totalQuestions: true, estimatedMinutes: true, usageCount: true }
+    where: { isActive: true, ...(isAdmin ? {} : { isTesting: false }) },
+    select: { id: true, code: true, name: true, category: true, description: true, introduction: true, isPaid: true, price: true, totalQuestions: true, estimatedMinutes: true, usageCount: true, isTesting: true }
   });
   res.json(scales);
 });
 
 // GET /api/assessment/scales/:id?age=25&gender=M
-router.get('/scales/:id', async (req, res) => {
+router.get('/scales/:id', optionalAuth, async (req, res) => {
+  const isAdmin = req.user?.role === 'admin' || req.user?.role === 'super_admin';
   const scale = await prisma.assessmentScale.findUnique({
     where: { id: Number(req.params.id) },
     include: { questions: { orderBy: { orderNum: 'asc' } } }
   });
   if (!scale) return res.status(404).json({ error: '量表不存在' });
+  if (scale.isTesting && !isAdmin) return res.status(404).json({ error: '量表不存在' });
   const { age, gender } = req.query;
   let questions = scale.questions;
   if (age || gender) {
@@ -507,7 +510,7 @@ router.get('/my-vouchers', authMiddleware, async (req, res) => {
 router.get('/my-available', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const [allScales, doneRows, pushed] = await Promise.all([
-    prisma.assessmentScale.findMany({ where: { isActive: true }, select: { id: true, name: true, category: true, description: true, totalQuestions: true, estimatedMinutes: true, isPaid: true } }),
+    prisma.assessmentScale.findMany({ where: { isActive: true, isTesting: false }, select: { id: true, name: true, category: true, description: true, totalQuestions: true, estimatedMinutes: true, isPaid: true } }),
     prisma.assessmentResult.findMany({ where: { userId }, select: { scaleId: true } }),
     prisma.assessmentVoucher.findMany({
       where: { targetUserId: userId, usedBy: null, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },

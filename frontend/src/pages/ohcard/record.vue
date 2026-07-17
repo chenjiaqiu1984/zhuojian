@@ -2,7 +2,7 @@
   <view class="page">
     <view v-if="!store.isLoggedIn()" class="empty">
       <u-empty text="请先登录查看记录" mode="auth" />
-      <u-button type="primary" @click="uni.navigateTo({url:'/pages/login/index'})">去登录</u-button>
+      <view class="login-btn" @click="uni.navigateTo({url:'/pages/login/index'})"><text class="login-btn-text">去登录</text></view>
     </view>
     <view v-else>
       <view class="record" v-for="r in records" :key="r.id" @click="toggle(r.id)">
@@ -114,4 +114,6 @@ function previewCard(c) { fsCard.value = c; }
 .fs-word { width:80vw; height:80vw; border:4rpx solid #C8A84B; border-radius:20rpx; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#1E3A34,#2C5249); }
 .fs-word-text { font-size:120rpx; font-weight:bold; color:#fff; }
 .fs-label { color:rgba(255,255,255,.7); font-size:24rpx; }
+.login-btn { margin-top:32rpx; background:#4A8A7A; padding:22rpx 60rpx; border-radius:14rpx; text-align:center; }
+.login-btn-text { color:#fff; font-size:28rpx; font-weight:600; }
 </style>

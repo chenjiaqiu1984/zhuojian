@@ -72,8 +72,24 @@
 import { ref, onMounted, computed } from 'vue';
 import DOMPurify from 'dompurify';
 import { newsApi } from '../../api/index';
+import { requireActive } from '../../utils/requireActive';
 // #ifndef H5
 import mpHtml from '@/components/mp-html/mp-html.vue';
+
+defineOptions({
+  onShareAppMessage() {
+    const pages = getCurrentPages();
+    const cur = pages[pages.length - 1];
+    const title = cur?.$vm?.news?.title || '卓见心理 — 最新动态';
+    const id = cur?.options?.id || '';
+    return { title, path: `/pages/news/detail?id=${id}` };
+  },
+  onShareTimeline() {
+    const pages = getCurrentPages();
+    const title = pages[pages.length - 1]?.$vm?.news?.title || '卓见心理 — 最新动态';
+    return { title };
+  },
+});
 // #endif
 
 
@@ -225,6 +241,7 @@ async function delComment(id) {
 }
 
 function registerActivity() {
+  if (!requireActive()) return;
   if (!news.value.price || news.value.price <= 0) {
     // 免费活动：直接报名，不走支付
     try {
@@ -241,7 +258,14 @@ function registerActivity() {
   }
   const title = encodeURIComponent(news.value.title);
   const endDate = news.value.endDate ? encodeURIComponent(news.value.endDate) : '';
-  uni.navigateTo({ url: `/pages/payment/index?newsId=${newsId}&activityName=${title}&amount=${news.value.price}&endDate=${endDate}` });
+  // 将完整参数存入 storage，避免小程序 URL 长度限制导致参数截断
+  uni.setStorageSync('_paymentParams', JSON.stringify({
+    newsId: Number(newsId),
+    activityName: news.value.title || '活动报名',
+    amount: news.value.price,
+    endDate: news.value.endDate || ''
+  }));
+  uni.navigateTo({ url: `/pages/payment/index?newsId=${newsId}&amount=${news.value.price}` });
 }
 </script>
 

@@ -24,12 +24,12 @@
         <text class="draw-tip">点击翻转每张卡牌</text>
       </view>
       <view class="cards-wrap">
-        <view class="card-item" v-for="(c,i) in cards" :key="i">
+        <view class="card-item" :class="{'card-landscape': c.cat==='彩虹卡'}" v-for="(c,i) in cards" :key="i">
           <text class="card-label">{{c.label}}</text>
           <view class="flip-card" :style="{transform: c.rotate, transition: 'transform 0.21s ease-in-out'}" @click="flip(i)">
             <view v-if="!c.flipped" class="card-back" :style="{background:catStyle(c.cat)}"><text class="back-txt">{{c.cat}}</text></view>
             <view v-else class="card-front" :class="c.word ? 'word-front' : ''">
-              <image v-if="c.imageUrl" :src="fullUrl(c.imageUrl)" mode="aspectFill" class="card-img" @click.stop="preview(c.imageUrl)" />
+              <image v-if="c.imageUrl" :src="fullUrl(c.imageUrl)" :mode="c.cat==='彩虹卡'?'aspectFit':'aspectFill'" class="card-img" @click.stop="preview(c.imageUrl)" />
               <view v-else class="word-frame"><text class="word-char">{{c.word}}</text></view>
             </view>
           </view>
@@ -169,7 +169,8 @@ const COMBOS = ref([
     qs:[
       '英雄之旅三张卡连起来，是什么故事？主角是谁？',
       '神话卡上的原型，如果成为你的盟友，会给你什么能力？',
-      'OH图卡里，你一直带着但可能没意识到的东西是什么？'
+      'OH图卡里，你一直带着但可能没意识到的东西是什么？',
+      '路标卡指向的下一个方向，你感到吸引还是犹豫？'
     ]
   }
 ]);
@@ -261,13 +262,15 @@ function reset() { step.value = 0; sel.value = null; cards.value = []; note.valu
 .draw-head { margin-bottom:32rpx; text-align:center; }
 .draw-title { font-size:36rpx; font-weight:600; color:#1C2A27; display:block; font-family:"Noto Serif SC",serif; }
 .draw-tip { font-size:22rpx; color:#9BBCB4; display:block; margin-top:12rpx; }
-.cards-wrap { display:flex; flex-wrap:wrap; padding:0 8rpx 16rpx; margin-bottom:12rpx; }
 
 .card-item { display:flex; flex-direction:column; align-items:center; width:31.5%; margin-right:2.75%; margin-bottom:16rpx; }
 .card-item:nth-child(3n) { margin-right:0; }
+.card-landscape { width:66%; max-width:440rpx; margin-right:0; align-self:center; }
+.card-landscape .flip-card { padding-top:66.67%; }
+.cards-wrap { display:flex; flex-wrap:wrap; padding:0 8rpx 16rpx; margin-bottom:12rpx; width:100%; max-width:420px; margin-left:auto; margin-right:auto; }
 .card-label { font-size:20rpx; color:#617870; margin-bottom:10rpx; text-align:center; line-height:1.4; height:56rpx; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-.flip-card { width:100%; aspect-ratio: 5/7; position:relative; border-radius:14rpx; will-change: transform; }
-.card-back, .card-front { width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
+.flip-card { width:100%; padding-top:140%; position:relative; border-radius:14rpx; will-change: transform; }
+.card-back, .card-front { position:absolute; top:0; left:0; width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
 .card-back { background:linear-gradient(135deg,#4A8A7A,#3A6E80); flex-direction:column; gap:8rpx; box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
 .back-txt { color:rgba(255,255,255,.9); font-size:20rpx; }
 .card-front { background:#fff; box-shadow:0 8rpx 26rpx rgba(28,42,39,.12); overflow:hidden; }

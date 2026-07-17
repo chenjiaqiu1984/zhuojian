@@ -1,28 +1,40 @@
 <template>
   <view class="page">
-    <view class="form">
-      <view class="field">
-        <text class="label">梦境内容<text class="req">*</text></text>
-        <textarea class="input tall" v-model="form.dreamContent" placeholder="描述梦境的场景、人物、情节..." />
-      </view>
-      <view class="field">
-        <text class="label">自由联想</text>
-        <textarea class="input" v-model="form.freeAssociation" placeholder="对梦境内容的自由联想、感受、想到了什么..." />
-      </view>
-      <view class="field">
-        <text class="label">治疗师解释</text>
-        <textarea class="input" v-model="form.interpretation" placeholder="治疗师对梦境的分析与解释..." />
-      </view>
-      <text class="save-btn" @click="save()">保存记录</text>
+    <view class="page-header">
+      <view class="hdr-glow" />
+      <text class="hdr-icon">🌙</text>
+      <text class="hdr-title">梦的工作记录</text>
+      <text class="hdr-desc">记录梦境、自由联想与治疗师解释</text>
     </view>
 
-    <view v-if="list.length" class="history-section">
-      <text class="history-title">历史记录</text>
-      <view class="record" v-for="r in list" :key="r.id" @click="view(r)">
-        <view class="rec-header">
-          <text class="rec-title">{{r.dreamContent.slice(0,30)}}{{r.dreamContent.length>30?'…':''}}</text>
-          <text class="rec-date">{{fmt(r.createdAt)}}</text>
-          <text class="del-btn" @click.stop="del(r.id)">×</text>
+    <view class="content">
+      <view class="form-card">
+        <view class="field">
+          <text class="field-label">梦境内容<text class="req-dot" /></text>
+          <textarea class="field-input tall" v-model="form.dreamContent" placeholder="描述梦境的场景、人物、情节..." />
+        </view>
+        <view class="field">
+          <text class="field-label">自由联想</text>
+          <textarea class="field-input" v-model="form.freeAssociation" placeholder="对梦境内容的自由联想、感受、想到了什么..." />
+        </view>
+        <view class="field last">
+          <text class="field-label">治疗师解释</text>
+          <textarea class="field-input" v-model="form.interpretation" placeholder="治疗师对梦境的分析与解释..." />
+        </view>
+        <text class="save-btn" @click="save()">保存记录</text>
+      </view>
+
+      <view v-if="list.length">
+        <view class="history-header">
+          <view class="history-bar" />
+          <text class="history-title">历史记录</text>
+        </view>
+        <view class="entry" v-for="r in list" :key="r.id" @click="view(r)">
+          <view class="entry-header">
+            <text class="entry-title">{{r.dreamContent.slice(0,40)}}{{r.dreamContent.length>40?'…':''}}</text>
+            <text class="entry-date">{{fmt(r.createdAt)}}</text>
+            <text class="del-btn" @click.stop="del(r.id)">×</text>
+          </view>
         </view>
       </view>
     </view>
@@ -137,33 +149,210 @@ function fmt(d) {
 </script>
 
 <style scoped lang="scss">
-.page { padding: 24rpx; background: #F5F7F6; min-height: 100vh; }
-.form { background: #fff; border-radius: 20rpx; padding: 30rpx; margin-bottom: 24rpx; }
-.field { margin-bottom: 24rpx; }
-.label { font-size: 28rpx; font-weight: 600; color: #1C2A27; display: block; margin-bottom: 10rpx; }
-.req { color: #e74c3c; margin-left: 4rpx; }
-.input { width: 100%; min-height: 120rpx; background: #f9f9f9; border-radius: 12rpx; padding: 16rpx; font-size: 28rpx; box-sizing: border-box; }
+$primary: #5A4A7A;
+$bg: #F5F7F6;
+$surface: #F7F5FA;
+$text-main: #1C2A27;
+$text-sub: #617870;
+$text-muted: #9BBCB4;
+
+.page {
+  min-height: 100vh;
+  background: $bg;
+  padding-bottom: 60rpx;
+}
+
+/* Page Header */
+.page-header {
+  position: relative;
+  overflow: hidden;
+  padding: 56rpx 36rpx 44rpx;
+  background: linear-gradient(155deg, #6E5A8A 0%, #3E2E5E 100%);
+}
+
+.hdr-glow {
+  position: absolute;
+  top: -100rpx;
+  right: -80rpx;
+  width: 360rpx;
+  height: 320rpx;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.14) 0%, transparent 66%);
+  pointer-events: none;
+}
+
+.hdr-icon { display: block; font-size: 52rpx; margin-bottom: 16rpx; position: relative; z-index: 1; }
+
+.hdr-title {
+  display: block;
+  font-size: 46rpx;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.05em;
+  font-family: "Noto Serif SC", serif;
+  margin-bottom: 12rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.hdr-desc {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.7;
+  position: relative;
+  z-index: 1;
+}
+
+/* Content */
+.content { padding: 28rpx; }
+
+.form-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(28,42,39,0.06);
+  border: 1rpx solid #EDF2F0;
+}
+
+.field { margin-bottom: 26rpx; }
+.field.last { margin-bottom: 0; }
+
+.field-label {
+  font-size: 27rpx;
+  font-weight: 700;
+  color: $text-main;
+  display: block;
+  margin-bottom: 10rpx;
+  letter-spacing: 0.02em;
+}
+
+.req-dot {
+  display: inline-block;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: #D95C4A;
+  margin-left: 6rpx;
+  vertical-align: middle;
+  margin-bottom: 3rpx;
+}
+
+.field-input {
+  width: 100%;
+  min-height: 120rpx;
+  background: $surface;
+  border-radius: 14rpx;
+  padding: 18rpx;
+  font-size: 27rpx;
+  box-sizing: border-box;
+  color: $text-main;
+  line-height: 1.6;
+}
+
 .tall { min-height: 200rpx; }
-.save-btn { background: #4A8A7A; color: #fff; text-align: center; padding: 24rpx; border-radius: 12rpx; font-size: 30rpx; font-weight: 600; }
-.history-section { margin-top: 8rpx; }
-.history-title { font-size: 26rpx; color: #9BBCB4; display: block; margin-bottom: 16rpx; }
-.record { background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
-.rec-header { display: flex; align-items: flex-start; gap: 12rpx; }
-.rec-title { flex: 1; font-size: 30rpx; font-weight: 600; color: #1C2A27; line-height: 1.4; }
-.rec-date { font-size: 22rpx; color: #9BBCB4; flex-shrink: 0; }
-.del-btn { font-size: 36rpx; color: #ccc; flex-shrink: 0; }
-.popup-view { background: #fff; border-radius: 32rpx 32rpx 0 0; padding: 40rpx 30rpx 60rpx; max-height: 85vh; overflow-y: auto; }
-.popup-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28rpx; }
-.popup-title { font-size: 34rpx; font-weight: 700; color: #1C2A27; }
-.popup-close { font-size: 44rpx; color: #ccc; }
-.detail-item { margin-bottom: 24rpx; }
-.detail-label { font-size: 24rpx; color: #9BBCB4; display: block; margin-bottom: 8rpx; }
-.detail-val { font-size: 28rpx; color: #1C2A27; line-height: 1.7; }
-.notes-section { border-top: 1rpx solid #f0f0f0; padding-top: 24rpx; margin-top: 8rpx; }
-.note-item { background: #f9f9f9; border-radius: 12rpx; padding: 16rpx; margin-bottom: 12rpx; }
-.note-date { font-size: 22rpx; color: #9BBCB4; display: block; margin-bottom: 6rpx; }
-.note-text { font-size: 28rpx; color: #1C2A27; line-height: 1.6; }
-.note-input-row { display: flex; gap: 16rpx; align-items: flex-end; margin-top: 12rpx; }
-.note-input { flex: 1; min-height: 80rpx; background: #f9f9f9; border-radius: 12rpx; padding: 14rpx; font-size: 28rpx; box-sizing: border-box; }
-.note-add-btn { background: #4A8A7A; color: #fff; padding: 18rpx 24rpx; border-radius: 12rpx; font-size: 28rpx; white-space: nowrap; flex-shrink: 0; }
+
+.save-btn {
+  display: block;
+  background: linear-gradient(135deg, $primary, #3E2E5E);
+  color: #fff;
+  text-align: center;
+  padding: 26rpx;
+  border-radius: 18rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 26rpx;
+}
+
+/* History */
+.history-header {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin: 36rpx 0 20rpx;
+}
+
+.history-bar {
+  width: 5rpx;
+  height: 28rpx;
+  border-radius: 3rpx;
+  background: $primary;
+  flex-shrink: 0;
+}
+
+.history-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-main;
+  letter-spacing: 0.03em;
+}
+
+.entry {
+  background: #fff;
+  border-radius: 18rpx;
+  padding: 22rpx 24rpx;
+  margin-bottom: 14rpx;
+  box-shadow: 0 2rpx 12rpx rgba(28,42,39,0.05);
+  border: 1rpx solid #EDF2F0;
+}
+
+.entry-header { display: flex; align-items: flex-start; gap: 12rpx; }
+
+.entry-title {
+  flex: 1;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: $text-main;
+  line-height: 1.5;
+}
+
+.entry-date {
+  font-size: 21rpx;
+  color: $text-muted;
+  flex-shrink: 0;
+  padding-top: 3rpx;
+}
+
+.del-btn { font-size: 38rpx; color: #D8D4E8; flex-shrink: 0; }
+
+/* Popup */
+.popup-view {
+  background: #fff;
+  border-radius: 36rpx 36rpx 0 0;
+  padding: 44rpx 32rpx 72rpx;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.popup-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 36rpx;
+}
+
+.popup-title { font-size: 34rpx; font-weight: 700; color: $text-main; }
+.popup-close { font-size: 44rpx; color: #C8C4D8; line-height: 1; }
+
+.detail-item { margin-bottom: 28rpx; }
+
+.detail-label {
+  font-size: 21rpx;
+  color: $text-muted;
+  display: block;
+  margin-bottom: 8rpx;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.detail-val { font-size: 28rpx; color: $text-main; line-height: 1.75; }
+
+.notes-section { border-top: 1rpx solid #F0F4F3; padding-top: 28rpx; margin-top: 12rpx; }
+.note-item { background: $surface; border-radius: 12rpx; padding: 16rpx 18rpx; margin-bottom: 12rpx; }
+.note-date { font-size: 20rpx; color: $text-muted; display: block; margin-bottom: 6rpx; }
+.note-text { font-size: 27rpx; color: $text-main; line-height: 1.65; }
+.note-input-row { display: flex; gap: 14rpx; align-items: flex-end; margin-top: 14rpx; }
+.note-input { flex: 1; min-height: 80rpx; background: $surface; border-radius: 14rpx; padding: 16rpx; font-size: 27rpx; box-sizing: border-box; }
+.note-add-btn { background: $primary; color: #fff; padding: 20rpx 28rpx; border-radius: 14rpx; font-size: 27rpx; white-space: nowrap; flex-shrink: 0; }
 </style>

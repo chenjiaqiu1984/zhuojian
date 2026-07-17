@@ -35,9 +35,11 @@ async function createJsapiOrder({ orderNo, amount, desc, openid, notifyUrl }) {
     amount: { total: amount, currency: 'CNY' },
     payer: { openid },
   });
-  const prepayId = result.data?.prepay_id;
-  if (!prepayId) throw new Error(`微信下单失败: ${JSON.stringify(result.data)}`);
-  const payParams = pay.buildMiniProgramPayment(process.env.WX_APPID, prepayId);
+  // wechatpay-node-v3 直接在 result.data 里返回签名好的支付参数
+  const payParams = result.data;
+  if (!payParams?.package) throw new Error(`微信下单失败: ${JSON.stringify(result.data)}`);
+  // 从 package 字段里提取 prepay_id（格式：prepay_id=xxx）
+  const prepayId = payParams.package?.replace('prepay_id=', '') || '';
   return { prepayId, payParams };
 }
 

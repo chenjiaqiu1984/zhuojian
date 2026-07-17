@@ -7,9 +7,12 @@ const router = express.Router();
 router.get('/', optionalAuth, async (req, res) => {
   const { type, page = 1, limit, pageSize, q } = req.query;
   const take = Number(pageSize || limit || 10);
-  const showDraft = (req.user?.role === 'admin' || req.user?.role === 'super_admin') && req.query.includeDraft === '1';
+  const isAdmin = req.user?.role === 'admin' || req.user?.role === 'super_admin';
+  const showDraft = isAdmin && req.query.includeDraft === '1';
   const where = {
     ...(showDraft ? {} : { isPublished: 1 }),
+    // 非管理员不可见测试中的内容
+    ...(isAdmin ? {} : { isTesting: 0 }),
     ...(type ? { type } : {}),
     ...(q ? { title: { contains: q } } : {}),
   };
@@ -37,7 +40,11 @@ router.get('/favorites', ...requireRole('user', 'admin', 'consultant'), async (r
 });
 
 router.get('/:id', optionalAuth, async (req, res) => {
-  const n = await prisma.news.findFirst({ where: { id: Number(req.params.id), isPublished: 1 } });
+  const isAdmin = req.user?.role === 'admin' || req.user?.role === 'super_admin';
+  const where = isAdmin
+    ? { id: Number(req.params.id) }
+    : { id: Number(req.params.id), isPublished: 1, isTesting: 0 };
+  const n = await prisma.news.findFirst({ where });
   if (!n) return res.status(404).json({ error: '未找到' });
   const uid = req.user?.id;
   const [likeCount, favoriteCount, isLiked, isFavorited] = await Promise.all([
@@ -73,6 +80,7 @@ function toNewsData(b) {
   if ('video_url' in d) { d.videoUrl = d.video_url; delete d.video_url; }
   if ('is_published' in d) { d.isPublished = d.is_published; delete d.is_published; }
   if ('is_paid' in d) { d.isPaid = d.is_paid ? 1 : 0; delete d.is_paid; }
+  if ('is_testing' in d) { d.isTesting = d.is_testing ? 1 : 0; delete d.is_testing; }
   if ('end_date' in d) { d.endDate = d.end_date || null; delete d.end_date; }
   // price 前端传元（如 0.01），后端存分
   if ('price' in d) d.price = Math.round((Number(d.price) || 0) * 100);

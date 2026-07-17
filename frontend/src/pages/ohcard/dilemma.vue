@@ -58,12 +58,12 @@
         <text class="draw-tip">点击翻转每张卡牌</text>
       </view>
       <view class="cards-wrap">
-        <view class="card-item" v-for="(c,i) in cards" :key="i">
+        <view class="card-item" :class="{'card-landscape': c.cat==='彩虹卡'}" v-for="(c,i) in cards" :key="i">
           <text class="card-label">{{c.label}}</text>
           <view class="flip-card" :style="{transform: c.rotate, transition: 'transform 0.21s ease-in-out'}" @click="flip(i)">
             <view v-if="!c.flipped" class="card-back" :style="{background:catStyle(c.cat)}"><text class="back-txt">{{c.cat}}</text></view>
             <view v-else class="card-front" :class="c.word ? 'word-front' : ''">
-              <image v-if="c.imageUrl" :src="fullUrl(c.imageUrl)" mode="aspectFill" class="card-img" @click.stop="fsUrl=c.imageUrl" />
+              <image v-if="c.imageUrl" :src="fullUrl(c.imageUrl)" :mode="c.cat==='彩虹卡'?'aspectFit':'aspectFill'" class="card-img" @click.stop="fsUrl=c.imageUrl" />
               <view v-else class="word-frame"><text class="word-char">{{c.word}}</text></view>
             </view>
           </view>
@@ -181,15 +181,15 @@ const DATA = ref([
     id:4, icon:'🤲', color:'#4A8A7A',
     fullTitle:'「我总是照顾别人，累到枯竭」',
     core:'讨好/拯救者模式，边界模糊，自我价值建立在被需要上',
-    cards:'孩童卡·情况 + 亲子互动卡/家庭卡 + 路标卡',
-    slots:[{catId:10,label:'关系中的身体姿态',cat:'孩童卡·情况'},{catId:5,label:'家里扮演的角色',cat:'亲子互动卡'},{catId:7,label:'精力转向自己的方向',cat:'路标卡'}],
+    cards:'孩童卡·情况 + 孩童卡·人像 + 路标卡',
+    slots:[{catId:10,label:'关系中的身体姿态',cat:'孩童卡·情况'},{catId:9,label:'家里扮演的角色',cat:'孩童卡·人像'},{catId:7,label:'精力转向自己的方向',cat:'路标卡'}],
     playName:'照顾者的起源',
     intro:'持续给予而难以接受，是许多人深层的关系模式。这个玩法通过身体觉察与卡牌投射，探索这种给予模式的早期来源——不是为了评判它，而是为了理解它当初是如何帮助你生存下来的，以及现在是否仍然适用。',
     steps:[
       { action:'抽1张孩童卡·情况：摆出"我在关系中习惯的身体姿态"（如弯腰、前倾、伸出手）',
         guides:['保持这个姿态一会儿，你注意到身体哪个部位有感觉？这种感觉是熟悉的还是陌生的？'] },
-      { action:'抽1张亲子互动卡：代表"小时候，我在家里扮演的角色"',
-        guides:['这张卡让你想到什么？在家里，这个角色是你主动选择的，还是慢慢形成的？'] },
+      { action:'抽1张孩童卡·人像：代表"小时候，我在家里扮演的角色"',
+        guides:['这个形象让你想到什么？在家里，这个角色是你主动选择的，还是慢慢形成的？'] },
       { action:'抽1张路标卡：代表"如果我把同样的精力转向自己，会走向哪里？"',
         guides:['看着这张卡代表的方向，你内心有什么反应？这个方向对你来说是什么感觉？'] },
       { action:'身体实验：从"给予"的姿态转换到"接收"的姿态，感受两者的不同',
@@ -408,13 +408,15 @@ async function save() {
 .draw-head { text-align:center; margin-bottom:32rpx; }
 .draw-title { font-size:29rpx; font-weight:600; color:#1C2A27; display:block; font-family:"Noto Serif SC",serif; }
 .draw-tip { font-size:22rpx; color:#9BBCB4; display:block; margin-top:12rpx; }
-.cards-wrap { display:flex; flex-wrap:wrap; padding:0 8rpx 16rpx; margin-bottom:12rpx; }
+.cards-wrap { display:flex; flex-wrap:wrap; padding:0 8rpx 16rpx; margin-bottom:12rpx; max-width:560rpx; margin-left:auto; margin-right:auto; }
 
 .card-item { display:flex; flex-direction:column; align-items:center; width:31.5%; margin-right:2.75%; margin-bottom:16rpx; }
 .card-item:nth-child(3n) { margin-right:0; }
+.card-landscape { width:100%; margin-right:0; max-width:500rpx; align-self:center; }
+.card-landscape .flip-card { padding-top:66.67%; }
 .card-label { font-size:20rpx; color:#617870; margin-bottom:10rpx; text-align:center; line-height:1.4; height:56rpx; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-.flip-card { width:100%; aspect-ratio: 5/7; position:relative; border-radius:14rpx; will-change: transform; }
-.card-back, .card-front { width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
+.flip-card { width:100%; padding-top:140%; position:relative; border-radius:14rpx; will-change: transform; }
+.card-back, .card-front { position:absolute; top:0; left:0; width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
 .card-back { background:linear-gradient(135deg,#4A8A7A,#3A6E80); box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
 .back-txt { color:rgba(255,255,255,.9); font-size:20rpx; }
 .card-front { background:#fff; box-shadow:0 8rpx 26rpx rgba(28,42,39,.12); overflow:hidden; }

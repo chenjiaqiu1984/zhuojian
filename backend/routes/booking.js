@@ -59,6 +59,8 @@ router.get('/', authMiddleware, async (req, res) => {
   }
   res.json(bookings.map(b => ({
     ...b, user_name: b.user?.name, consultant_name: b.consultant?.name,
+    consultant_price: b.consultant?.price ?? 0,
+    consultant_discount_rate: b.consultant?.discountRate ?? 1.0,
     start_time: b.slot?.startTime, end_time: b.slot?.endTime
   })));
 });

@@ -28,11 +28,14 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { assessmentApi } from '../../api/index.js';
+import { useUserStore } from '../../store/user.js';
 
+const store = useUserStore();
 const loading = ref(true);
 const list = ref([]);
 
 onMounted(async () => {
+  if (!store.isLoggedIn()) { loading.value = false; return; }
   try { list.value = await assessmentApi.getResults(); } catch {}
   loading.value = false;
 });

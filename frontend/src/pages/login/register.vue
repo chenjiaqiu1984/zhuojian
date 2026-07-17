@@ -20,7 +20,9 @@
         </text>
       </view>
 
-      <u-button type="primary" @click="doRegister()" :loading="loading" style="margin-top:24rpx">注册</u-button>
+      <view class="submit-btn" :class="{'submit-btn--loading': loading}" @click="!loading && doRegister()" style="margin-top:24rpx">
+        <text class="submit-btn-text">{{ loading ? '注册中...' : '注册' }}</text>
+      </view>
     </view>
   </view>
 </template>
@@ -64,4 +66,9 @@ async function doRegister() {
 .check-mark { color: #fff; font-size: 24rpx; font-weight: bold; }
 .agree-text { font-size: 24rpx; color: #666; line-height: 1.6; flex: 1; }
 .link { color: #4A8A7A; }
+.submit-btn {
+  background: #4A8A7A; border-radius: 16rpx; padding: 26rpx 0; text-align: center;
+  &--loading { opacity: 0.7; }
+}
+.submit-btn-text { color: #fff; font-size: 30rpx; font-weight: 700; }
 </style>

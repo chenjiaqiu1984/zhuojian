@@ -13,13 +13,15 @@
         <view class="input-wrap" style="flex:1;margin-bottom:0">
           <input class="ipt" v-model="form.code" placeholder="验证码" type="number" maxlength="6" />
         </view>
-        <u-button size="mini" :disabled="form.countdown>0" @click="sendCode()" type="primary" plain style="margin-left:16rpx;flex-shrink:0">
-          {{form.countdown>0 ? `${form.countdown}s` : '获取验证码'}}
-        </u-button>
+        <view class="send-code-btn" :class="{'send-code-btn--disabled': form.countdown>0}" @click="form.countdown<=0 && sendCode()">
+          <text class="send-code-btn-text">{{form.countdown>0 ? `${form.countdown}s` : '获取验证码'}}</text>
+        </view>
       </view>
       <view class="input-wrap"><input class="ipt" v-model="form.newPwd" placeholder="新密码（含字母和数字，至少6位）" password /></view>
       <view class="input-wrap" style="margin-top:16rpx"><input class="ipt" v-model="form.confirmPwd" placeholder="再次输入新密码" password /></view>
-      <u-button type="primary" @click="doReset()" :loading="loading" style="margin-top:32rpx">确认重置</u-button>
+      <view class="submit-btn" :class="{'submit-btn--loading': loading}" @click="!loading && doReset()" style="margin-top:32rpx">
+        <text class="submit-btn-text">{{ loading ? '重置中...' : '确认重置' }}</text>
+      </view>
     </view>
   </view>
 </template>
@@ -82,4 +84,15 @@ async function doReset() {
 .captcha-row { display: flex; align-items: center; gap: 16rpx; margin-bottom: 24rpx; }
 .captcha-img { width: 200rpx; height: 80rpx; border-radius: 8rpx; background: #f5f6f8; flex-shrink: 0; border: 2rpx solid #e8e8e8; }
 .code-row { display: flex; align-items: center; gap: 16rpx; }
+.send-code-btn {
+  flex-shrink: 0; margin-left: 16rpx;
+  border: 1.5rpx solid #4A8A7A; border-radius: 12rpx; padding: 18rpx 20rpx; background: #fff;
+  &--disabled { border-color: #ccc; }
+}
+.send-code-btn-text { font-size: 24rpx; color: #4A8A7A; .send-code-btn--disabled & { color: #ccc; } }
+.submit-btn {
+  background: #4A8A7A; border-radius: 16rpx; padding: 26rpx 0; text-align: center;
+  &--loading { opacity: 0.7; }
+}
+.submit-btn-text { color: #fff; font-size: 30rpx; font-weight: 700; }
 </style>

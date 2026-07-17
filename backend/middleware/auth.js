@@ -5,12 +5,16 @@ const ROLE_MAP = { '超级管理员': 'super_admin', '管理员': 'admin', '咨�
 
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: '未授权' });
+  if (!token) {
+    console.warn(`[auth] 401 无token ${req.method} ${req.path}`);
+    return res.status(401).json({ error: '未授权' });
+  }
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     if (ROLE_MAP[req.user.role]) req.user.role = ROLE_MAP[req.user.role];
     next();
-  } catch {
+  } catch (err) {
+    console.warn(`[auth] 401 token无效 ${req.method} ${req.path} err=${err.message}`);
     res.status(401).json({ error: 'token无效' });
   }
 }

@@ -66,17 +66,27 @@ async function main() {
   });
   if (dilemma) {
     const cfg = JSON.parse(dilemma.config);
+    // slot 1 已是 catId:10 (孩童卡·情况)，slot 2 的亲子互动卡改为 catId:9 (孩童卡·人像)
     cfg.slots = cfg.slots.map(s =>
       (s.cat === '亲子互动卡' || s.cat === '亲子互动工具卡')
-        ? { catId: 10, label: s.label, cat: '孩童卡·情况' }
+        ? { catId: 9, label: s.label, cat: '孩童卡·人像' }
         : s
     );
-    if (cfg.cards) cfg.cards = cfg.cards.replace(/亲子互动卡/g, '孩童卡·情况');
+    if (cfg.cards) cfg.cards = cfg.cards.replace(/亲子互动卡(\/家庭卡)?/g, '孩童卡·人像');
+    // 同步更新 step action 文本
+    if (cfg.steps) {
+      cfg.steps = cfg.steps.map(step => ({
+        ...step,
+        action: step.action
+          .replace(/抽1张亲子互动卡/, '抽1张孩童卡·人像')
+          .replace(/亲子互动工具卡/, '孩童卡·人像')
+      }));
+    }
     await p.ohCardPreset.update({
       where: { id: dilemma.id },
       data: { config: JSON.stringify(cfg) }
     });
-    console.log(`✓ 更新 dilemma「照顾者的枯竭」(id=${dilemma.id})`);
+    console.log(`✓ 更新 dilemma「照顾者的枯竭」(id=${dilemma.id})，亲子互动卡 → 孩童卡·人像`);
   } else {
     console.log('  dilemma「照顾者的枯竭」不存在，跳过');
   }

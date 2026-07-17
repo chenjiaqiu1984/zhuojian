@@ -3,7 +3,7 @@
     <u-tabs :list="tabs" :current="tab" @click="tab = $event.index" />
     <view v-if="!store.isLoggedIn()" class="empty">
       <u-empty text="请先登录查看预约" mode="auth" />
-      <u-button type="primary" @click="uni.navigateTo({url:'/pages/login/index'})" style="margin-top:32rpx">去登录</u-button>
+      <view class="login-btn" @click="uni.navigateTo({url:'/pages/login/index'})"><text class="login-btn-text">去登录</text></view>
     </view>
     <view v-else>
       <view class="booking-card" v-for="b in filtered" :key="b.id">
@@ -15,16 +15,16 @@
         <text class="b-created">操作时间：{{fmt(b.createdAt)}}</text>
         <text v-if="b.message" class="b-msg">{{b.message}}</text>
         <view class="b-actions" v-if="b.status === 'pending_payment'">
-          <u-button size="mini" type="error" @click="goToPay(b)">去支付</u-button>
-          <u-button size="mini" type="error" plain @click="cancel(b)">取消预约</u-button>
+          <view class="act-btn act-btn--primary" @click="goToPay(b)">去支付</view>
+          <view class="act-btn act-btn--danger-plain" @click="cancel(b)">取消预约</view>
         </view>
         <view class="b-actions" v-else-if="b.status === 'pending'">
-          <u-button size="mini" type="primary" plain @click="confirmBooking(b)" v-if="isConsultant">确认预约</u-button>
-          <u-button size="mini" type="warning" plain @click="reschedule(b)">修改时间</u-button>
-          <u-button size="mini" type="error" plain @click="cancel(b)">取消预约</u-button>
+          <view class="act-btn act-btn--success-plain" v-if="isConsultant" @click="confirmBooking(b)">确认预约</view>
+          <view class="act-btn act-btn--warning-plain" @click="reschedule(b)">修改时间</view>
+          <view class="act-btn act-btn--danger-plain" @click="cancel(b)">取消预约</view>
         </view>
         <view class="b-actions" v-else-if="['cancelled','completed'].includes(b.status)">
-          <u-button size="mini" type="error" plain @click="deleteBooking(b)">删除</u-button>
+          <view class="act-btn act-btn--danger-plain" @click="deleteBooking(b)">删除</view>
         </view>
       </view>
       <u-empty v-if="!filtered.length" text="暂无预约记录" mode="data" />
@@ -80,8 +80,8 @@ async function confirmBooking(b) {
 function goToPay(b) {
   const name         = encodeURIComponent(b.consultant_name || '');
   const time         = encodeURIComponent(b.start_time || '');
-  const amount       = b.consultant?.price || 0;
-  const discountRate = b.consultant?.discountRate ?? 1.0;
+  const amount       = b.consultant_price || b.consultant?.price || 0;
+  const discountRate = b.consultant_discount_rate ?? b.consultant?.discountRate ?? 1.0;
   uni.navigateTo({
     url: `/pages/payment/index?bookingId=${b.id}&consultantName=${name}&slotTime=${time}&amount=${amount}&discountRate=${discountRate}`
   });
@@ -131,14 +131,91 @@ function fmt(d) {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; }
+$primary: #4A8A7A;
+$bg: #F0F4F3;
+$text-main: #1C2A27;
+$text-sub: #617870;
+$text-muted: #9BBCB4;
+
+.page { min-height: 100vh; background: $bg; }
+
 .empty { padding: 80rpx 32rpx; display: flex; flex-direction: column; align-items: center; }
-.booking-card { background: #fff; margin: 16rpx 24rpx; padding: 24rpx; border-radius: 16rpx; }
-.b-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
-.b-name { font-size: 30rpx; font-weight: 600; color: #333; }
-.b-name-link { color: #4A8A7A; }
-.b-time { font-size: 24rpx; color: #666; display: block; margin-bottom: 4rpx; }
-.b-created { font-size: 22rpx; color: #9BBCB4; display: block; margin-bottom: 8rpx; }
-.b-msg { font-size: 24rpx; color: #4A7BBA; display: block; margin-bottom: 8rpx; }
-.b-actions { margin-top: 12rpx; display: flex; gap: 16rpx; }
+.login-btn {
+  margin-top: 32rpx; background: #4A8A7A;
+  padding: 22rpx 60rpx; border-radius: 14rpx; text-align: center;
+}
+.login-btn-text { color: #fff; font-size: 28rpx; font-weight: 600; }
+
+.booking-card {
+  background: #fff;
+  margin: 16rpx 24rpx 0;
+  padding: 28rpx 28rpx 24rpx;
+  border-radius: 24rpx;
+  box-shadow: 0 2rpx 14rpx rgba(74,138,122,0.07);
+}
+
+.b-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #EEF4F2;
+}
+
+.b-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: $text-main;
+}
+
+.b-name-link {
+  color: $primary;
+  font-weight: 700;
+}
+
+.b-time {
+  font-size: 26rpx;
+  color: $text-sub;
+  display: block;
+  margin-bottom: 8rpx;
+  line-height: 1.6;
+}
+
+.b-created {
+  font-size: 22rpx;
+  color: $text-muted;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.b-msg {
+  font-size: 24rpx;
+  color: #4A7BBA;
+  display: block;
+  margin-bottom: 10rpx;
+  padding: 10rpx 16rpx;
+  background: #F0F5FF;
+  border-radius: 10rpx;
+}
+
+.b-actions {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #EEF4F2;
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.act-btn {
+  font-size: 24rpx;
+  font-weight: 600;
+  padding: 12rpx 28rpx;
+  border-radius: 12rpx;
+  &--primary       { background: $primary; color: #fff; }
+  &--danger-plain  { border: 1.5rpx solid #C03030; color: #C03030; background: #FFF5F5; }
+  &--warning-plain { border: 1.5rpx solid #C88A2A; color: #C88A2A; background: #FFFBF0; }
+  &--success-plain { border: 1.5rpx solid $primary; color: $primary; background: #EAF5F1; }
+}
 </style>

@@ -350,6 +350,7 @@ const activityRefund = computed(() => {
     deadline24h: fmtDatetime(d24),
   };
 });
+const refundDeadline48h = computed(() => {
   const d = parseSlotTime(slotTime.value);
   if (!d) return '';
   return fmtDatetime(new Date(d.getTime() - 48 * 60 * 60 * 1000));
@@ -365,11 +366,20 @@ onMounted(async () => {
   // 从页面 query 读取参数（uni-app H5 / 小程序均兼容）
   const pages = getCurrentPages();
   const cur   = pages[pages.length - 1];
-  const query = cur?.$page?.fullPath?.split('?')[1] || cur?.options;
-  if (query) {
-    const p = typeof query === 'string'
-      ? Object.fromEntries(new URLSearchParams(query))
-      : query;
+  // 小程序优先用 cur.options（原生参数对象，最可靠）；H5 用 fullPath 或 hash
+  let p = null;
+  // #ifndef H5
+  p = cur?.options || {};
+  // #endif
+  // #ifdef H5
+  const fullPathQuery = cur?.$page?.fullPath?.split('?')[1];
+  if (fullPathQuery) {
+    p = Object.fromEntries(new URLSearchParams(fullPathQuery));
+  } else {
+    p = cur?.options || {};
+  }
+  // #endif
+  if (p) {
     if (p.bookingId)      bookingId.value      = Number(p.bookingId);
     if (p.newsId)         newsId.value         = Number(p.newsId);
     if (p.activityName)   activityName.value   = decodeURIComponent(p.activityName);
@@ -379,7 +389,22 @@ onMounted(async () => {
     if (p.amount)         amount.value         = Number(p.amount);
     if (p.discountRate)   discountRate.value   = Number(p.discountRate);
   }
-  startCountdown();
+
+  // 从 storage 补充完整参数（活动报名场景下 URL 可能因长度限制被截断）
+  try {
+    const stored = uni.getStorageSync('_paymentParams');
+    if (stored) {
+      const sp = JSON.parse(stored);
+      // URL 参数完整时以 URL 为准，URL 被截断时（newsId=0）直接用 storage
+      if (sp.newsId && (!newsId.value || newsId.value === sp.newsId)) {
+        if (!newsId.value)          newsId.value         = sp.newsId;
+        if (!activityName.value && sp.activityName) activityName.value = sp.activityName;
+        if (!activityEndDate.value && sp.endDate)   activityEndDate.value = sp.endDate;
+        if (!amount.value && sp.amount)             amount.value = Number(sp.amount);
+      }
+      uni.removeStorageSync('_paymentParams');
+    }
+  } catch {}
   // H5 兜底：从 hash URL 直接读参数（应对 $page/options 读取失败的场景）
   // #ifdef H5
   if (!newsId.value && !bookingId.value) {
@@ -398,7 +423,14 @@ onMounted(async () => {
     }
   }
   // #endif
-  // 并行加载套餐和优惠券（静默失败）
+
+  // 参数读取失败（如从支付页返回时页面栈丢失参数），直接退出避免显示错误金额
+  if (amount.value <= 0 && !usePackage.value) {
+    uni.navigateBack({ delta: 1 });
+    return;
+  }
+
+  startCountdown();
   try {
     const [pkgs, coupons] = await Promise.all([
       packageApi.my(),
@@ -441,6 +473,11 @@ function selectPackage(id) {
 // ── 主支付入口 ────────────────────────────────────────────────────
 async function doPay() {
   if (loading.value) return;
+  if (!requireActive()) return;
+  if (!isActivity.value && !bookingId.value) {
+    uni.showToast({ title: '预约信息异常，请重新预约', icon: 'none' });
+    return;
+  }
   loading.value = true;
   try {
     if (isActivity.value) {

@@ -83,24 +83,44 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { newsApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
+
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    return { title: '卓见心理 — 心理健康主题活动，陪你探索内心世界', path: '/pages/activity/index' };
+  },
+  onShareTimeline() {
+    return { title: '卓见心理活动中心 — 参与 · 成长' };
+  },
+});
+// #endif
 
 const list = ref([]);
 const loading = ref(true);
 const store = useUserStore();
 const registeredIds = ref([]);
 
-onMounted(async () => {
+function loadRegisteredIds() {
   try {
     const stored = uni.getStorageSync('registeredActivities');
     registeredIds.value = stored ? JSON.parse(stored) : [];
   } catch {}
+}
+
+onMounted(async () => {
+  loadRegisteredIds();
   try {
     const res = await newsApi.list({ type: 'activity' });
     list.value = res?.items || [];
   } catch {}
   loading.value = false;
+});
+
+onShow(() => {
+  loadRegisteredIds();
 });
 
 function isExpired(n) {
@@ -157,7 +177,14 @@ function register(n) {
   if (n.price > 0) {
     const title = encodeURIComponent(n.title || '活动报名');
     const endDate = n.endDate ? encodeURIComponent(n.endDate) : '';
-    uni.navigateTo({ url: `/pages/payment/index?newsId=${n.id}&activityName=${title}&amount=${n.price}&endDate=${endDate}` });
+    // 将完整参数存入 storage，避免小程序 URL 长度限制导致参数截断
+    uni.setStorageSync('_paymentParams', JSON.stringify({
+      newsId: n.id,
+      activityName: n.title || '活动报名',
+      amount: n.price,
+      endDate: n.endDate || ''
+    }));
+    uni.navigateTo({ url: `/pages/payment/index?newsId=${n.id}&amount=${n.price}` });
     return;
   }
   if (registeredIds.value.includes(n.id)) return;
