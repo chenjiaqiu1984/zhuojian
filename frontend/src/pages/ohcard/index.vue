@@ -84,8 +84,11 @@
         <view class="card-grid">
           <view class="card-chip" v-for="d in visibleDilemma" :key="d.id"
             @click="nav('/pages/ohcard/dilemma?id='+d.id,{cat:'dilemma',id:d.id,name:d.title})">
-            <text class="chip-name">{{d.title}}</text>
-            <text v-if="d.sub" class="chip-sub">{{d.sub}}</text>
+            <view class="chip-icon"><ZjIcon :name="d.icon" :size="40" color="#4A8A7A" /></view>
+            <view class="chip-body">
+              <text class="chip-name">{{d.title}}</text>
+              <text v-if="d.sub" class="chip-sub">{{d.sub}}</text>
+            </view>
           </view>
         </view>
         <view v-if="dilemmas.length > PAGE_SIZE && !showAllDilemma" class="more-btn" @click="showAllDilemma=true">
@@ -353,14 +356,14 @@ onMounted(async () => {
   width: 48.6%;
   box-sizing: border-box;
   margin-bottom: 18rpx;
-  padding: 32rpx 28rpx;
+  padding: 28rpx 24rpx;
   border-radius: 24rpx;
   background: #FFFFFF;
   border: 1rpx solid #E8EFED;
   box-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   display: flex;
-  flex-direction: column;
-  gap: 8rpx;
+  align-items: center;
+  gap: 20rpx;
   transition: transform 0.15s ease;
 }
 
@@ -368,11 +371,30 @@ onMounted(async () => {
   transform: scale(0.98);
 }
 
+.chip-icon {
+  width: 72rpx;
+  height: 72rpx;
+  flex-shrink: 0;
+  border-radius: 18rpx;
+  background: #EDF4F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chip-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
 .chip-name {
   font-size: 26rpx;
   font-weight: 600;
   color: #1C2A27;
-  line-height: 1.5;
+  line-height: 1.4;
   display: block;
   letter-spacing: 0.01em;
 }
@@ -380,7 +402,7 @@ onMounted(async () => {
 .chip-sub {
   font-size: 19rpx;
   color: #9BBCB4;
-  line-height: 1.45;
+  line-height: 1.4;
   display: block;
 }
 
