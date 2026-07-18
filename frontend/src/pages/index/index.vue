@@ -151,6 +151,7 @@ const menuGroups = ref([
       { path: '/pages/monster/index',     label: '心里怪兽', icon: '/static/icons/grid/monster.svg',    color: '#7B4E9E' },
       { path: '/pages/mandala/index',     label: '曼达拉',   icon: '/static/icons/grid/mandala.svg',    color: '#3A6E80' },
       { path: '/pages/breathing/index',   label: '正念呼吸', icon: '/static/icons/grid/breathing.svg',  color: '#3A6E80' },
+      { path: '/pages/squeeze/index',     label: '解压捏捏乐', icon: '/static/icons/grid/squeeze.svg',   color: '#7B4E9E' },
     ],
   },
 ]);

@@ -1,134 +1,978 @@
 <template>
   <view class="page">
-    <view class="hero">
-      <view class="hero-glow" />
-      <view class="hero-blob" />
-      <view class="hero-content">
-        <text class="hero-eyebrow">正念练习</text>
-        <text class="hero-title">呼吸球</text>
-        <text class="hero-sub">跟随呼吸节律，让身心回归平静</text>
+    <!-- 顶部栏 -->
+    <view class="top-bar">
+      <view class="icon-btn" @click="onBack">
+        <text class="icon-text">←</text>
+      </view>
+      <text class="top-title">呼吸球</text>
+      <view class="top-right-btns">
+        <view class="top-icon-btn" @click="showStyleSheet = true">
+          <text class="top-icon-text">🎨</text>
+        </view>
+        <view class="mode-picker-btn" @click="showModeSheet = true">
+          <text class="mode-picker-label">{{ currentMode.name }}</text>
+          <text class="mode-picker-arrow">›</text>
+        </view>
       </view>
     </view>
-    <view class="coming-wrap">
-      <view class="coming-circle">
-        <ZjIcon class="coming-emoji" name="droplets" :size="120" color="#9BBCB4" />
+
+    <!-- 主体区域 -->
+    <view class="body">
+      <!-- 引导词 -->
+      <view class="guide-wrap">
+        <text class="guide-text" :class="{ visible: guideText }">{{ guideText }}</text>
       </view>
-      <text class="coming-title">即将开放</text>
-      <text class="coming-desc">正念呼吸球功能正在精心打磨中，敬请期待</text>
+
+      <!-- 呼吸球 -->
+      <view class="ball-wrap">
+        <view class="ball-glow" :style="glowStyle" />
+        <view class="ball-ring" :style="ringStyle" />
+        <!-- 样式：水波纹 -->
+        <view v-if="ballStyleKey === 'ripple'" class="ball-ripple-outer" :style="rippleOuterStyle" />
+        <view class="ball" :style="ballStyle">
+          <text class="ball-count">{{ displayCount }}</text>
+        </view>
+      </view>
+
+      <!-- 阶段提示文字 -->
+      <view class="phase-label-wrap">
+        <text class="phase-label">{{ phaseLabel }}</text>
+      </view>
+
+      <!-- 进度点 -->
+      <view class="dots-wrap">
+        <view
+          v-for="i in currentMode.steps[phaseIndex].duration"
+          :key="i"
+          class="dot"
+          :class="{ active: i <= dotActive }"
+          :style="dotActiveStyle"
+        />
+      </view>
+
+      <!-- 轮次 -->
+      <text class="round-text">第 {{ round }} / {{ totalRounds }} 轮</text>
+    </view>
+
+    <!-- 底部控制 -->
+    <view class="footer">
+      <view class="duration-row">
+        <view
+          v-for="d in DURATION_OPTIONS"
+          :key="d.value"
+          class="duration-btn"
+          :class="{ active: selectedDuration === d.value }"
+          @click="onPickDuration(d.value)"
+        >
+          <text class="duration-text">{{ d.label }}</text>
+        </view>
+      </view>
+
+      <view class="ctrl-btn" :class="{ running: isRunning }" :style="ctrlBtnStyle" @click="togglePlay">
+        <text class="ctrl-icon">{{ isRunning ? '⏸' : '▶' }}</text>
+        <text class="ctrl-label">{{ isRunning ? '暂停' : (isPaused ? '继续' : '开始') }}</text>
+      </view>
+    </view>
+
+    <!-- 模式选择弹层 -->
+    <view v-if="showModeSheet" class="sheet-mask" @click="showModeSheet = false">
+      <view class="sheet" @click.stop>
+        <text class="sheet-title">选择呼吸模式</text>
+        <view
+          v-for="m in MODES"
+          :key="m.key"
+          class="sheet-item"
+          :class="{ active: modeKey === m.key }"
+          @click="pickMode(m.key)"
+        >
+          <view class="sheet-item-left">
+            <text class="sheet-item-name">{{ m.name }}</text>
+            <text class="sheet-item-desc">{{ m.desc }}</text>
+          </view>
+          <text v-if="modeKey === m.key" class="sheet-check">✓</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 外观选择弹层 -->
+    <view v-if="showStyleSheet" class="sheet-mask" @click="showStyleSheet = false">
+      <view class="sheet" @click.stop>
+        <text class="sheet-title">外观设置</text>
+
+        <!-- 球样式 -->
+        <text class="sheet-section-label">球体样式</text>
+        <view class="style-row">
+          <view
+            v-for="s in BALL_STYLES"
+            :key="s.key"
+            class="style-card"
+            :class="{ active: ballStyleKey === s.key }"
+            @click="ballStyleKey = s.key"
+          >
+            <view class="style-preview" :style="stylePreview(s.key)" />
+            <text class="style-card-label">{{ s.label }}</text>
+          </view>
+        </view>
+
+        <!-- 颜色 -->
+        <text class="sheet-section-label">主题颜色</text>
+        <view class="color-row">
+          <view
+            v-for="c in COLOR_PRESETS"
+            :key="c.value"
+            class="color-swatch"
+            :class="{ active: customColor === c.value }"
+            :style="{ background: c.value }"
+            @click="customColor = c.value"
+          >
+            <text v-if="customColor === c.value" class="color-check">✓</text>
+          </view>
+        </view>
+
+        <view class="sheet-confirm-btn" @click="showStyleSheet = false">
+          <text class="sheet-confirm-text">确定</text>
+        </view>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import ZjIcon from '../../components/ZjIcon.vue';
+import { ref, computed, onUnmounted } from 'vue';
+
+// ── 球体样式 ──────────────────────────────────────────────────
+const BALL_STYLES = [
+  { key: 'solid',   label: '纯色' },
+  { key: 'glass',   label: '玻璃' },
+  { key: 'ripple',  label: '水波' },
+  { key: 'nebula',  label: '星云' },
+];
+
+const COLOR_PRESETS = [
+  { value: '#4A7A9E' },
+  { value: '#3A7E8A' },
+  { value: '#6A5ACD' },
+  { value: '#4AB8A0' },
+  { value: '#E57373' },
+  { value: '#F5A623' },
+  { value: '#A0C4A0' },
+  { value: '#B57BCA' },
+  { value: '#4A90D9' },
+  { value: '#E8705A' },
+];
+
+// 每个阶段的引导词
+const GUIDE_WORDS = {
+  in:   ['慢慢吸气…', '深深地吸入…', '让气息充满胸腔…', '鼻子缓缓吸气…'],
+  hold: ['轻轻屏住…', '保持住…', '沉静地停留…'],
+  out:  ['缓缓呼出…', '慢慢地释放…', '将气息轻轻呼出…', '让身体放松…'],
+  rest: ['自然放松…', '静静休息…'],
+};
+
+// ── 呼吸模式定义 ──────────────────────────────────────────────
+const MODES = [
+  {
+    key: '4-7-8',
+    name: '4-7-8 放松',
+    desc: '吸气4秒・屏息7秒・呼气8秒，深度放松神经',
+    color: '#4A7A9E',
+    steps: [
+      { label: '吸气', duration: 4, phase: 'in'   },
+      { label: '屏息', duration: 7, phase: 'hold'  },
+      { label: '呼气', duration: 8, phase: 'out'   },
+    ],
+  },
+  {
+    key: '4-4-4',
+    name: '4-4-4 专注',
+    desc: '均匀三段，稳定注意力，适合工作前准备',
+    color: '#3A7E8A',
+    steps: [
+      { label: '吸气', duration: 4, phase: 'in'   },
+      { label: '屏息', duration: 4, phase: 'hold'  },
+      { label: '呼气', duration: 4, phase: 'out'   },
+    ],
+  },
+  {
+    key: '4-2-6',
+    name: '4-2-6 助眠',
+    desc: '延长呼气激活副交感神经，帮助入睡',
+    color: '#6A5ACD',
+    steps: [
+      { label: '吸气', duration: 4, phase: 'in'   },
+      { label: '屏息', duration: 2, phase: 'hold'  },
+      { label: '呼气', duration: 6, phase: 'out'   },
+    ],
+  },
+  {
+    key: '5-5',
+    name: '5-5 心率同调',
+    desc: '吸气5秒・呼气5秒，改善心率变异性',
+    color: '#4AB8A0',
+    steps: [
+      { label: '吸气', duration: 5, phase: 'in'   },
+      { label: '呼气', duration: 5, phase: 'out'   },
+    ],
+  },
+];
+
+const DURATION_OPTIONS = [
+  { label: '3 分钟',  value: 3  },
+  { label: '5 分钟',  value: 5  },
+  { label: '10 分钟', value: 10 },
+];
+
+// ── 状态 ───────────────────────────────────────────────────────
+const modeKey          = ref('4-7-8');
+const selectedDuration = ref(5);
+const showModeSheet    = ref(false);
+const showStyleSheet   = ref(false);
+const isRunning        = ref(false);
+const isPaused         = ref(false);
+const ballStyleKey     = ref('solid');
+const customColor      = ref('#4A7A9E');
+
+// 动画状态
+const ballScale  = ref(0.55);
+const phaseIndex = ref(0);
+const elapsed    = ref(0);
+const round      = ref(1);
+const guideText  = ref('');
+
+// ── 计算属性 ──────────────────────────────────────────────────
+const currentMode = computed(() => MODES.find(m => m.key === modeKey.value));
+const activeColor = computed(() => customColor.value);
+
+const totalRounds = computed(() => {
+  const cycleDur = currentMode.value.steps.reduce((s, st) => s + st.duration, 0);
+  return Math.max(1, Math.round((selectedDuration.value * 60) / cycleDur));
+});
+
+const phaseLabel = computed(() => {
+  if (!isRunning.value && !isPaused.value) return '准备好了吗？';
+  return currentMode.value.steps[phaseIndex.value].label;
+});
+
+const displayCount = computed(() => {
+  if (!isRunning.value && !isPaused.value) return '';
+  const step = currentMode.value.steps[phaseIndex.value];
+  return String(Math.max(1, Math.ceil(step.duration - elapsed.value)));
+});
+
+const dotActive = computed(() => Math.ceil(elapsed.value + 0.01));
+
+// 根据 ballStyleKey 生成球的样式
+const ballStyle = computed(() => {
+  const s = ballScale.value;
+  const c = activeColor.value;
+  let bg = '';
+  if (ballStyleKey.value === 'solid') {
+    bg = `radial-gradient(circle at 36% 32%, ${lighten(c, 0.42)} 0%, ${c} 55%, ${darken(c, 0.18)} 100%)`;
+  } else if (ballStyleKey.value === 'glass') {
+    bg = `radial-gradient(circle at 30% 28%, rgba(255,255,255,0.55) 0%, ${c}CC 40%, ${darken(c, 0.22)}EE 100%)`;
+  } else if (ballStyleKey.value === 'ripple') {
+    bg = `radial-gradient(circle at 50% 50%, ${lighten(c, 0.3)} 0%, ${c} 60%, ${darken(c, 0.15)} 100%)`;
+  } else if (ballStyleKey.value === 'nebula') {
+    bg = `radial-gradient(circle at 40% 35%, ${lighten(c, 0.55)} 0%, ${c} 35%, ${darken(c, 0.1)} 60%, ${darken(c, 0.3)} 100%)`;
+  }
+  const extra = ballStyleKey.value === 'glass'
+    ? 'backdrop-filter: blur(8px);'
+    : '';
+  return `transform: scale(${s}); background: ${bg}; ${extra}`;
+});
+
+const ringStyle = computed(() => {
+  const s = ballScale.value;
+  const c = activeColor.value;
+  const opacity = 0.18 + (s - 0.55) * 0.45;
+  const dashed = ballStyleKey.value === 'ripple' ? 'border-style: dashed;' : '';
+  return `transform: scale(${s * 1.18}); border-color: ${c}; opacity: ${opacity.toFixed(2)}; ${dashed}`;
+});
+
+const glowStyle = computed(() => {
+  const s = ballScale.value;
+  const c = activeColor.value;
+  const size = 480 + (s - 0.55) * 560;
+  const op   = ballStyleKey.value === 'nebula'
+    ? (0.18 + (s - 0.55) * 0.32).toFixed(2)
+    : (0.12 + (s - 0.55) * 0.24).toFixed(2);
+  return `width: ${size}rpx; height: ${size}rpx; background: radial-gradient(ellipse at center, ${c}55 0%, transparent 68%); opacity: ${op};`;
+});
+
+// 水波纹外圈样式
+const rippleOuterStyle = computed(() => {
+  const s = ballScale.value;
+  const c = activeColor.value;
+  const op = (0.08 + (s - 0.55) * 0.18).toFixed(2);
+  return `transform: scale(${s * 1.45}); border-color: ${c}; opacity: ${op};`;
+});
+
+// 进度点激活颜色
+const dotActiveStyle = computed(() => '');
+
+// 开始按钮颜色
+const ctrlBtnStyle = computed(() => {
+  if (isRunning.value) return '';
+  return `background: ${activeColor.value}; box-shadow: 0 8rpx 32rpx ${activeColor.value}60;`;
+});
+
+// 样式预览（弹层里的小圆）
+function stylePreview(key) {
+  const c = activeColor.value;
+  if (key === 'solid')  return `background: radial-gradient(circle at 36% 32%, ${lighten(c,0.42)} 0%, ${c} 60%, ${darken(c,0.18)} 100%)`;
+  if (key === 'glass')  return `background: radial-gradient(circle at 30% 28%, rgba(255,255,255,0.55) 0%, ${c}CC 50%, ${darken(c,0.22)}EE 100%)`;
+  if (key === 'ripple') return `background: ${c}; border: 3rpx dashed ${lighten(c,0.4)}`;
+  if (key === 'nebula') return `background: radial-gradient(circle at 40% 35%, ${lighten(c,0.55)} 0%, ${c} 45%, ${darken(c,0.3)} 100%)`;
+  return `background: ${c}`;
+}
+
+// ── 动画引擎 ──────────────────────────────────────────────────
+let rafId        = null;
+let lastTime     = null;
+let guideTimer   = null;
+let lastPhaseIdx = -1;
+
+function easeInOut(t) {
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+
+function targetScale(phase) {
+  if (phase === 'in')   return 1.0;
+  if (phase === 'out')  return 0.55;
+  if (phase === 'hold') return 1.0;
+  if (phase === 'rest') return 0.55;
+  return 0.55;
+}
+
+function startScale(phase) {
+  if (phase === 'in')   return 0.55;
+  if (phase === 'out')  return 1.0;
+  if (phase === 'hold') return 1.0;
+  if (phase === 'rest') return 0.55;
+  return 0.55;
+}
+
+// 切换引导词：从对应阶段随机选一句，2.2 秒后淡出
+function updateGuide(phase) {
+  if (guideTimer) { clearTimeout(guideTimer); guideTimer = null; }
+  const pool = GUIDE_WORDS[phase] || [];
+  if (!pool.length) { guideText.value = ''; return; }
+  guideText.value = pool[Math.floor(Math.random() * pool.length)];
+  guideTimer = setTimeout(() => { guideText.value = ''; }, 2200);
+}
+
+function tick(ts) {
+  if (!isRunning.value) return;
+
+  if (lastTime === null) { lastTime = ts; }
+  const dt = Math.min((ts - lastTime) / 1000, 0.1);
+  lastTime = ts;
+
+  const steps = currentMode.value.steps;
+  const step  = steps[phaseIndex.value];
+  elapsed.value += dt;
+
+  // 阶段刚切换时触发引导词
+  if (phaseIndex.value !== lastPhaseIdx) {
+    lastPhaseIdx = phaseIndex.value;
+    updateGuide(step.phase);
+  }
+
+  const progress  = Math.min(elapsed.value / step.duration, 1);
+  const eased     = easeInOut(progress);
+  const from      = startScale(step.phase);
+  const to        = targetScale(step.phase);
+  ballScale.value = from + (to - from) * eased;
+
+  if (elapsed.value >= step.duration) {
+    elapsed.value -= step.duration;
+    const nextIdx = phaseIndex.value + 1;
+    if (nextIdx >= steps.length) {
+      phaseIndex.value = 0;
+      if (round.value >= totalRounds.value) {
+        finishSession();
+        return;
+      }
+      round.value += 1;
+    } else {
+      phaseIndex.value = nextIdx;
+    }
+  }
+
+  rafId = requestAnimationFrame(tick);
+}
+
+function startLoop() {
+  lastTime     = null;
+  lastPhaseIdx = -1;
+  rafId        = requestAnimationFrame(tick);
+}
+
+function stopLoop() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  if (guideTimer) { clearTimeout(guideTimer); guideTimer = null; }
+  lastTime = null;
+}
+
+function resetState() {
+  stopLoop();
+  phaseIndex.value = 0;
+  elapsed.value    = 0;
+  round.value      = 1;
+  ballScale.value  = 0.55;
+  guideText.value  = '';
+  isRunning.value  = false;
+  isPaused.value   = false;
+}
+
+function finishSession() {
+  stopLoop();
+  isRunning.value  = false;
+  isPaused.value   = false;
+  ballScale.value  = 0.55;
+  phaseIndex.value = 0;
+  elapsed.value    = 0;
+  round.value      = 1;
+  guideText.value  = '';
+  uni.showToast({ title: '练习完成 ✨', icon: 'none', duration: 2000 });
+}
+
+// ── 控件 ─────────────────────────────────────────────────────
+function togglePlay() {
+  if (isRunning.value) {
+    // 暂停
+    stopLoop();
+    isRunning.value = false;
+    isPaused.value  = true;
+  } else {
+    isRunning.value = true;
+    isPaused.value  = false;
+    startLoop();
+  }
+}
+
+function onPickDuration(val) {
+  if (isRunning.value || isPaused.value) {
+    uni.showModal({
+      title: '重置练习',
+      content: '更改时长将重置当前练习，确定吗？',
+      success: (res) => {
+        if (!res.confirm) return;
+        resetState();
+        selectedDuration.value = val;
+      },
+    });
+  } else {
+    selectedDuration.value = val;
+  }
+}
+
+function pickMode(key) {
+  if (isRunning.value || isPaused.value) {
+    uni.showModal({
+      title: '切换模式',
+      content: '切换模式将重置当前练习，确定吗？',
+      success: (res) => {
+        if (!res.confirm) return;
+        resetState();
+        modeKey.value = key;
+        showModeSheet.value = false;
+      },
+    });
+  } else {
+    modeKey.value = key;
+    showModeSheet.value = false;
+  }
+}
+
+function onBack() {
+  if (isRunning.value || isPaused.value) {
+    uni.showModal({
+      title: '离开练习',
+      content: '练习尚未结束，确定要离开吗？',
+      success: (res) => { if (res.confirm) { resetState(); uni.navigateBack(); } },
+    });
+  } else {
+    uni.navigateBack();
+  }
+}
+
+// ── 颜色工具 ─────────────────────────────────────────────────
+function hexToRgb(hex) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function lighten(hex, amt) {
+  const [r, g, b] = hexToRgb(hex);
+  const l = v => Math.min(255, Math.round(v + (255 - v) * amt));
+  return `rgb(${l(r)},${l(g)},${l(b)})`;
+}
+function darken(hex, amt) {
+  const [r, g, b] = hexToRgb(hex);
+  const d = v => Math.max(0, Math.round(v * (1 - amt)));
+  return `rgb(${d(r)},${d(g)},${d(b)})`;
+}
+
+onUnmounted(() => stopLoop());
 </script>
 
 <style scoped lang="scss">
-$bg: #F5F7F6;
-$text-1: #1C2A27;
-$text-muted: #9BBCB4;
+$bg:       #0D1821;
+$surface:  #162230;
+$text-1:   #EEF4F2;
+$text-2:   #8DAAB8;
+$accent:   #4A7A9E;
 
 .page {
   min-height: 100vh;
   background: $bg;
-}
-
-.hero {
-  position: relative;
-  padding: 96rpx 48rpx 80rpx;
-  overflow: hidden;
-  background: linear-gradient(155deg, #4A7A9E 0%, #2A4E7A 100%);
-}
-
-.hero-glow {
-  position: absolute;
-  top: -160rpx;
-  right: -120rpx;
-  width: 560rpx;
-  height: 480rpx;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,0.14) 0%, transparent 66%);
-  pointer-events: none;
-}
-
-.hero-blob {
-  position: absolute;
-  bottom: -80rpx;
-  left: -60rpx;
-  width: 300rpx;
-  height: 300rpx;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-}
-
-.hero-eyebrow {
-  display: block;
-  font-size: 20rpx;
-  letter-spacing: 0.34em;
-  color: rgba(255,255,255,0.65);
-  margin-bottom: 28rpx;
-}
-
-.hero-title {
-  display: block;
-  font-size: 66rpx;
-  font-weight: 600;
-  color: #FFFFFF;
-  letter-spacing: 0.06em;
-  line-height: 1.18;
-  margin-bottom: 24rpx;
-  font-family: "Noto Serif SC", serif;
-}
-
-.hero-sub {
-  display: block;
-  font-size: 26rpx;
-  color: rgba(255,255,255,0.78);
-  line-height: 1.9;
-  letter-spacing: 0.03em;
-}
-
-.coming-wrap {
-  padding: 120rpx 60rpx 0;
   display: flex;
   flex-direction: column;
+}
+
+/* ── 顶部栏 ── */
+.top-bar {
+  display: flex;
   align-items: center;
+  padding: 20rpx 32rpx;
   gap: 20rpx;
 }
 
-.coming-circle {
-  width: 160rpx;
-  height: 160rpx;
+.icon-btn {
+  width: 64rpx;
+  height: 64rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #D0DFF0 0%, #B0C8E8 100%);
+  background: rgba(255,255,255,0.06);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8rpx;
+  flex-shrink: 0;
+  &:active { opacity: 0.6; }
 }
 
-.coming-emoji { width: 120rpx; }
-
-.coming-title {
-  display: block;
-  font-size: 34rpx;
-  font-weight: 700;
+.icon-text {
+  font-size: 30rpx;
   color: $text-1;
+}
+
+.top-title {
+  flex: 1;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $text-1;
+  letter-spacing: 0.05em;
   font-family: "Noto Serif SC", serif;
 }
 
-.coming-desc {
-  display: block;
+.top-right-btns {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.top-icon-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &:active { opacity: 0.6; }
+}
+
+.top-icon-text {
+  font-size: 32rpx;
+}
+
+.mode-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 10rpx 24rpx;
+  background: rgba(255,255,255,0.07);
+  border-radius: 40rpx;
+  &:active { opacity: 0.65; }
+}
+
+.mode-picker-label {
+  font-size: 22rpx;
+  color: $text-2;
+}
+
+.mode-picker-arrow {
   font-size: 26rpx;
-  color: $text-muted;
+  color: $text-2;
+}
+
+/* ── 主体 ── */
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40rpx;
+  padding: 0 40rpx 40rpx;
+}
+
+/* ── 引导词 ── */
+.guide-wrap {
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guide-text {
+  font-size: 28rpx;
+  color: rgba(238,244,242,0);
+  letter-spacing: 0.12em;
+  font-family: "Noto Serif SC", serif;
+  font-weight: 300;
+  transition: color 0.5s;
+
+  &.visible {
+    color: rgba(238,244,242,0.65);
+  }
+}
+
+/* ── 球 ── */
+.ball-wrap {
+  position: relative;
+  width: 480rpx;
+  height: 480rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ball-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: width 0.1s, height 0.1s, opacity 0.1s;
+}
+
+.ball-ring {
+  position: absolute;
+  width: 360rpx;
+  height: 360rpx;
+  border-radius: 50%;
+  border: 3rpx solid $accent;
+  pointer-events: none;
+  transition: transform 0.08s, opacity 0.08s;
+  will-change: transform;
+}
+
+.ball-ripple-outer {
+  position: absolute;
+  width: 360rpx;
+  height: 360rpx;
+  border-radius: 50%;
+  border: 2rpx solid $accent;
+  pointer-events: none;
+  transition: transform 0.08s, opacity 0.08s;
+  will-change: transform;
+}
+
+.ball {
+  position: relative;
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 0 60rpx rgba(74,122,158,0.35),
+    0 0 120rpx rgba(74,122,158,0.15),
+    inset 0 -20rpx 40rpx rgba(0,0,0,0.18);
+  transition: transform 0.08s, background 0.4s;
+  will-change: transform;
+}
+
+.ball-count {
+  font-size: 80rpx;
+  font-weight: 200;
+  color: rgba(255,255,255,0.92);
+  letter-spacing: -0.02em;
+  font-family: "Noto Serif SC", serif;
+  line-height: 1;
+}
+
+/* ── 阶段文字 ── */
+.phase-label-wrap {
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phase-label {
+  font-size: 36rpx;
+  color: $text-1;
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  font-family: "Noto Serif SC", serif;
+}
+
+/* ── 进度点 ── */
+.dots-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  min-height: 20rpx;
+}
+
+.dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.16);
+  transition: background 0.25s, transform 0.25s;
+
+  &.active {
+    background: $accent;
+    transform: scale(1.35);
+  }
+}
+
+/* ── 轮次 ── */
+.round-text {
+  font-size: 24rpx;
+  color: $text-2;
+  letter-spacing: 0.06em;
+}
+
+/* ── 底部 ── */
+.footer {
+  flex-shrink: 0;
+  padding: 0 40rpx 60rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32rpx;
+}
+
+.duration-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  background: $surface;
+  border-radius: 50rpx;
+  padding: 8rpx 12rpx;
+}
+
+.duration-btn {
+  padding: 12rpx 32rpx;
+  border-radius: 40rpx;
+  transition: background 0.2s;
+
+  &.active { background: $accent; }
+  &:active  { opacity: 0.7; }
+}
+
+.duration-text {
+  font-size: 26rpx;
+  color: $text-2;
+  letter-spacing: 0.04em;
+
+  .active & { color: #FFFFFF; font-weight: 600; }
+}
+
+.ctrl-btn {
+  width: 280rpx;
+  height: 96rpx;
+  border-radius: 48rpx;
+  background: $accent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  box-shadow: 0 8rpx 32rpx rgba(74,122,158,0.38);
+  transition: transform 0.15s, background 0.3s, box-shadow 0.3s;
+
+  &.running {
+    background: rgba(255,255,255,0.1) !important;
+    box-shadow: none !important;
+    border: 1rpx solid rgba(255,255,255,0.12);
+  }
+
+  &:active { transform: scale(0.95); }
+}
+
+.ctrl-icon  { font-size: 36rpx; color: #FFFFFF; }
+.ctrl-label {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 0.08em;
+}
+
+/* ── 弹层通用 ── */
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.sheet {
+  width: 100%;
+  background: #1A2C3D;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 32rpx 32rpx 60rpx;
+}
+
+.sheet-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-1;
   text-align: center;
-  line-height: 1.7;
+  margin-bottom: 32rpx;
+  letter-spacing: 0.05em;
+}
+
+/* 模式列表 */
+.sheet-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 12rpx;
+  background: rgba(255,255,255,0.04);
+  transition: background 0.15s;
+
+  &.active { background: rgba(74,122,158,0.22); }
+  &:active  { opacity: 0.7; }
+}
+
+.sheet-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.sheet-item-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-1;
+}
+
+.sheet-item-desc {
+  font-size: 22rpx;
+  color: $text-2;
+  line-height: 1.5;
+}
+
+.sheet-check {
+  font-size: 32rpx;
+  color: $accent;
+  font-weight: 700;
+}
+
+/* 外观弹层 */
+.sheet-section-label {
+  display: block;
+  font-size: 22rpx;
+  color: $text-2;
+  letter-spacing: 0.08em;
+  margin-bottom: 20rpx;
+  margin-top: 8rpx;
+}
+
+.style-row {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 36rpx;
+}
+
+.style-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 20rpx 10rpx;
+  border-radius: 20rpx;
+  background: rgba(255,255,255,0.04);
+  border: 2rpx solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+
+  &.active {
+    border-color: $accent;
+    background: rgba(74,122,158,0.15);
+  }
+
+  &:active { opacity: 0.7; }
+}
+
+.style-preview {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+}
+
+.style-card-label {
+  font-size: 22rpx;
+  color: $text-2;
+
+  .active & { color: $text-1; }
+}
+
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 40rpx;
+}
+
+.color-swatch {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4rpx solid transparent;
+  box-sizing: border-box;
+  transition: transform 0.15s, border-color 0.15s;
+
+  &.active {
+    border-color: #FFFFFF;
+    transform: scale(1.18);
+  }
+
+  &:active { transform: scale(0.92); }
+}
+
+.color-check {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.sheet-confirm-btn {
+  height: 88rpx;
+  border-radius: 44rpx;
+  background: $accent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8rpx;
+  &:active { opacity: 0.8; }
+}
+
+.sheet-confirm-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 0.08em;
 }
 </style>
