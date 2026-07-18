@@ -13,5 +13,5 @@ onLaunch(() => {
 
 <style lang="scss">
 @import 'uview-plus/index.scss';
-page { box-sizing: border-box; margin: 0; padding: 0; background: #F5F7FA; font-family: -apple-system, 'PingFang SC', sans-serif; }
+page { box-sizing: border-box; margin: 0; padding: 0; background: $zj-bg; font-family: -apple-system, 'PingFang SC', sans-serif; }
 </style>

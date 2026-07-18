@@ -15,7 +15,7 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         silenceDeprecations: ['import'],
-        additionalData: `@import "uview-plus/theme.scss";\n@import "uview-plus/libs/css/theme-vars.scss";\n@import "uview-plus/libs/css/mixin.scss";`
+        additionalData: `@import "uview-plus/theme.scss";\n@import "uview-plus/libs/css/theme-vars.scss";\n@import "uview-plus/libs/css/mixin.scss";\n@import "@/styles/tokens.scss";`
       }
     }
   }
