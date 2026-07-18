@@ -1,7 +1,6 @@
 <template>
   <view class="page">
     <view class="hero">
-      <view class="hero-glow" />
       <view class="hero-content">
         <text class="hero-eyebrow">心理投射工具</text>
         <text class="hero-title">图卡探索</text>
@@ -13,7 +12,6 @@
       <!-- 单卡牌组合 -->
       <view class="section">
         <view class="sec-header">
-          <view class="sec-bar" />
           <text class="sec-title">单卡牌组合</text>
         </view>
         <view class="card-grid">
@@ -34,7 +32,6 @@
       <!-- 跨卡牌组合 -->
       <view class="section">
         <view class="sec-header">
-          <view class="sec-bar" />
           <text class="sec-title">跨卡牌组合</text>
         </view>
         <view class="card-grid">
@@ -56,7 +53,6 @@
       <!-- 场景选卡 -->
       <view class="section">
         <view class="sec-header">
-          <view class="sec-bar" />
           <text class="sec-title">场景选卡</text>
         </view>
         <view class="card-grid">
@@ -78,7 +74,6 @@
       <!-- 人生困境 -->
       <view class="section">
         <view class="sec-header">
-          <view class="sec-bar" />
           <text class="sec-title">人生困境</text>
         </view>
         <view class="card-grid">
@@ -256,40 +251,25 @@ onMounted(async () => {
 <style scoped lang="scss">
 .page {
   min-height: 100vh;
-  background: #F5F7F6;
+  background: $zj-bg;
   padding-bottom: 88rpx;
 }
 
 /* ---- Hero ---- */
 .hero {
-  position: relative;
   padding: 96rpx 48rpx 72rpx;
-  overflow: hidden;
-  background: linear-gradient(135deg, #4A8A7A 0%, #3A6E80 100%);
-}
-
-.hero-glow {
-  position: absolute;
-  top: -160rpx;
-  right: -120rpx;
-  width: 560rpx;
-  height: 480rpx;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,0.14) 0%, transparent 66%);
-  pointer-events: none;
+  background: $zj-teal;
 }
 
 .hero-content {
-  position: relative;
-  z-index: 1;
-  text-align: center;
+  text-align: left;
 }
 
 .hero-eyebrow {
   display: block;
   font-size: 20rpx;
   letter-spacing: 0.34em;
-  color: rgba(255,255,255,0.72);
+  color: rgba(255, 255, 255, 0.72);
   margin-bottom: 28rpx;
 }
 
@@ -297,17 +277,17 @@ onMounted(async () => {
   display: block;
   font-size: 66rpx;
   font-weight: 600;
-  color: #FFFFFF;
+  color: $zj-surface;
   letter-spacing: 0.06em;
   line-height: 1.18;
   margin-bottom: 24rpx;
-  font-family: "Noto Serif SC", serif;
+  font-family: $zj-font-serif;
 }
 
 .hero-sub {
   display: block;
   font-size: 26rpx;
-  color: rgba(255,255,255,0.82);
+  color: rgba(255, 255, 255, 0.82);
   line-height: 1.9;
   letter-spacing: 0.03em;
 }
@@ -321,28 +301,22 @@ onMounted(async () => {
   margin-top: 44rpx;
 }
 
+/* 最后一个区块前加大间距，打破均等节奏 */
+.section:last-child {
+  margin-top: 28rpx;
+}
+
 .sec-header {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
   margin-bottom: 28rpx;
   padding-left: 2rpx;
 }
 
-.sec-bar {
-  width: 6rpx;
-  height: 30rpx;
-  border-radius: 4rpx;
-  flex-shrink: 0;
-  background: #4A8A7A;
-}
-
 .sec-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: 600;
-  color: #1C2A27;
+  color: $zj-text-1;
   letter-spacing: 0.04em;
-  font-family: "Noto Serif SC", serif;
+  font-family: $zj-font-serif;
 }
 
 /* ---- Card grid ---- */
@@ -357,18 +331,23 @@ onMounted(async () => {
   box-sizing: border-box;
   margin-bottom: 18rpx;
   padding: 28rpx 24rpx;
-  border-radius: 24rpx;
-  background: #FFFFFF;
-  border: 1rpx solid #E8EFED;
-  box-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
+  border-radius: $zj-radius-card;
+  background: $zj-surface;
+  border: 1rpx solid $zj-border;
+  box-shadow: $zj-shadow-card;
   display: flex;
   align-items: center;
   gap: 20rpx;
-  transition: transform 0.15s ease;
-}
+  transition: transform 120ms $zj-ease-out;
 
-.card-chip:active {
-  transform: scale(0.98);
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $zj-teal;
+    outline-offset: 2px;
+  }
 }
 
 .chip-icon {
@@ -376,7 +355,7 @@ onMounted(async () => {
   height: 72rpx;
   flex-shrink: 0;
   border-radius: 18rpx;
-  background: #EDF4F0;
+  background: $zj-teal-light;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -393,7 +372,7 @@ onMounted(async () => {
 .chip-name {
   font-size: 26rpx;
   font-weight: 600;
-  color: #1C2A27;
+  color: $zj-text-1;
   line-height: 1.4;
   display: block;
   letter-spacing: 0.01em;
@@ -401,7 +380,7 @@ onMounted(async () => {
 
 .chip-sub {
   font-size: 19rpx;
-  color: #9BBCB4;
+  color: $zj-muted;
   line-height: 1.4;
   display: block;
 }
@@ -414,42 +393,52 @@ onMounted(async () => {
   gap: 10rpx;
   margin-top: 4rpx;
   padding: 24rpx 0;
-  border: 1rpx dashed #C8D8D4;
+  border: 1rpx dashed $zj-border;
   border-radius: 20rpx;
-  background: rgba(74,138,122,0.03);
+  background: rgba(74, 138, 122, 0.03);
+
+  &:focus-visible {
+    outline: 2px solid $zj-teal;
+    outline-offset: 2px;
+  }
 }
 
 .more-text {
   font-size: 24rpx;
-  color: #617870;
+  color: $zj-text-2;
 }
 
 .more-arrow {
   font-size: 22rpx;
-  color: #9BBCB4;
+  color: $zj-muted;
 }
 
 /* ---- Record entry ---- */
 .record-entry {
   margin: 56rpx 28rpx 0;
   padding: 34rpx 36rpx;
-  border: 1rpx solid #E8EFED;
-  border-radius: 24rpx;
+  border: 1rpx solid $zj-border;
+  border-radius: $zj-radius-card;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #FFFFFF;
+  background: $zj-surface;
+
+  &:focus-visible {
+    outline: 2px solid $zj-teal;
+    outline-offset: 2px;
+  }
 }
 
 .record-label {
   font-size: 27rpx;
-  color: #617870;
+  color: $zj-text-2;
   letter-spacing: 0.04em;
 }
 
 .record-arrow {
   font-size: 40rpx;
-  color: #4A8A7A;
+  color: $zj-teal;
   line-height: 1;
 }
 </style>

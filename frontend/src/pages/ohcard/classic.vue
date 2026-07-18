@@ -16,7 +16,7 @@
         <view class="card-col">
           <text class="card-label">图卡</text>
           <!-- 去掉外层 overflow:hidden，避免微信小程序吞掉点击事件 -->
-          <view class="card img-card" :style="{transform: imgRotate, transition: 'transform 0.21s ease-in-out'}" @click="handleImgClick()">
+          <view class="card img-card" :style="{transform: imgRotate, transition: 'transform 0.21s cubic-bezier(0.16,1,0.3,1)'}" @click="handleImgClick()">
             <view v-if="!imgFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
             <view v-else class="card-front">
               <image :src="fullUrl(imgCard?.imageUrl)" mode="aspectFill" class="card-img" />
@@ -31,7 +31,7 @@
         <!-- Word card (right, larger) -->
         <view v-if="selDeck?.wordCatId" class="card-col">
           <text class="card-label">{{wordCard?.imageUrl ? '情况卡' : '字卡'}}</text>
-          <view class="card word-card" :style="{transform: wordRotate, transition: 'transform 0.21s ease-in-out'}" @click="flipWord()">
+          <view class="card word-card" :style="{transform: wordRotate, transition: 'transform 0.21s cubic-bezier(0.16,1,0.3,1)'}" @click="flipWord()">
             <view v-if="!wordFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
             <view v-else class="card-front" :class="wordCard?.imageUrl ? '' : 'word-front'">
               <image v-if="wordCard?.imageUrl" :src="fullUrl(wordCard.imageUrl)" mode="aspectFill" class="card-img" />

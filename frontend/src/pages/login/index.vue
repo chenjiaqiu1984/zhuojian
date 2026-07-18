@@ -25,19 +25,24 @@
       <button
         class="mp-tap-btn"
         open-type="getPhoneNumber"
-        :disabled="loading"
+        :disabled="loading || !termsAgreed"
         @getphonenumber="(e) => onGetPhoneNumber(e)"
         @tap="() => onBtnTap()"
-      >{{ loading ? '登录中…' : '微信一键登录' }}</button>
+      >{{ loading ? '登录中…' : '手机号快捷登录' }}</button>
 
-      <view class="mp-terms">
-        <text class="mp-terms-text">登录即代表同意</text>
-        <view class="mp-terms-link" @click="goTerms()">
-          <text class="mp-terms-link-text">《用户协议》</text>
+      <view class="mp-terms-row">
+        <view class="mp-terms-check" @click="termsAgreed = !termsAgreed">
+          <view :class="['mp-checkbox', termsAgreed && 'mp-checkbox-checked']" />
         </view>
-        <text class="mp-terms-text">与</text>
-        <view class="mp-terms-link" @click="goPrivacy()">
-          <text class="mp-terms-link-text">《隐私政策》</text>
+        <view class="mp-terms-text-wrap">
+          <text class="mp-terms-text">我已阅读并同意</text>
+          <view class="mp-terms-link" @click="goTerms()">
+            <text class="mp-terms-link-text">《用户协议》</text>
+          </view>
+          <text class="mp-terms-text">与</text>
+          <view class="mp-terms-link" @click="goPrivacy()">
+            <text class="mp-terms-link-text">《隐私政策》</text>
+          </view>
         </view>
       </view>
     </view>
@@ -161,6 +166,7 @@ const tabs = ['密码登录', '手机登录'];
 const phone = ref({ num: '', code: '', countdown: 0 });
 const pwd = ref({ username: '', password: '' });
 const rememberMe = ref(true);
+const termsAgreed = ref(false);
 
 const { captchaUrl, captchaToken, captchaAnswer, refreshCaptcha } = useCaptcha();
 onMounted(() => refreshCaptcha());
@@ -216,7 +222,11 @@ function goPrivacy() { uni.navigateTo({ url: '/pages/legal/privacy' }); }
 // #endif
 
 // #ifdef MP-WEIXIN
-function onBtnTap() {}
+function onBtnTap() {
+  if (!termsAgreed.value) {
+    uni.showToast({ title: '请先阅读并同意用户协议与隐私政策', icon: 'none', duration: 2000 });
+  }
+}
 // #endif
 
 // #ifdef MP-WEIXIN
@@ -439,19 +449,51 @@ function success() {
 }
 
 /* 协议行 */
-.mp-terms {
+.mp-terms-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+.mp-terms-check {
+  padding-top: 4rpx;
+  flex-shrink: 0;
+}
+.mp-checkbox {
+  width: 36rpx;
+  height: 36rpx;
+  border: 2rpx solid #C0CCC8;
+  border-radius: 8rpx;
+  background: #fff;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.mp-checkbox-checked {
+  background: #4A8A7A;
+  border-color: #4A8A7A;
+  position: relative;
+  &::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 22rpx;
+    line-height: 1;
+  }
+}
+.mp-terms-text-wrap {
   display: flex;
   align-items: center;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 2rpx;
+  flex: 1;
 }
 .mp-terms-text {
   font-size: 24rpx;
   color: #A0BAB5;
 }
 .mp-terms-link {
-  padding: 6rpx 10rpx;
+  padding: 0 4rpx;
 }
 .mp-terms-link-text {
   font-size: 24rpx;

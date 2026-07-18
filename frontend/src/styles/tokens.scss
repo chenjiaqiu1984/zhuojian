@@ -36,6 +36,9 @@ $zj-gradient-header: linear-gradient(155deg, #4A8A7A 0%, #2E5870 100%);   // 深
 // ── 字体 ──
 $zj-font-serif:  "Noto Serif SC", serif;   // 标题衬线体
 
+// ── 缓动 ──
+$zj-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);   // expo-out，替代浏览器默认 ease
+
 // ── 层级（替代随手写的 z-index: 9999）──
 $zj-z-sticky:    100;
 $zj-z-overlay:   1000;
