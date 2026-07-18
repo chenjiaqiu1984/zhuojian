@@ -10,7 +10,7 @@
         <view class="top-icon-btn" @click="showStyleSheet = true">
           <text class="top-icon-text">🎨</text>
         </view>
-        <view class="mode-picker-btn" @click="showModeSheet = true">
+        <view v-if="!fromSelect" class="mode-picker-btn" @click="showModeSheet = true">
           <text class="mode-picker-label">{{ currentMode.name }}</text>
           <text class="mode-picker-arrow">›</text>
         </view>
@@ -198,6 +198,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 
+const fromSelect = ref(false);
+
 // ── 球体样式 ──────────────────────────────────────────────────
 const BALL_STYLES = [
   { key: 'solid',   label: '纯色' },
@@ -384,8 +386,11 @@ const activeSteps = computed(() => {
 });
 
 const activeColor = computed(() => {
-  if (isProgramMode.value) return currentProgram.value.color;
-  return customColor.value;
+  const base = isProgramMode.value ? currentProgram.value.color : customColor.value;
+  if (!isRunning.value && !isPaused.value) return base;
+  // ballScale 范围 0.55~1.0，映射到明暗：吸气亮，呼气暗
+  const t = (ballScale.value - 0.55) / 0.45; // 0~1
+  return t > 0.5 ? lighten(base, (t - 0.5) * 0.36) : darken(base, (0.5 - t) * 0.28);
 });
 
 // 当前段总轮数（乘以周期数）
@@ -732,6 +737,23 @@ function darken(hex, amt) {
   const d = v => Math.max(0, Math.round(v * (1 - amt)));
   return `rgb(${d(r)},${d(g)},${d(b)})`;
 }
+
+onMounted(() => {
+  const pages = getCurrentPages();
+  const page  = pages[pages.length - 1];
+  const opts  = page.$page?.options ?? page.options ?? {};
+  const { type, key } = opts;
+  if (type && key) {
+    fromSelect.value = true;
+    if (type === 'program') {
+      isProgramMode.value = true;
+      programKey.value    = key;
+    } else {
+      isProgramMode.value = false;
+      modeKey.value       = key;
+    }
+  }
+});
 
 onUnmounted(() => stopLoop());
 </script>

@@ -201,7 +201,7 @@ let isMouseDown = false;
 // 直线/弧线预览状态
 let previewStart  = null; // {x,y}
 let previewCurrent = null; // {x,y}
-let arcState      = 0;    // 0=等待起点, 1=等待终点（弧线专用）
+let arcState      = 0;    // 0=等待起点, 1=等待终点, 2=等待控制点（弧线专用）
 let arcStart      = null;
 let arcEnd        = null;
 
@@ -436,8 +436,11 @@ function handleDrawStart(pos) {
       previewCurrent = pos;
     } else if (arcState === 1) {
       arcEnd = pos;
-      const ctrl = midPoint(arcStart, pos);
-      commitArcPath(arcStart, ctrl, arcEnd);
+      arcState  = 2;
+      previewCurrent = pos;
+    } else if (arcState === 2) {
+      // pos 就是控制点
+      commitArcPath(arcStart, pos, arcEnd);
       arcState = 0; arcStart = null; arcEnd = null;
       previewStart = null; previewCurrent = null;
     }
@@ -661,22 +664,40 @@ function drawPreview() {
       ctx.stroke();
       ctx.setLineDash([]);
     }
-  } else if (drawMode.value === 'arc' && arcState === 1 && arcStart && previewCurrent) {
-    const ctrl = midPoint(arcStart, previewCurrent);
-    for (let seg = 0; seg < count; seg++) {
-      const angle = (Math.PI * 2 * seg) / count;
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth   = lw;
-      ctx.lineCap     = 'round';
-      ctx.setLineDash([6, 4]);
-      const p0 = rotatePoint(arcStart,       cx, cy, angle);
-      const p1 = rotatePoint(ctrl,           cx, cy, angle);
-      const p2 = rotatePoint(previewCurrent, cx, cy, angle);
-      ctx.moveTo(p0.x, p0.y);
-      ctx.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
+  } else if (drawMode.value === 'arc' && arcStart && previewCurrent) {
+    if (arcState === 1) {
+      // 第一步完成，预览起点到当前光标的直线
+      for (let seg = 0; seg < count; seg++) {
+        const angle = (Math.PI * 2 * seg) / count;
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = lw;
+        ctx.lineCap     = 'round';
+        ctx.setLineDash([6, 4]);
+        const p0 = rotatePoint(arcStart,       cx, cy, angle);
+        const p1 = rotatePoint(previewCurrent, cx, cy, angle);
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    } else if (arcState === 2 && arcEnd) {
+      // 第二步完成，预览以光标为控制点的真实弧线
+      for (let seg = 0; seg < count; seg++) {
+        const angle = (Math.PI * 2 * seg) / count;
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = lw;
+        ctx.lineCap     = 'round';
+        ctx.setLineDash([6, 4]);
+        const p0 = rotatePoint(arcStart,       cx, cy, angle);
+        const p1 = rotatePoint(previewCurrent, cx, cy, angle);
+        const p2 = rotatePoint(arcEnd,         cx, cy, angle);
+        ctx.moveTo(p0.x, p0.y);
+        ctx.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
   } else if (SHAPE_MODES.has(drawMode.value) && previewStart && previewCurrent) {
     for (let seg = 0; seg < count; seg++) {
