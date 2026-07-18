@@ -34,82 +34,68 @@
       <view v-if="drawMode === 'parts'" class="parts-wrap">
         <!-- 预览 -->
         <view class="preview-outer">
-          <view class="preview-box" :style="{ background: `${parts.color}14` }">
-            <view class="preview-glow" :style="{ background: `radial-gradient(circle, ${parts.color}28 0%, transparent 68%)` }" />
-            <image v-if="parts.body" class="p-body" :src="`/static/monster/body/${parts.body}.svg`" mode="aspectFit" />
-            <image v-if="parts.tail" class="p-tail" :src="`/static/monster/tail/${parts.tail}.svg`" mode="aspectFit" />
-            <image v-if="parts.horn" class="p-horn" :src="`/static/monster/horn/${parts.horn}.svg`" mode="aspectFit" />
-            <image v-if="parts.eyes" class="p-eyes" :src="`/static/monster/eyes/${parts.eyes}.svg`" mode="aspectFit" />
-            <image v-if="parts.mouth" class="p-mouth" :src="`/static/monster/mouth/${parts.mouth}.svg`" mode="aspectFit" />
+          <view class="preview-box" :style="{ background: `${parts.color}18` }">
+            <view class="preview-glow" :style="{ background: `radial-gradient(circle, ${parts.color}30 0%, transparent 68%)` }" />
+            <!-- 尾巴和脚在身体后面渲染 -->
+            <view v-if="parts.tail" class="p-tail" v-html="partSvg('tail')" />
+            <view v-if="parts.legs" class="p-legs" v-html="partSvg('legs')" />
+            <view v-if="parts.legs && getPartTexture('legs')" class="p-legs p-texture-layer" v-html="partTextureSvg('legs')" />
+            <!-- 身体 -->
+            <view v-if="parts.arms" class="p-arms" v-html="partSvg('arms')" />
+            <view v-if="parts.arms && getPartTexture('arms')" class="p-arms p-texture-layer" v-html="partTextureSvg('arms')" />
+            <view v-if="parts.body" class="p-body" v-html="partSvg('body')" />
+            <view v-if="parts.body && getPartTexture('body')" class="p-body p-texture-layer" v-html="partTextureSvg('body')" />
+            <!-- 面部在身体前面 -->
+            <view v-if="parts.horn" class="p-horn" v-html="partSvg('horn')" />
+            <view v-if="parts.eyes" class="p-eyes" v-html="partSvg('eyes')" />
+            <view v-if="parts.mouth" class="p-mouth" v-html="partSvg('mouth')" />
           </view>
         </view>
 
-        <!-- 颜色 -->
-        <view class="section-block">
-          <text class="section-label">主题颜色</text>
-          <view class="color-row">
-            <view
-              v-for="c in COLORS" :key="c"
+        <!-- 全局颜色 + 材质 面板（跟随 activePart） -->
+        <view class="style-panel">
+          <view class="style-panel-title">
+            <text class="style-panel-hint" v-if="activePart">正在编辑：{{ PART_DEFS.find(p=>p.key===activePart)?.label }}</text>
+            <text class="style-panel-hint" v-else>选择一个部件后可设置颜色和材质</text>
+            <view v-if="activePart" class="apply-all-btn" @click="applyStyleToAll">
+              <text class="apply-all-text">应用到全部</text>
+            </view>
+          </view>
+          <view class="color-row" style="margin-bottom:16rpx">
+            <view v-for="c in COLORS" :key="c"
               class="color-dot"
-              :class="{ selected: parts.color === c }"
+              :class="{ selected: activePart && getPartColor(activePart) === c }"
               :style="{ background: c }"
-              @click="parts.color = c"
+              @click="setPartColor(c)"
             />
           </view>
-        </view>
-
-        <!-- 身体 -->
-        <view class="section-block">
-          <text class="section-label">身体形状</text>
           <view class="chips-row">
-            <view v-for="b in BODIES" :key="b" class="part-chip" :class="{ selected: parts.body === b }" @click="parts.body = b">
-              <image :src="`/static/monster/body/${b}.svg`" mode="aspectFit" class="chip-img" />
+            <view v-for="tx in TEXTURES" :key="tx.key"
+              class="texture-chip"
+              :class="{ selected: activePart && getPartTexture(activePart) === tx.key }"
+              @click="setPartTexture(tx.key)"
+            >
+              <view v-if="tx.key === ''" class="texture-preview texture-none"><text class="chip-none">无</text></view>
+              <view v-else class="texture-preview"><image :src="`/static/monster/texture/${tx.key}.svg`" mode="aspectFit" class="texture-img" /></view>
+              <text class="texture-label">{{ tx.label }}</text>
             </view>
           </view>
         </view>
 
-        <!-- 眼睛 -->
-        <view class="section-block">
-          <text class="section-label">眼睛</text>
+        <!-- 部件列表 -->
+        <view v-for="part in PART_DEFS" :key="part.key" class="section-block">
+          <text class="section-label">{{ part.label }}</text>
           <view class="chips-row">
-            <view v-for="e in EYES" :key="e" class="part-chip" :class="{ selected: parts.eyes === e }" @click="parts.eyes = e">
-              <image :src="`/static/monster/eyes/${e}.svg`" mode="aspectFit" class="chip-img" />
-            </view>
-          </view>
-        </view>
-
-        <!-- 嘴巴 -->
-        <view class="section-block">
-          <text class="section-label">嘴巴</text>
-          <view class="chips-row">
-            <view v-for="m in MOUTHS" :key="m" class="part-chip" :class="{ selected: parts.mouth === m }" @click="parts.mouth = m">
-              <image :src="`/static/monster/mouth/${m}.svg`" mode="aspectFit" class="chip-img" />
-            </view>
-          </view>
-        </view>
-
-        <!-- 角 -->
-        <view class="section-block">
-          <text class="section-label">角（可选）</text>
-          <view class="chips-row">
-            <view class="part-chip" :class="{ selected: parts.horn === '' }" @click="parts.horn = ''">
+            <view v-if="part.optional" class="part-chip" :class="{ selected: parts[part.key] === '' }" @click="selectPart(part.key, '')">
               <text class="chip-none">无</text>
             </view>
-            <view v-for="h in HORNS" :key="h" class="part-chip" :class="{ selected: parts.horn === h }" @click="parts.horn = h">
-              <image :src="`/static/monster/horn/${h}.svg`" mode="aspectFit" class="chip-img" />
-            </view>
-          </view>
-        </view>
-
-        <!-- 尾巴 -->
-        <view class="section-block">
-          <text class="section-label">尾巴（可选）</text>
-          <view class="chips-row">
-            <view class="part-chip" :class="{ selected: parts.tail === '' }" @click="parts.tail = ''">
-              <text class="chip-none">无</text>
-            </view>
-            <view v-for="t in TAILS" :key="t" class="part-chip" :class="{ selected: parts.tail === t }" @click="parts.tail = t">
-              <image :src="`/static/monster/tail/${t}.svg`" mode="aspectFit" class="chip-img" />
+            <view
+              v-for="item in part.items" :key="item"
+              class="part-chip"
+              :class="{ selected: parts[part.key] === item, active: activePart === part.key && parts[part.key] === item }"
+              @click="selectPart(part.key, item)"
+            >
+              <image :src="`/static/monster/${part.key}/${item}.svg`" mode="aspectFit" class="chip-img" />
             </view>
           </view>
         </view>
@@ -122,9 +108,12 @@
             canvas-id="monsterCanvas"
             id="monsterCanvas"
             class="draw-canvas"
-            @touchstart="onTouchStart"
-            @touchmove="onTouchMove"
+            @touchstart.prevent="onTouchStart"
+            @touchmove.prevent="onTouchMove"
             @touchend="onTouchEnd"
+            @mousedown="onMouseDown"
+            @mousemove="onMouseMove"
+            @mouseup="onMouseUp"
           />
         </view>
 
@@ -229,19 +218,30 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { monsterApi } from '@/api';
 import ZjIcon from '../../components/ZjIcon.vue';
 
 const step = ref(1);
 const drawMode = ref('parts');
 
-const COLORS = ['#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#E91E8C','#1ABC9C'];
-const BODIES = ['body_01','body_02','body_03','body_04'];
-const EYES = ['eyes_01','eyes_02','eyes_03','eyes_04','eyes_05'];
-const MOUTHS = ['mouth_01','mouth_02','mouth_03','mouth_04','mouth_05'];
-const HORNS = ['horn_01','horn_02','horn_03'];
-const TAILS = ['tail_01','tail_02','tail_03'];
+const COLORS = ['#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#E91E8C','#1ABC9C','#F06292','#00BCD4','#8BC34A','#FF7043'];
+const BODIES = ['body_01','body_02','body_03','body_04','body_05','body_06','body_07','body_08'];
+const EYES = ['eyes_01','eyes_02','eyes_03','eyes_04','eyes_05','eyes_06','eyes_07','eyes_08','eyes_09'];
+const MOUTHS = ['mouth_01','mouth_02','mouth_03','mouth_04','mouth_05','mouth_06','mouth_07','mouth_08','mouth_09'];
+const HORNS = ['horn_01','horn_02','horn_03','horn_04','horn_05'];
+const TAILS = ['tail_01','tail_02','tail_03','tail_04','tail_05'];
+const ARMS = ['arms_01','arms_02','arms_03','arms_04','arms_05','arms_06'];
+const LEGS = ['legs_01','legs_02','legs_03','legs_04','legs_05','legs_06'];
+const TEXTURES = [
+  { key: '', label: '无' },
+  { key: 'stripe', label: '条纹' },
+  { key: 'dots', label: '波点' },
+  { key: 'scales', label: '鳞片' },
+  { key: 'fluffy', label: '毛茸' },
+  { key: 'sparkle', label: '闪光' },
+  { key: 'crack', label: '裂纹' },
+];
 const BRUSH_SIZES = [3, 6, 11, 18];
 
 const EMOTIONS = [
@@ -253,26 +253,162 @@ const EMOTIONS = [
   { key: '其他', label: '其他', icon: '👾' },
 ];
 
-const parts = reactive({ body: 'body_01', eyes: 'eyes_01', mouth: 'mouth_01', horn: '', tail: '', color: '#9B59B6' });
+const PART_DEFS = [
+  { key: 'body',  label: '身体', optional: false, items: BODIES },
+  { key: 'eyes',  label: '眼睛', optional: false, items: EYES },
+  { key: 'mouth', label: '嘴巴', optional: false, items: MOUTHS },
+  { key: 'horn',  label: '角',   optional: true,  items: HORNS },
+  { key: 'tail',  label: '尾巴', optional: true,  items: TAILS },
+  { key: 'arms',  label: '手',   optional: true,  items: ARMS },
+  { key: 'legs',  label: '脚',   optional: true,  items: LEGS },
+];
+
+// 每个部件的颜色和材质独立存储
+const partColors = reactive({ body: '#9B59B6', eyes: '#9B59B6', mouth: '#9B59B6', horn: '#9B59B6', tail: '#9B59B6', arms: '#9B59B6', legs: '#9B59B6' });
+const partTextures = reactive({ body: '', eyes: '', mouth: '', horn: '', tail: '', arms: '', legs: '' });
+
+const parts = reactive({
+  body: 'body_01', eyes: 'eyes_01', mouth: 'mouth_01',
+  horn: '', tail: '', arms: '', legs: '',
+  color: '#9B59B6', texture: '',
+});
+
+// 当前正在编辑的部件
+const activePart = ref('body');
+
+function selectPart(key, val) {
+  parts[key] = val;
+  if (val) activePart.value = key;
+}
+
+function getPartColor(key) {
+  return partColors[key] || parts.color;
+}
+
+function getPartTexture(key) {
+  return partTextures[key] !== undefined ? partTextures[key] : parts.texture;
+}
+
+function setPartColor(c) {
+  if (!activePart.value) return;
+  partColors[activePart.value] = c;
+  parts.color = c;
+}
+
+function setPartTexture(tx) {
+  if (!activePart.value) return;
+  partTextures[activePart.value] = tx;
+}
+
+function applyStyleToAll(c) {
+  const color = activePart.value ? partColors[activePart.value] : parts.color;
+  const texture = activePart.value ? partTextures[activePart.value] : parts.texture;
+  PART_DEFS.forEach(p => {
+    partColors[p.key] = color;
+    partTextures[p.key] = texture;
+  });
+  parts.color = color;
+  parts.texture = texture;
+}
+
+function applyColorToAll(c) {
+  PART_DEFS.forEach(p => { partColors[p.key] = c; });
+  parts.color = c;
+}
+
+function applyTextureToAll(tx) {
+  PART_DEFS.forEach(p => { partTextures[p.key] = tx; });
+  parts.texture = tx;
+}
+
+// SVG 内联缓存
+const svgCache = reactive({});
+
+async function loadSvg(path) {
+  if (svgCache[path]) return;
+  try {
+    const res = await fetch(`/static/monster/${path}.svg`);
+    const text = await res.text();
+    svgCache[path] = text; // reactive 赋值会触发重渲染
+  } catch (e) { /* ignore */ }
+}
+
+function coloredSvg(type, name, color) {
+  const key = `${type}/${name}`;
+  const raw = svgCache[key]; // 访问 reactive 属性，建立依赖
+  if (!raw) { loadSvg(key); return ''; }
+  return raw.replace(/currentColor/g, color || parts.color);
+}
+
+function partSvg(key) {
+  if (!parts[key]) return '';
+  const type = key; // body, eyes, mouth, etc.
+  const name = parts[key];
+  const cacheKey = `${type}/${name}`;
+  const raw = svgCache[cacheKey]; // 建立响应式依赖
+  if (!raw) { loadSvg(cacheKey); return ''; }
+  return raw.replace(/currentColor/g, getPartColor(key));
+}
+
+function partTextureSvg(key) {
+  const tx = getPartTexture(key);
+  if (!tx) return '';
+  const cacheKey = `texture/${tx}`;
+  const raw = svgCache[cacheKey]; // 建立响应式依赖
+  if (!raw) { loadSvg(cacheKey); return ''; }
+  return raw;
+}
+
+// 预加载当前选中的部件
+watch(() => [parts.body, parts.eyes, parts.mouth, parts.horn, parts.tail, parts.arms, parts.legs, parts.texture], () => {
+  if (parts.body) loadSvg(`body/${parts.body}`);
+  if (parts.eyes) loadSvg(`eyes/${parts.eyes}`);
+  if (parts.mouth) loadSvg(`mouth/${parts.mouth}`);
+  if (parts.horn) loadSvg(`horn/${parts.horn}`);
+  if (parts.tail) loadSvg(`tail/${parts.tail}`);
+  if (parts.arms) loadSvg(`arms/${parts.arms}`);
+  if (parts.legs) loadSvg(`legs/${parts.legs}`);
+  PART_DEFS.forEach(p => {
+    const tx = getPartTexture(p.key);
+    if (tx) loadSvg(`texture/${tx}`);
+  });
+}, { immediate: true });
 const brushColor = ref('#9B59B6');
 const brushSize = ref(6);
 const isEraser = ref(false);
 const canvasPaths = ref([]);
 let currentPath = null;
 let ctx = null;
+let isMouseDown = false;
 
 const form = reactive({ name: '', emotion: '', color: '#9B59B6' });
 const canSave = computed(() => form.name.trim() && form.emotion);
 
-onMounted(() => { ctx = uni.createCanvasContext('monsterCanvas'); });
+onMounted(() => {
+  ctx = uni.createCanvasContext('monsterCanvas');
+});
 
-function getPos(e) {
+function getTouchPos(e) {
   const t = e.touches[0];
+  const el = document.getElementById('monsterCanvas');
+  if (el) {
+    const rect = el.getBoundingClientRect();
+    // uni-app canvas 内部坐标与 CSS 像素一致（H5），不需要缩放
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
   return { x: t.x, y: t.y };
 }
 
-function onTouchStart(e) {
-  const pos = getPos(e);
+function getMousePos(e) {
+  const el = document.getElementById('monsterCanvas');
+  if (el) {
+    const rect = el.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+  return { x: e.offsetX, y: e.offsetY };
+}
+
+function startPath(pos) {
   currentPath = {
     color: isEraser.value ? '#FFFFFF' : brushColor.value,
     width: isEraser.value ? brushSize.value * 4 : brushSize.value,
@@ -281,19 +417,32 @@ function onTouchStart(e) {
   canvasPaths.value.push(currentPath);
 }
 
-function onTouchMove(e) {
+function addPoint(pos) {
   if (!currentPath) return;
-  currentPath.points.push(getPos(e));
+  currentPath.points.push(pos);
   redrawCanvas();
 }
 
+function onTouchStart(e) { startPath(getTouchPos(e)); }
+function onTouchMove(e) { addPoint(getTouchPos(e)); }
 function onTouchEnd() { currentPath = null; }
+
+function onMouseDown(e) { isMouseDown = true; startPath(getMousePos(e)); }
+function onMouseMove(e) { if (isMouseDown) addPoint(getMousePos(e)); }
+function onMouseUp() { isMouseDown = false; currentPath = null; }
+
+function getCanvasSize() {
+  const el = document.getElementById('monsterCanvas');
+  if (el) return { w: el.offsetWidth, h: el.offsetHeight };
+  return { w: 600, h: 600 };
+}
 
 function redrawCanvas() {
   if (!ctx) return;
-  ctx.clearRect(0, 0, 600, 600);
+  const { w, h } = getCanvasSize();
+  ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = '#FDFAFF';
-  ctx.fillRect(0, 0, 600, 600);
+  ctx.fillRect(0, 0, w, h);
   for (const path of canvasPaths.value) {
     if (path.points.length < 2) continue;
     ctx.beginPath();
@@ -312,9 +461,10 @@ function clearCanvas() {
   canvasPaths.value = [];
   currentPath = null;
   if (ctx) {
-    ctx.clearRect(0, 0, 600, 600);
+    const { w, h } = getCanvasSize();
+    ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#FDFAFF';
-    ctx.fillRect(0, 0, 600, 600);
+    ctx.fillRect(0, 0, w, h);
     ctx.draw();
   }
 }
@@ -455,15 +605,19 @@ $white: #FFFFFF;
 }
 
 .preview-box {
-  width: 260rpx;
-  height: 260rpx;
+  width: 320rpx;
+  height: 320rpx;
   border-radius: 28rpx;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   border: 1rpx solid rgba(123,78,158,0.12);
+}
+
+.preview-outer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24rpx;
+  padding: 40rpx 0 24rpx;
 }
 
 .preview-glow {
@@ -472,11 +626,27 @@ $white: #FFFFFF;
   pointer-events: none;
 }
 
-.p-body { position: absolute; width: 190rpx; height: 190rpx; }
-.p-tail { position: absolute; bottom: 16rpx; right: 8rpx; width: 76rpx; height: 76rpx; }
-.p-horn { position: absolute; top: 8rpx; width: 72rpx; height: 56rpx; }
-.p-eyes { position: absolute; top: 66rpx; width: 150rpx; height: 46rpx; }
-.p-mouth { position: absolute; top: 122rpx; width: 122rpx; height: 46rpx; }
+.p-body { position: absolute; width: 210rpx; height: 210rpx; top: 50%; left: 50%; transform: translate(-50%, -46%); }
+.p-tail { position: absolute; width: 90rpx; height: 90rpx; bottom: 30rpx; right: 10rpx; }
+.p-horn { position: absolute; top: 14rpx; left: 50%; transform: translateX(-50%); width: 80rpx; height: 64rpx; }
+.p-eyes { position: absolute; top: 90rpx; left: 50%; transform: translateX(-50%); width: 160rpx; height: 50rpx; }
+.p-mouth { position: absolute; top: 148rpx; left: 50%; transform: translateX(-50%); width: 130rpx; height: 50rpx; }
+.p-arms { position: absolute; top: 120rpx; left: 50%; transform: translateX(-50%); width: 280rpx; height: 64rpx; }
+.p-legs { position: absolute; bottom: 10rpx; left: 50%; transform: translateX(-50%); width: 150rpx; height: 64rpx; }
+
+.p-body, .p-tail, .p-horn, .p-eyes, .p-mouth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  :deep(svg) { width: 100%; height: 100%; }
+}
+
+.p-texture-layer {
+  opacity: 0.45;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  :deep(svg) { width: 100%; height: 100%; }
+}
 
 /* 公共 section */
 .section-block {
@@ -551,6 +721,153 @@ $white: #FFFFFF;
 
 .chip-img { width: 68rpx; height: 60rpx; }
 .chip-none { font-size: 22rpx; color: $text-muted; }
+
+.style-panel {
+  background: $white;
+  border-radius: 20rpx;
+  padding: 20rpx 20rpx 16rpx;
+  margin-bottom: 24rpx;
+  border: 1rpx solid $purple-light;
+  box-shadow: 0 2rpx 12rpx rgba(123,78,158,0.07);
+}
+
+.style-panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.style-panel-hint {
+  font-size: 22rpx;
+  color: $text-muted;
+}
+
+.apply-all-btn {
+  padding: 6rpx 18rpx;
+  border-radius: 20rpx;
+  background: $purple-light;
+}
+
+.apply-all-text {
+  font-size: 20rpx;
+  color: $purple;
+}
+
+.part-chip.active {
+  border: 2rpx solid $purple;
+  background: rgba(123,78,158,0.1);
+  box-shadow: 0 0 0 3rpx rgba(123,78,158,0.2);
+}
+
+.part-override-panel {
+  margin-top: 16rpx;
+  padding: 16rpx 18rpx;
+  background: rgba(123,78,158,0.05);
+  border-radius: 16rpx;
+  border: 1rpx solid $purple-light;
+}
+
+.override-label {
+  display: block;
+  font-size: 22rpx;
+  color: $text-muted;
+  margin-bottom: 10rpx;
+}
+
+.part-detail-toggle {
+  margin-top: 10rpx;
+  display: inline-flex;
+  padding: 6rpx 0;
+}
+
+.part-detail-text {
+  font-size: 22rpx;
+  color: $purple;
+}
+
+.override-reset, .override-reset-tx {
+  background: $white;
+  border: 2rpx solid $purple-light;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.part-label-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  margin-bottom: 14rpx;
+
+  .section-label { margin-bottom: 0; }
+}
+
+.part-color-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.part-color-dot {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 2rpx solid transparent;
+  box-sizing: border-box;
+  transition: transform 0.12s;
+
+  &.selected {
+    border-color: $text-main;
+    transform: scale(1.18);
+  }
+}
+
+.p-texture {
+  opacity: 0.6;
+  mix-blend-mode: multiply;
+}
+
+.texture-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  cursor: pointer;
+
+  &.selected .texture-preview {
+    border: 2rpx solid $purple;
+    background: rgba(123,78,158,0.06);
+  }
+}
+
+.texture-preview {
+  width: 80rpx;
+  height: 64rpx;
+  border-radius: 14rpx;
+  background: $white;
+  border: 2rpx solid $purple-light;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.texture-none {
+  background: $white;
+}
+
+.texture-img {
+  width: 72rpx;
+  height: 58rpx;
+}
+
+.texture-label {
+  font-size: 20rpx;
+  color: $text-muted;
+}
+
+
 
 /* Canvas */
 .canvas-wrap { padding: 0 28rpx; }

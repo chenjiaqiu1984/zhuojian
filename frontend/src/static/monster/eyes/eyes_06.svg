@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50">
+  <path d="M25 25 m-15,0 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0" fill="none" stroke="currentColor" stroke-width="4"/>
+  <path d="M25 25 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" fill="none" stroke="currentColor" stroke-width="3"/>
+  <circle cx="25" cy="25" r="3" fill="currentColor"/>
+  <path d="M75 25 m-15,0 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0" fill="none" stroke="currentColor" stroke-width="4"/>
+  <path d="M75 25 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" fill="none" stroke="currentColor" stroke-width="3"/>
+  <circle cx="75" cy="25" r="3" fill="currentColor"/>
+</svg>
