@@ -31,7 +31,7 @@
             <view class="top-card-inner">
               <text class="top-name">{{ s.name }}</text>
               <view class="top-footer">
-                <text class="top-meta">{{ s.totalQuestions }}题 · {{ s.estimatedMinutes }}分钟</text>
+              <text class="top-meta">{{ s.totalQuestions }}题<template v-if="s.estimatedMinutes"> · {{ s.estimatedMinutes }}分钟</template></text>
                 <view class="top-count-pill">
                   <text class="top-count-txt">{{ s.usageCount }}次</text>
                 </view>
@@ -57,12 +57,14 @@
 
     <!-- Scenario chips -->
     <scroll-view v-if="allScenarios.length" scroll-x class="chip-bar">
-      <view class="chip-list">
-        <view :class="['chip', !activeScenario && 'chip--active']" @click="activeScenario=''">全部</view>
+      <view class="chip-list" role="list">
+        <view :class="['chip', !activeScenario && 'chip--active']" role="button" :aria-pressed="!activeScenario" @click="activeScenario=''">全部</view>
         <view
           v-for="t in allScenarios"
           :key="t"
           :class="['chip', activeScenario === t && 'chip--active']"
+          role="button"
+          :aria-pressed="activeScenario === t"
           @click="activeScenario = t"
         >{{ t }}</view>
       </view>
@@ -71,11 +73,13 @@
     <!-- Tabs -->
     <view class="tabs-wrap">
       <scroll-view scroll-x class="tabs-scroll">
-        <view class="tabs">
+        <view class="tabs" role="tablist">
           <view
             v-for="t in tabs"
             :key="t.key"
             :class="['tab', activeTab === t.key && 'tab--active']"
+            role="tab"
+            :aria-selected="activeTab === t.key"
             @click="activeTab = t.key"
           >
             <text class="tab-label">{{ t.label }}</text>
@@ -99,10 +103,21 @@
 
         <view class="card-body">
           <view class="card-top">
-            <text class="card-name">{{ s.name }}</text>
+            <view class="card-name-row">
+              <view class="card-cat-icon" :style="{ background: catLight(s.category) }">
+                <ZjIcon :name="catIcon(s.category)" :size="28" :color="catColor(s.category)" />
+              </view>
+              <text class="card-name">{{ s.name }}</text>
+            </view>
             <view class="card-right">
               <!-- Fav -->
-              <view :class="['fav-btn', favoriteIds.has(s.id) && 'fav-btn--on']" @click.stop="toggleFav(s.id)">
+              <view
+                :class="['fav-btn', favoriteIds.has(s.id) && 'fav-btn--on']"
+                role="button"
+                :aria-label="favoriteIds.has(s.id) ? '取消收藏' : '收藏'"
+                :aria-pressed="favoriteIds.has(s.id)"
+                @click.stop="toggleFav(s.id)"
+              >
                 <view class="fav-star" />
               </view>
               <!-- Badge -->
@@ -129,8 +144,8 @@
             <view class="meta-group">
               <text class="meta-txt">{{ s.totalQuestions }}题</text>
               <view class="meta-dot" />
-              <text class="meta-txt">{{ s.estimatedMinutes }}分钟</text>
-              <view class="meta-dot" />
+              <text v-if="s.estimatedMinutes" class="meta-txt">{{ s.estimatedMinutes }}分钟</text>
+              <view v-if="s.estimatedMinutes" class="meta-dot" />
               <text class="meta-txt">{{ s.usageCount }}次</text>
             </view>
             <text v-if="s.isPaid" class="meta-price">¥{{ (s.price / 100).toFixed(2) }}</text>
@@ -151,6 +166,7 @@ import { ref, computed, onMounted } from 'vue';
 import { assessmentApi } from '../../api/index.js';
 import { useUserStore } from '../../store/user.js';
 import { track } from '../../utils/track.js';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 // #ifndef H5
 defineOptions({
@@ -172,12 +188,12 @@ const TOP_GRADS = [
 ];
 
 const CAT = {
-  clinical:    { border: '#4A7BBA', light: '#EBF2FF' },
-  personality: { border: '#8468BE', light: '#F0EBFF' },
-  children:    { border: '#4A8A7A', light: '#E6F5F0' },
-  diagnostic:  { border: '#3A6E80', light: '#E4EDF2' },
-  psychiatric: { border: '#B85C78', light: '#FFECF0' },
-  fun:         { border: '#D8693A', light: '#FFF1EC' },
+  clinical:    { border: '#4A7BBA', light: '#EBF2FF', icon: 'stethoscope' },
+  personality: { border: '#8468BE', light: '#F0EBFF', icon: 'user' },
+  children:    { border: '#4A8A7A', light: '#E6F5F0', icon: 'baby' },
+  diagnostic:  { border: '#3A6E80', light: '#E4EDF2', icon: 'clipboard-list' },
+  psychiatric: { border: '#B85C78', light: '#FFECF0', icon: 'brain' },
+  fun:         { border: '#D8693A', light: '#FFF1EC', icon: 'candy' },
 };
 
 const CATEGORY_LABELS = {
@@ -195,6 +211,7 @@ const loading = ref(true);
 
 function catColor(cat) { return (CAT[cat] || CAT.clinical).border; }
 function catLight(cat) { return (CAT[cat] || CAT.clinical).light; }
+function catIcon(cat)  { return (CAT[cat] || CAT.clinical).icon; }
 function parsedScenarios(s) {
   try { return JSON.parse(s.scenarios || '[]'); } catch { return []; }
 }
@@ -288,24 +305,7 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
 }
 
 .hero-glow {
-  position: absolute;
-  top: -160rpx;
-  right: -100rpx;
-  width: 560rpx;
-  height: 480rpx;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,0.15) 0%, transparent 65%);
-  pointer-events: none;
-
-  &--b {
-    top: auto;
-    bottom: -200rpx;
-    left: -140rpx;
-    right: auto;
-    width: 400rpx;
-    height: 360rpx;
-    background: radial-gradient(ellipse at center, rgba(255,255,255,0.08) 0%, transparent 65%);
-  }
+  display: none;
 }
 
 .hero-content {
@@ -330,6 +330,7 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
   letter-spacing: 0.12em;
   line-height: 1.15;
   margin-bottom: 22rpx;
+  font-family: $zj-font-display;
 }
 
 .hero-sub {
@@ -386,7 +387,9 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
   flex-shrink: 0;
   overflow: hidden;
   position: relative;
+  transition: transform 0.2s $zj-ease-out, opacity 0.2s $zj-ease-out;
 
+  &:hover { transform: translateY(-3rpx); }
   &:active { transform: scale(0.97); opacity: 0.92; }
 }
 
@@ -480,6 +483,7 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
   white-space: nowrap;
   border: 1rpx solid $border;
   flex-shrink: 0;
+  transition: background 0.2s $zj-ease-out, color 0.2s $zj-ease-out;
 
   &--active {
     background: $teal;
@@ -488,6 +492,7 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
     font-weight: 600;
   }
 
+  &:hover { background: $teal-light; }
   &:active { opacity: 0.8; }
 }
 
@@ -513,10 +518,14 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
   padding: 26rpx 22rpx;
   border-bottom: 3rpx solid transparent;
   flex-shrink: 0;
+  transition: border-color 0.2s $zj-ease-out, color 0.2s $zj-ease-out;
 
   &--active {
     border-bottom-color: $teal;
   }
+
+  &:hover { color: $teal; }
+  &:active { opacity: 0.75; }
 }
 
 .tab-label {
@@ -547,14 +556,16 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
 .list { padding: 24rpx 28rpx; }
 
 .card {
-  background: $surface;
+  background: $zj-card-bg;
   border-radius: $r-card;
   border: 1rpx solid $border;
   box-shadow: $shadow-card;
   margin-bottom: 24rpx;
   overflow: hidden;
   position: relative;
+  transition: box-shadow 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
 
+  &:hover { transform: translateY(-2rpx); box-shadow: $zj-shadow-card-hover; }
   &:active { transform: scale(0.99); opacity: 0.96; }
 }
 
@@ -575,12 +586,26 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
   margin-bottom: 14rpx;
 }
 
+.card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  flex: 1;
+  padding-right: 16rpx;
+}
+
+.card-cat-icon {
+  width: 48rpx; height: 48rpx;
+  border-radius: 12rpx;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
 .card-name {
   font-size: 33rpx;
   font-weight: 700;
   color: $text-1;
   flex: 1;
-  padding-right: 16rpx;
   line-height: 1.45;
   letter-spacing: 0.02em;
 }

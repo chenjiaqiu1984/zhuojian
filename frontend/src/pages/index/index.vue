@@ -148,10 +148,15 @@ const menuGroups = ref([
       { path: '/pages/ohcard/index',      label: '心理图卡', icon: '/static/icons/grid/ohcard.svg',     color: '#3A6E80' },
       { path: '/pages/homework/index',    label: '咨询工具', icon: '/static/icons/grid/homework.svg',   color: '#3A6E80' },
       { path: '/pages/learning/index',    label: '学习进阶', icon: '/static/icons/grid/learning.svg',   color: '#3A6E80' },
-      { path: '/pages/monster/index',     label: '心里怪兽', icon: '/static/icons/grid/monster.svg',    color: '#7B4E9E' },
+    ],
+  },
+  {
+    label: '解压游戏',
+    items: [
       { path: '/pages/mandala/index',     label: '曼达拉',   icon: '/static/icons/grid/mandala.svg',    color: '#3A6E80' },
-      { path: '/pages/breathing/index',   label: '正念呼吸', icon: '/static/icons/grid/breathing.svg',  color: '#3A6E80' },
-      { path: '/pages/squeeze/index',     label: '解压捏捏乐', icon: '/static/icons/grid/squeeze.svg',   color: '#7B4E9E' },
+      { path: '/pages/breathing/select',   label: '正念呼吸', icon: '/static/icons/grid/breathing.svg',  color: '#3A6E80' },
+      { path: '/pages/monster/index',     label: '情绪怪兽', icon: '/static/icons/grid/monster.svg',    color: '#3A6E80' },
+      { path: '/pages/squeeze/index',     label: '解压捏捏乐', icon: '/static/icons/grid/squeeze.svg',  color: '#3A6E80' },
     ],
   },
 ]);
@@ -228,14 +233,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   background: linear-gradient(135deg, $teal 0%, $teal-dark 100%);
 }
 .hero-glow {
-  position: absolute;
-  top: -160rpx;
-  right: -120rpx;
-  width: 600rpx;
-  height: 520rpx;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,0.16) 0%, transparent 64%);
-  pointer-events: none;
+  display: none;
 }
 .hero-content {
   position: relative;
@@ -256,7 +254,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   letter-spacing: 0.04em;
   line-height: 1.25;
   margin-bottom: 24rpx;
-  font-family: "Noto Serif SC", serif;
+  font-family: $zj-font-display;
 }
 .hero-title-em {
   color: rgba(255,255,255,0.78);
@@ -427,13 +425,15 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   align-items: center;
   gap: 10rpx;
   padding: 28rpx 24rpx 24rpx;
-  background: #fff;
+  background: $zj-card-bg;
   border-radius: $card-r;
   border: 1rpx solid $border;
   border-top: 4rpx solid $teal;
   box-shadow: $card-shadow;
   width: 220rpx;
   flex-shrink: 0;
+  transition: box-shadow 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
+  &:hover { transform: translateY(-2rpx); box-shadow: $zj-shadow-card-hover; }
   &:active { transform: scale(0.98); }
 }
 .c-avatar-wrap { position: relative; }
@@ -504,12 +504,13 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   display: flex;
   align-items: center;
   gap: 20rpx;
-  background: #fff;
+  background: $zj-card-bg;
   border-radius: $card-r;
   border: 1rpx solid $border;
-  border-left: 5rpx solid $teal;
   box-shadow: $card-shadow;
   padding: 28rpx 28rpx 28rpx 24rpx;
+  transition: box-shadow 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
+  &:hover { transform: translateY(-2rpx); box-shadow: $zj-shadow-card-hover; }
   &:active { transform: scale(0.99); }
 }
 .news-info {

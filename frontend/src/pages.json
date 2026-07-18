@@ -42,6 +42,7 @@
     { "path": "pages/mandala/index",       "style": { "navigationBarTitleText": "曼达拉" } },
     { "path": "pages/mandala/draw",        "style": { "navigationBarTitleText": "曼达拉创作" } },
     { "path": "pages/mandala/gallery",     "style": { "navigationBarTitleText": "我的画廊" } },
+    { "path": "pages/breathing/select",    "style": { "navigationBarTitleText": "正念呼吸" } },
     { "path": "pages/breathing/index",     "style": { "navigationBarTitleText": "正念呼吸球" } },
     { "path": "pages/squeeze/index",       "style": { "navigationBarTitleText": "解压捏捏乐" } }
   ],

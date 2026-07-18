@@ -57,6 +57,20 @@
 <script setup>
 import { ref, computed, nextTick } from 'vue';
 import { onLoad, onReady } from '@dcloudio/uni-app';
+
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    const pages = getCurrentPages();
+    const vm = pages[pages.length - 1]?.$vm;
+    const title = vm?.sel?.title || '场景选卡';
+    return { title: `我在用「${title}」探索此刻的状态，快来试试`, path: '/pages/ohcard/index' };
+  },
+  onShareTimeline() {
+    return { title: '卓见心理图卡 — 场景选卡，找到属于你的答案' };
+  },
+});
+// #endif
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { SERVER } from '../../config';

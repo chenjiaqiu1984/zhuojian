@@ -107,17 +107,21 @@ import CrisisAlert from '../../components/CrisisAlert.vue';
 defineOptions({
   onShareAppMessage() {
     const pages = getCurrentPages();
-    const name = pages[pages.length - 1]?.$vm?.scaleName;
+    const vm = pages[pages.length - 1]?.$vm;
+    const name = vm?.scaleName;
+    const isFun = vm?.isFunQuiz;
     const title = name
-      ? `我完成了「${name}」测评，快来试试`
+      ? (isFun ? `我刚测了「${name}」，快来看看你的结果` : `我完成了「${name}」专业测评，快来了解自己`)
       : '我完成了一项心理测评，快来试试';
     return { title, path: `/pages/assessment/index` };
   },
   onShareTimeline() {
     const pages = getCurrentPages();
-    const name = pages[pages.length - 1]?.$vm?.scaleName;
+    const vm = pages[pages.length - 1]?.$vm;
+    const name = vm?.scaleName;
+    const isFun = vm?.isFunQuiz;
     const title = name
-      ? `我完成了「${name}」测评 — 卓见心理`
+      ? (isFun ? `我测了「${name}」— 卓见心理` : `我完成了「${name}」测评 — 卓见心理`)
       : '卓见心理测评 — 了解真实的自己';
     return { title };
   },

@@ -281,7 +281,7 @@ onMounted(async () => {
   letter-spacing: 0.06em;
   line-height: 1.18;
   margin-bottom: 24rpx;
-  font-family: $zj-font-serif;
+  font-family: $zj-font-display;
 }
 
 .hero-sub {
@@ -332,17 +332,16 @@ onMounted(async () => {
   margin-bottom: 18rpx;
   padding: 28rpx 24rpx;
   border-radius: $zj-radius-card;
-  background: $zj-surface;
+  background: $zj-card-bg;
   border: 1rpx solid $zj-border;
   box-shadow: $zj-shadow-card;
   display: flex;
   align-items: center;
   gap: 20rpx;
-  transition: transform 120ms $zj-ease-out;
+  transition: box-shadow 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
 
-  &:active {
-    transform: scale(0.98);
-  }
+  &:hover { transform: translateY(-2rpx); box-shadow: $zj-shadow-card-hover; }
+  &:active { transform: scale(0.98); }
 
   &:focus-visible {
     outline: 2px solid $zj-teal;

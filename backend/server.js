@@ -19,7 +19,13 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,h
   .split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    if (!origin) return cb(null, true);
+    // 开发环境放行所有 localhost（任意端口）
+    if (process.env.NODE_ENV !== 'production' && /^http:\/\/localhost:\d+$/.test(origin)) {
+      return cb(null, true);
+    }
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    console.warn('[CORS blocked] origin:', origin);
     cb(new Error('Not allowed by CORS'));
   },
   credentials: true,

@@ -51,7 +51,7 @@
     </view>
 
     <!-- 空状态 -->
-    <view v-else-if="monsters.length === 0" class="empty-wrap">
+    <view v-else-if="monsters.length === 0" class="empty-wrap fade-in">
       <view class="empty-circle">
         <ZjIcon class="empty-emoji" name="paw-print" :size="96" color="#9BBCB4" />
       </view>
@@ -63,7 +63,7 @@
     </view>
 
     <!-- 怪兽网格 -->
-    <view v-else class="grid-wrap">
+    <view v-else class="grid-wrap fade-in">
       <view
         class="monster-card"
         v-for="(m, idx) in monsters"
@@ -225,6 +225,15 @@ $white: #FFFFFF;
   padding-bottom: 140rpx;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8rpx); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s $zj-ease-out both;
+}
+
 /* Hero */
 .hero {
   position: relative;
@@ -233,16 +242,10 @@ $white: #FFFFFF;
   background: linear-gradient(155deg, #7B4E9E 0%, #4A2870 100%);
 }
 .hero-glow {
-  position: absolute; top: -160rpx; right: -120rpx;
-  width: 560rpx; height: 480rpx; border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,0.14) 0%, transparent 66%);
-  pointer-events: none;
+  display: none;
 }
 .hero-blob {
-  position: absolute; bottom: -80rpx; left: -60rpx;
-  width: 300rpx; height: 300rpx; border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, transparent 70%);
-  pointer-events: none;
+  display: none;
 }
 .hero-content { position: relative; z-index: 1; text-align: center; }
 .hero-eyebrow {
@@ -252,7 +255,7 @@ $white: #FFFFFF;
 .hero-title {
   display: block; font-size: 66rpx; font-weight: 600; color: #FFFFFF;
   letter-spacing: 0.06em; line-height: 1.18; margin-bottom: 24rpx;
-  font-family: "Noto Serif SC", serif;
+  font-family: $zj-font-display;
 }
 .hero-sub {
   display: block; font-size: 26rpx; color: rgba(255,255,255,0.78);
@@ -439,6 +442,12 @@ $white: #FFFFFF;
   width: 100%; height: 180rpx; border-radius: 16rpx;
   background: linear-gradient(90deg, #EDE5F5 25%, #F5EFF9 50%, #EDE5F5 75%);
   background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 .skeleton-line {
   height: 20rpx; border-radius: 10rpx; background: #EDE5F5;
@@ -468,6 +477,8 @@ $white: #FFFFFF;
   margin-top: 12rpx; padding: 26rpx 56rpx;
   background: linear-gradient(135deg, #7B4E9E 0%, #4A2870 100%);
   border-radius: 50rpx; box-shadow: 0 8rpx 24rpx rgba(123,78,158,0.30);
+  transition: opacity 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
+  &:hover { opacity: 0.90; }
   &:active { transform: scale(0.97); }
 }
 .empty-btn-text { font-size: 28rpx; font-weight: 600; color: white; }
@@ -479,9 +490,11 @@ $white: #FFFFFF;
 }
 
 .monster-card {
-  background: $white; border-radius: 24rpx; overflow: hidden;
+  background: $zj-card-bg; border-radius: 24rpx; overflow: hidden;
   box-shadow: 0 4rpx 20rpx rgba(74,40,112,0.08);
   border: 1rpx solid $purple-light; position: relative;
+  transition: box-shadow 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
+  &:hover { transform: translateY(-2rpx); box-shadow: 0 8rpx 32rpx rgba(74,40,112,0.16); }
   &:active { transform: scale(0.97); }
 }
 
@@ -578,6 +591,8 @@ $white: #FFFFFF;
   background: linear-gradient(135deg, #7B4E9E 0%, #4A2870 100%);
   box-shadow: 0 8rpx 28rpx rgba(123,78,158,0.40);
   display: flex; align-items: center; justify-content: center; z-index: 100;
+  transition: opacity 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
+  &:hover { opacity: 0.90; }
   &:active { transform: scale(0.92); }
 }
 .fab-icon { font-size: 54rpx; color: white; font-weight: 300; line-height: 1; margin-top: -4rpx; }

@@ -107,6 +107,27 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    const pages = getCurrentPages();
+    const vm = pages[pages.length - 1]?.$vm;
+    const name = vm?.scale?.name || '心理测评';
+    const isFun = vm?.scale?.category === 'fun';
+    const title = isFun
+      ? `我刚测了「${name}」，快来看看你的结果`
+      : `我正在做「${name}」专业测评，快来了解自己`;
+    return { title, path: '/pages/assessment/index' };
+  },
+  onShareTimeline() {
+    const pages = getCurrentPages();
+    const vm = pages[pages.length - 1]?.$vm;
+    const isFun = vm?.scale?.category === 'fun';
+    return { title: isFun ? '卓见心理趣味测评 — 轻松了解自己' : '卓见心理专业测评 — 科学认识自我' };
+  },
+});
+// #endif
 import { onShow } from '@dcloudio/uni-app';
 import { assessmentApi } from '../../api/index.js';
 import ZjIcon from '../../components/ZjIcon.vue';

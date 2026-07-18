@@ -62,17 +62,19 @@
     <!-- 底部工具面板 -->
     <view class="toolbar">
       <!-- 笔触模式行 -->
-      <view class="mode-row">
-        <view
-          v-for="m in MODES" :key="m.key"
-          class="mode-btn"
-          :class="{ active: drawMode === m.key }"
-          @click="setDrawMode(m.key)"
-        >
-          <text class="mode-icon">{{ m.icon }}</text>
-          <text class="mode-label">{{ m.label }}</text>
+      <scroll-view scroll-x class="mode-scroll">
+        <view class="mode-row">
+          <view
+            v-for="m in MODES" :key="m.key"
+            class="mode-btn"
+            :class="{ active: drawMode === m.key }"
+            @click="setDrawMode(m.key)"
+          >
+            <text class="mode-icon">{{ m.icon }}</text>
+            <text class="mode-label">{{ m.label }}</text>
+          </view>
         </view>
-      </view>
+      </scroll-view>
 
       <!-- 颜色行 -->
       <scroll-view scroll-x class="color-scroll">
@@ -90,15 +92,17 @@
       <!-- 操作行 -->
       <view class="action-row">
         <!-- 画笔大小 -->
-        <view class="size-group">
-          <view
-            v-for="s in SIZES" :key="s"
-            class="size-dot"
-            :class="{ selected: brushSize === s && !isEraser }"
-            :style="{ width: s * 4 + 'rpx', height: s * 4 + 'rpx', background: brushColor }"
-            @click="pickSize(s)"
-          />
-        </view>
+        <scroll-view scroll-x class="size-scroll">
+          <view class="size-group">
+            <view
+              v-for="s in SIZES" :key="s"
+              class="size-dot"
+              :class="{ selected: brushSize === s && !isEraser }"
+              :style="{ width: s * 3 + 'rpx', height: s * 3 + 'rpx', minWidth: s * 3 + 'rpx', background: brushColor }"
+              @click="pickSize(s)"
+            />
+          </view>
+        </scroll-view>
 
         <view class="divider-v" />
 
@@ -120,12 +124,12 @@
         <view class="divider-v" />
 
         <!-- 清空 -->
-        <view class="tool-btn" @click="clearCanvas">
+        <view class="tool-btn tool-btn--outline" @click="clearCanvas">
           <text class="tool-icon">🗑</text>
         </view>
 
         <!-- 重新开始 -->
-        <view class="tool-btn" @click="resetCanvas">
+        <view class="tool-btn tool-btn--danger" @click="resetCanvas">
           <text class="tool-icon">↺</text>
         </view>
 
@@ -149,11 +153,16 @@ const COLORS = [
   '#3A8AC9', '#6A5ACD', '#C45AB3', '#F48FB1', '#FFFFFF',
   '#D4A76A', '#8B5E3C', '#4A4A4A', '#1C1C1C',
 ];
-const SIZES = [3, 6, 10, 16];
+const SIZES = [1, 2, 3, 5, 8, 12, 18, 26];
 const MODES = [
-  { key: 'free', icon: '✏️', label: '自由' },
-  { key: 'line', icon: '╱', label: '直线' },
-  { key: 'arc',  icon: '◠', label: '弧线' },
+  { key: 'free',      icon: '✏️', label: '自由' },
+  { key: 'line',      icon: '╱',  label: '直线' },
+  { key: 'arc',       icon: '◠',  label: '弧线' },
+  { key: 'rect',      icon: '▭',  label: '矩形' },
+  { key: 'square',    icon: '□',  label: '正方' },
+  { key: 'diamond',   icon: '◇',  label: '菱形' },
+  { key: 'circle',    icon: '○',  label: '圆形' },
+  { key: 'semicircle',icon: '◑',  label: '半圆' },
 ];
 const BG_COLOR = '#FDF8F2';
 const MIN_SCALE = 0.5;
@@ -219,25 +228,29 @@ onUnmounted(() => { ctx = null; });
 
 // ── 初始化 ──
 function initCanvas() {
-  // #ifdef H5
-  const el = document.getElementById('mandalaCanvas');
-  if (el) {
-    canvasSize = { w: el.offsetWidth, h: el.offsetHeight };
-    canvasRect = el.getBoundingClientRect();
-  }
-  // #endif
-  // #ifdef MP-WEIXIN
-  const query = uni.createSelectorQuery();
-  query.select('#mandalaCanvas').boundingClientRect(rect => {
-    if (rect) {
-      canvasSize = { w: rect.width, h: rect.height };
-      canvasRect = rect;
+  try {
+    // #ifdef H5
+    const el = document.getElementById('mandalaCanvas');
+    if (el) {
+      canvasSize = { w: el.offsetWidth, h: el.offsetHeight };
+      canvasRect = el.getBoundingClientRect();
     }
-  }).exec();
-  // #endif
-  ctx = uni.createCanvasContext('mandalaCanvas');
-  drawBackground();
-  ctx.draw();
+    // #endif
+    // #ifdef MP-WEIXIN
+    const query = uni.createSelectorQuery();
+    query.select('#mandalaCanvas').boundingClientRect(rect => {
+      if (rect) {
+        canvasSize = { w: rect.width, h: rect.height };
+        canvasRect = rect;
+      }
+    }).exec();
+    // #endif
+    ctx = uni.createCanvasContext('mandalaCanvas');
+    drawBackground();
+    ctx.draw();
+  } catch (e) {
+    uni.showToast({ title: '画布加载失败，请重试', icon: 'none' });
+  }
 }
 
 // 刷新 canvasRect（每次手势开始时调用以获取最新位置）
@@ -257,33 +270,36 @@ function refreshCanvasRect(cb) {
 }
 
 // ── 坐标变换 ──
-// 将屏幕坐标（相对于 gesture-layer，即 canvas-box）转为 canvas 原始坐标系
-function toCanvasCoord(screenX, screenY) {
-  if (!canvasRect) return { x: screenX, y: screenY };
+// 将绝对屏幕坐标转为 canvas 原始坐标系
+function toCanvasCoord(clientX, clientY) {
+  if (!canvasRect) return { x: clientX, y: clientY };
   const { scale, offsetX, offsetY } = transform.value;
-  // canvas 中心在 canvasRect 中的位置
   const cx = canvasRect.width  / 2;
   const cy = canvasRect.height / 2;
-  // 反变换：先减去 canvas box 左上角（gesture-layer 与 canvas-box 同尺寸），
-  // 再反算 transform
-  const localX = screenX - canvasRect.left;
-  const localY = screenY - canvasRect.top;
-  // canvas transform: scale(scale) translate(offsetX, offsetY)，origin=center
-  // 正变换: p' = (p - center) * scale + center + scale*offset
-  // 反变换: p  = (p' - center) / scale - offset + center
+  // 转为相对 canvas-box 的局部坐标
+  const localX = clientX - canvasRect.left;
+  const localY = clientY - canvasRect.top;
+  // 反算 CSS transform: scale(s) translate(ox, oy)，origin=center
+  // 正变换: local' = (local - center) * s + center + s * offset
+  // 反变换: local  = (local' - center) / s - offset + center
   const x = (localX - cx) / scale - offsetX + cx;
   const y = (localY - cy) / scale - offsetY + cy;
-  return { x, y };
+  // 映射到 canvas 像素坐标（canvas-box 尺寸 vs canvas 逻辑尺寸）
+  const scaleX = canvasSize.w / canvasRect.width;
+  const scaleY = canvasSize.h / canvasRect.height;
+  return { x: x * scaleX, y: y * scaleY };
 }
 
-// gesture-layer 上的相对坐标（直接相对于 canvas-box 左上角）
-function getTouchRelPos(touch) {
-  // #ifdef H5
-  if (canvasRect) {
-    return { x: touch.clientX - canvasRect.left, y: touch.clientY - canvasRect.top };
+// 从 touch/mouse 事件提取绝对屏幕坐标
+function getClientPos(touchOrEvent) {
+  if (touchOrEvent.clientX !== undefined) {
+    return { x: touchOrEvent.clientX, y: touchOrEvent.clientY };
   }
-  // #endif
-  return { x: touch.x, y: touch.y };
+  // 小程序 touch：x/y 是相对页面坐标，需加上 canvasRect 的 top/left 偏移
+  // 实际上小程序 touch.pageX/pageY 最可靠
+  const px = touchOrEvent.pageX ?? touchOrEvent.x ?? 0;
+  const py = touchOrEvent.pageY ?? touchOrEvent.y ?? 0;
+  return { x: px, y: py };
 }
 
 // ── 触摸事件 ──
@@ -291,7 +307,6 @@ function onTouchStart(e) {
   refreshCanvasRect(() => {
     const touches = e.touches;
     if (touches.length === 2) {
-      // 双指捏合缩放
       clearPanTimer();
       isPanMode = false;
       currentPath = null;
@@ -299,16 +314,13 @@ function onTouchStart(e) {
       lastPinchMid  = getPinchMid(touches);
       return;
     }
-    // 单指
     lastPinchDist = null;
     const t = touches[0];
-    const relPos = getTouchRelPos(t);
-    const canvasPos = toCanvasCoord(relPos.x + (canvasRect ? canvasRect.left : 0),
-                                    relPos.y + (canvasRect ? canvasRect.top  : 0));
+    const client = getClientPos(t);
+    const canvasPos = toCanvasCoord(client.x, client.y);
 
-    // 延迟判断平移：200ms 内不移动则进入平移
-    panStartTouch = { ...relPos };
-    lastPanTouch  = { ...relPos };
+    panStartTouch = { ...client };
+    lastPanTouch  = { ...client };
     panTimer = setTimeout(() => {
       isPanMode = true;
       panTimer  = null;
@@ -322,47 +334,38 @@ function onTouchMove(e) {
   const touches = e.touches;
 
   if (touches.length === 2 && lastPinchDist !== null) {
-    // 双指缩放
     clearPanTimer();
     isPanMode = false;
     const newDist = getPinchDist(touches);
-    const newMid  = getPinchMid(touches);
-    const ratio   = newDist / lastPinchDist;
-    const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, transform.value.scale * ratio));
+    const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, transform.value.scale * newDist / lastPinchDist));
     transform.value = { ...transform.value, scale: newScale };
     lastPinchDist = newDist;
-    lastPinchMid  = newMid;
     return;
   }
 
   if (touches.length === 1) {
     const t = touches[0];
-    const relPos = getTouchRelPos(t);
+    const client = getClientPos(t);
 
     if (isPanMode) {
-      // 平移模式
-      const dx = (relPos.x - lastPanTouch.x) / transform.value.scale;
-      const dy = (relPos.y - lastPanTouch.y) / transform.value.scale;
+      const dx = (client.x - lastPanTouch.x) / transform.value.scale;
+      const dy = (client.y - lastPanTouch.y) / transform.value.scale;
       transform.value = {
         ...transform.value,
         offsetX: transform.value.offsetX + dx,
         offsetY: transform.value.offsetY + dy,
       };
-      lastPanTouch = { ...relPos };
+      lastPanTouch = { ...client };
       return;
     }
 
-    // 检测是否移动超过阈值，若超过则取消平移计时
     if (panTimer && panStartTouch) {
-      const dx = relPos.x - panStartTouch.x;
-      const dy = relPos.y - panStartTouch.y;
-      if (Math.sqrt(dx * dx + dy * dy) > 5) {
-        clearPanTimer();
-      }
+      const dx = client.x - panStartTouch.x;
+      const dy = client.y - panStartTouch.y;
+      if (Math.sqrt(dx * dx + dy * dy) > 5) clearPanTimer();
     }
 
-    const canvasPos = toCanvasCoord(relPos.x + (canvasRect ? canvasRect.left : 0),
-                                    relPos.y + (canvasRect ? canvasRect.top  : 0));
+    const canvasPos = toCanvasCoord(client.x, client.y);
     handleDrawMove(canvasPos);
   }
 }
@@ -371,9 +374,7 @@ function onTouchEnd(e) {
   clearPanTimer();
   isPanMode     = false;
   lastPinchDist = null;
-  if (e.touches.length === 0) {
-    handleDrawEnd();
-  }
+  if (e.touches.length === 0) handleDrawEnd();
 }
 
 // ── 鼠标事件（H5）──
@@ -418,13 +419,14 @@ function resetTransform() {
 }
 
 // ── 绘画逻辑分派 ──
+const SHAPE_MODES = new Set(['rect', 'square', 'diamond', 'circle', 'semicircle']);
+
 function handleDrawStart(pos) {
   if (drawMode.value === 'free') {
     startFreePath(pos);
   } else if (drawMode.value === 'line') {
     previewStart   = pos;
     previewCurrent = pos;
-    // 先不提交，等 end 时提交
     currentPath = null;
   } else if (drawMode.value === 'arc') {
     if (arcState === 0) {
@@ -433,16 +435,16 @@ function handleDrawStart(pos) {
       arcState  = 1;
       previewCurrent = pos;
     } else if (arcState === 1) {
-      // 第二次点击确认终点
-      arcEnd   = pos;
+      arcEnd = pos;
       const ctrl = midPoint(arcStart, pos);
       commitArcPath(arcStart, ctrl, arcEnd);
-      arcState  = 0;
-      arcStart  = null;
-      arcEnd    = null;
-      previewStart   = null;
-      previewCurrent = null;
+      arcState = 0; arcStart = null; arcEnd = null;
+      previewStart = null; previewCurrent = null;
     }
+  } else if (SHAPE_MODES.has(drawMode.value)) {
+    previewStart   = pos;
+    previewCurrent = pos;
+    currentPath = null;
   }
 }
 
@@ -450,15 +452,11 @@ function handleDrawMove(pos) {
   if (drawMode.value === 'free') {
     addFreePoint(pos);
   } else if (drawMode.value === 'line') {
-    if (previewStart) {
-      previewCurrent = pos;
-      redrawCanvas(true);
-    }
+    if (previewStart) { previewCurrent = pos; redrawCanvas(true); }
   } else if (drawMode.value === 'arc') {
-    if (arcState === 1 && arcStart) {
-      previewCurrent = pos;
-      redrawCanvas(true);
-    }
+    if (arcState === 1 && arcStart) { previewCurrent = pos; redrawCanvas(true); }
+  } else if (SHAPE_MODES.has(drawMode.value)) {
+    if (previewStart) { previewCurrent = pos; redrawCanvas(true); }
   }
 }
 
@@ -466,13 +464,12 @@ function handleDrawEnd() {
   if (drawMode.value === 'free') {
     endFreePath();
   } else if (drawMode.value === 'line') {
-    if (previewStart && previewCurrent) {
-      commitLinePath(previewStart, previewCurrent);
-    }
-    previewStart   = null;
-    previewCurrent = null;
+    if (previewStart && previewCurrent) commitLinePath(previewStart, previewCurrent);
+    previewStart = null; previewCurrent = null;
+  } else if (SHAPE_MODES.has(drawMode.value)) {
+    if (previewStart && previewCurrent) commitShapePath(drawMode.value, previewStart, previewCurrent);
+    previewStart = null; previewCurrent = null;
   }
-  // arc 模式：end 在第二次 start 时处理，这里不做额外操作
 }
 
 // ── 自由笔触 ──
@@ -500,7 +497,19 @@ function endFreePath() {
   pushUndo();
 }
 
-// ── 直线提交 ──
+// ── 图形提交 ──
+function commitShapePath(type, start, end) {
+  paths.push({
+    type,
+    color:  isEraser.value ? BG_COLOR : brushColor.value,
+    width:  isEraser.value ? brushSize.value * 4 : brushSize.value,
+    eraser: isEraser.value,
+    points: [start, end],
+  });
+  redoStack.value = [];
+  pushUndo();
+  redrawCanvas(false);
+}
 function commitLinePath(start, end) {
   paths.push({
     type:   'line',
@@ -564,6 +573,8 @@ function drawPath(path) {
   const cx    = canvasSize.w / 2;
   const cy    = canvasSize.h / 2;
   const count = symmetry.value ? symmetryCount.value : 1;
+  // 线宽不跟随缩放变化：除以当前 scale
+  const lw = path.width / transform.value.scale;
 
   if (path.type === 'free') {
     if (path.points.length < 2) return;
@@ -571,7 +582,7 @@ function drawPath(path) {
       const angle = (Math.PI * 2 * seg) / count;
       ctx.beginPath();
       ctx.strokeStyle = path.color;
-      ctx.lineWidth   = path.width;
+      ctx.lineWidth   = lw;
       ctx.lineCap     = 'round';
       ctx.lineJoin    = 'round';
       const first = rotatePoint(path.points[0], cx, cy, angle);
@@ -588,7 +599,7 @@ function drawPath(path) {
       const angle = (Math.PI * 2 * seg) / count;
       ctx.beginPath();
       ctx.strokeStyle = path.color;
-      ctx.lineWidth   = path.width;
+      ctx.lineWidth   = lw;
       ctx.lineCap     = 'round';
       const p0 = rotatePoint(path.points[0], cx, cy, angle);
       const p1 = rotatePoint(path.points[1], cx, cy, angle);
@@ -602,7 +613,7 @@ function drawPath(path) {
       const angle = (Math.PI * 2 * seg) / count;
       ctx.beginPath();
       ctx.strokeStyle = path.color;
-      ctx.lineWidth   = path.width;
+      ctx.lineWidth   = lw;
       ctx.lineCap     = 'round';
       const p0 = rotatePoint(path.points[0], cx, cy, angle);
       const p1 = rotatePoint(path.points[1], cx, cy, angle);
@@ -611,24 +622,36 @@ function drawPath(path) {
       ctx.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
       ctx.stroke();
     }
+  } else if (SHAPE_MODES.has(path.type)) {
+    if (path.points.length < 2) return;
+    for (let seg = 0; seg < count; seg++) {
+      const angle = (Math.PI * 2 * seg) / count;
+      ctx.beginPath();
+      ctx.strokeStyle = path.color;
+      ctx.lineWidth   = lw;
+      ctx.lineCap     = 'round';
+      ctx.lineJoin    = 'round';
+      drawShape(ctx, path.type, path.points[0], path.points[1], cx, cy, angle);
+      ctx.stroke();
+    }
   }
 }
 
-// 绘制预览线（直线/弧线 move 时）
+// 绘制预览线（直线/弧线/图形 move 时）
 function drawPreview() {
   if (!ctx) return;
   const cx    = canvasSize.w / 2;
   const cy    = canvasSize.h / 2;
   const count = symmetry.value ? symmetryCount.value : 1;
   const color = isEraser.value ? BG_COLOR : brushColor.value;
-  const width = isEraser.value ? brushSize.value * 4 : brushSize.value;
+  const lw    = (isEraser.value ? brushSize.value * 4 : brushSize.value) / transform.value.scale;
 
   if (drawMode.value === 'line' && previewStart && previewCurrent) {
     for (let seg = 0; seg < count; seg++) {
       const angle = (Math.PI * 2 * seg) / count;
       ctx.beginPath();
       ctx.strokeStyle = color;
-      ctx.lineWidth   = width;
+      ctx.lineWidth   = lw;
       ctx.lineCap     = 'round';
       ctx.setLineDash([6, 4]);
       const p0 = rotatePoint(previewStart,   cx, cy, angle);
@@ -644,17 +667,101 @@ function drawPreview() {
       const angle = (Math.PI * 2 * seg) / count;
       ctx.beginPath();
       ctx.strokeStyle = color;
-      ctx.lineWidth   = width;
+      ctx.lineWidth   = lw;
       ctx.lineCap     = 'round';
       ctx.setLineDash([6, 4]);
-      const p0 = rotatePoint(arcStart,      cx, cy, angle);
-      const p1 = rotatePoint(ctrl,          cx, cy, angle);
+      const p0 = rotatePoint(arcStart,       cx, cy, angle);
+      const p1 = rotatePoint(ctrl,           cx, cy, angle);
       const p2 = rotatePoint(previewCurrent, cx, cy, angle);
       ctx.moveTo(p0.x, p0.y);
       ctx.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
       ctx.stroke();
       ctx.setLineDash([]);
     }
+  } else if (SHAPE_MODES.has(drawMode.value) && previewStart && previewCurrent) {
+    for (let seg = 0; seg < count; seg++) {
+      const angle = (Math.PI * 2 * seg) / count;
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = lw;
+      ctx.lineCap     = 'round';
+      ctx.lineJoin    = 'round';
+      ctx.setLineDash([6, 4]);
+      drawShape(ctx, drawMode.value, previewStart, previewCurrent, cx, cy, angle);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+// ── 图形绘制辅助 ──
+function drawShape(c, type, start, end, cx, cy, rotAngle) {
+  // 先在原始坐标系计算图形顶点，再旋转
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+
+  if (type === 'rect') {
+    // 矩形：start 为一角，end 为对角
+    const pts = [
+      { x: start.x,       y: start.y },
+      { x: start.x + dx,  y: start.y },
+      { x: start.x + dx,  y: start.y + dy },
+      { x: start.x,       y: start.y + dy },
+    ];
+    const rpts = pts.map(p => rotatePoint(p, cx, cy, rotAngle));
+    c.moveTo(rpts[0].x, rpts[0].y);
+    rpts.slice(1).forEach(p => c.lineTo(p.x, p.y));
+    c.closePath();
+
+  } else if (type === 'square') {
+    // 正方形：以 start 为中心，dx 决定半边长
+    const half = Math.max(Math.abs(dx), Math.abs(dy)) / 2;
+    const mx   = (start.x + end.x) / 2;
+    const my   = (start.y + end.y) / 2;
+    const pts  = [
+      { x: mx - half, y: my - half },
+      { x: mx + half, y: my - half },
+      { x: mx + half, y: my + half },
+      { x: mx - half, y: my + half },
+    ];
+    const rpts = pts.map(p => rotatePoint(p, cx, cy, rotAngle));
+    c.moveTo(rpts[0].x, rpts[0].y);
+    rpts.slice(1).forEach(p => c.lineTo(p.x, p.y));
+    c.closePath();
+
+  } else if (type === 'diamond') {
+    // 菱形：以 start 为中心，dx/dy 为半轴
+    const mx  = (start.x + end.x) / 2;
+    const my  = (start.y + end.y) / 2;
+    const rx  = Math.abs(dx) / 2;
+    const ry  = Math.abs(dy) / 2;
+    const pts = [
+      { x: mx,      y: my - ry },
+      { x: mx + rx, y: my },
+      { x: mx,      y: my + ry },
+      { x: mx - rx, y: my },
+    ];
+    const rpts = pts.map(p => rotatePoint(p, cx, cy, rotAngle));
+    c.moveTo(rpts[0].x, rpts[0].y);
+    rpts.slice(1).forEach(p => c.lineTo(p.x, p.y));
+    c.closePath();
+
+  } else if (type === 'circle') {
+    // 圆形：以 start 为圆心，距离为半径
+    const r   = Math.sqrt(dx * dx + dy * dy);
+    const rc  = rotatePoint(start, cx, cy, rotAngle);
+    // 旋转后圆心画圆（圆不需要旋转顶点）
+    c.arc(rc.x, rc.y, r, 0, Math.PI * 2);
+
+  } else if (type === 'semicircle') {
+    // 半圆：start 为圆心，end 决定半径和朝向
+    const r     = Math.sqrt(dx * dx + dy * dy);
+    const baseAngle = Math.atan2(dy, dx);
+    const rc    = rotatePoint(start, cx, cy, rotAngle);
+    // 旋转后的朝向角度
+    const startA = baseAngle + rotAngle;
+    c.arc(rc.x, rc.y, r, startA, startA + Math.PI);
+    c.closePath();
   }
 }
 
@@ -709,7 +816,6 @@ function setSymmetryCount(n) {
 // ── 模式切换 ──
 function setDrawMode(mode) {
   drawMode.value = mode;
-  // 重置弧线状态
   arcState  = 0;
   arcStart  = null;
   arcEnd    = null;
@@ -750,6 +856,28 @@ function clearCanvas() {
       arcState    = 0;
       arcStart    = null;
       redoStack.value = [];
+      redrawCanvas(false);
+    },
+  });
+}
+
+// ── 重新开始 ──
+function resetCanvas() {
+  uni.showModal({
+    title: '重新开始',
+    content: '将清空所有笔迹并恢复初始画布，确定吗？',
+    success: (res) => {
+      if (!res.confirm) return;
+      paths           = [];
+      currentPath     = null;
+      arcState        = 0;
+      arcStart        = null;
+      arcEnd          = null;
+      previewStart    = null;
+      previewCurrent  = null;
+      undoStack.value = [];
+      redoStack.value = [];
+      transform.value = { scale: 1.0, offsetX: 0, offsetY: 0 };
       redrawCanvas(false);
     },
   });
@@ -999,14 +1127,19 @@ $toolbar-bg:  #FFFFFF;
 }
 
 /* 笔触模式行 */
+.mode-scroll {
+  width: 100%;
+  margin-bottom: 14rpx;
+}
+
 .mode-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  margin-bottom: 14rpx;
+  gap: 8rpx;
   background: #F0F4F3;
   border-radius: 24rpx;
   padding: 6rpx 10rpx;
+  white-space: nowrap;
 }
 
 .mode-btn {
@@ -1084,6 +1217,12 @@ $toolbar-bg:  #FFFFFF;
   align-items: center;
   gap: 10rpx;
   padding: 0 4rpx;
+  white-space: nowrap;
+}
+
+.size-scroll {
+  flex: 1;
+  min-width: 0;
 }
 
 .size-dot {
@@ -1122,6 +1261,18 @@ $toolbar-bg:  #FFFFFF;
   &.active  { background: #D0EBE8; }
   &.disabled { opacity: 0.35; }
   &:active:not(.disabled) { transform: scale(0.93); }
+
+  // 清空按钮：描边风格，弱化视觉权重
+  &--outline {
+    background: transparent;
+    border: 1rpx solid #C8D8D2;
+  }
+
+  // 重置按钮：轻红色，提示危险操作
+  &--danger {
+    background: rgba(231,76,60,0.08);
+    .tool-icon { color: #E74C3C; }
+  }
 }
 
 .tool-icon { font-size: 28rpx; }

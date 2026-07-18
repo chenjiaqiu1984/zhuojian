@@ -43,7 +43,7 @@
       <!-- 进度点 -->
       <view class="dots-wrap">
         <view
-          v-for="i in currentMode.steps[phaseIndex].duration"
+          v-for="i in activeSteps[phaseIndex].duration"
           :key="i"
           class="dot"
           :class="{ active: i <= dotActive }"
@@ -51,13 +51,39 @@
         />
       </view>
 
+      <!-- 课程段落进度 -->
+      <view v-if="isProgramMode" class="program-progress">
+        <view v-for="(s, i) in currentProgram.stages" :key="i" class="prog-stage-wrap">
+          <view class="prog-stage-bar" :class="{ done: i < programStageIndex, current: i === programStageIndex }">
+            <view class="prog-stage-fill" :style="i === programStageIndex ? { width: stageProgress + '%' } : {}" />
+          </view>
+          <text class="prog-stage-name">{{ s.label }}</text>
+        </view>
+      </view>
+
       <!-- 轮次 -->
-      <text class="round-text">第 {{ round }} / {{ totalRounds }} 轮</text>
+      <text class="round-text">
+        <template v-if="isProgramMode">{{ currentProgram.stages[programStageIndex].label }} · 第 {{ round }} / {{ currentStageRounds }} 轮</template>
+        <template v-else>第 {{ round }} / {{ totalRounds }} 轮</template>
+      </text>
     </view>
 
     <!-- 底部控制 -->
     <view class="footer">
-      <view class="duration-row">
+      <!-- 课程模式：周期选择 -->
+      <view v-if="isProgramMode" class="duration-row">
+        <view
+          v-for="c in [1, 2, 3]"
+          :key="c"
+          class="duration-btn"
+          :class="{ active: selectedCycles === c }"
+          @click="onPickCycles(c)"
+        >
+          <text class="duration-text">{{ c }} 周期</text>
+        </view>
+      </view>
+      <!-- 单一模式：时长选择 -->
+      <view v-else class="duration-row">
         <view
           v-for="d in DURATION_OPTIONS"
           :key="d.value"
@@ -79,18 +105,49 @@
     <view v-if="showModeSheet" class="sheet-mask" @click="showModeSheet = false">
       <view class="sheet" @click.stop>
         <text class="sheet-title">选择呼吸模式</text>
+
+        <!-- 课程组合 -->
+        <text class="sheet-section-label">🌿 呼吸课程</text>
+        <view
+          v-for="p in PROGRAMS"
+          :key="p.key"
+          class="sheet-item program-item"
+          :class="{ active: isProgramMode && programKey === p.key }"
+          @click="pickProgram(p.key)"
+        >
+          <view class="program-emoji-wrap">
+            <text class="program-emoji">{{ p.emoji }}</text>
+          </view>
+          <view class="sheet-item-left">
+            <view class="program-title-row">
+              <text class="sheet-item-name">{{ p.name }}</text>
+              <text class="program-duration-tag">{{ p.totalMin }} 分钟</text>
+            </view>
+            <text class="sheet-item-desc">{{ p.desc }}</text>
+            <view class="program-stages">
+              <text v-for="(s, i) in p.stages" :key="i" class="program-stage-tag">{{ s.label }}</text>
+            </view>
+          </view>
+          <text v-if="isProgramMode && programKey === p.key" class="sheet-check">✓</text>
+        </view>
+
+        <!-- 分隔 -->
+        <view class="sheet-divider" />
+
+        <!-- 单一模式 -->
+        <text class="sheet-section-label">🎯 单一模式</text>
         <view
           v-for="m in MODES"
           :key="m.key"
           class="sheet-item"
-          :class="{ active: modeKey === m.key }"
+          :class="{ active: !isProgramMode && modeKey === m.key }"
           @click="pickMode(m.key)"
         >
           <view class="sheet-item-left">
             <text class="sheet-item-name">{{ m.name }}</text>
             <text class="sheet-item-desc">{{ m.desc }}</text>
           </view>
-          <text v-if="modeKey === m.key" class="sheet-check">✓</text>
+          <text v-if="!isProgramMode && modeKey === m.key" class="sheet-check">✓</text>
         </view>
       </view>
     </view>
@@ -139,7 +196,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 // ── 球体样式 ──────────────────────────────────────────────────
 const BALL_STYLES = [
@@ -170,7 +227,76 @@ const GUIDE_WORDS = {
   rest: ['自然放松…', '静静休息…'],
 };
 
-// ── 呼吸模式定义 ──────────────────────────────────────────────
+// ── 呼吸课程定义 ──────────────────────────────────────────────
+const PROGRAMS = [
+  {
+    key: 'sleep',
+    name: '入睡准备',
+    emoji: '🌙',
+    desc: '渐进放松神经系统，帮助身心平静进入睡眠',
+    totalMin: 12,
+    color: '#6A5ACD',
+    stages: [
+      { label: '热身', rounds: 10, mode: '4-4-4', hint: '让身体慢慢安静下来…' },
+      { label: '深化', rounds: 10, mode: '4-2-6', hint: '延长呼气，激活副交感神经…' },
+      { label: '沉降', rounds: 8,  mode: '4-7-8', hint: '深度放松，让意识慢慢沉入…' },
+    ],
+  },
+  {
+    key: 'focus',
+    name: '专注启动',
+    emoji: '🎯',
+    desc: '唤醒注意力，进入清醒专注的工作状态',
+    totalMin: 8,
+    color: '#3A7E8A',
+    stages: [
+      { label: '激活', rounds: 10, mode: '4-4-4', hint: '均匀呼吸，稳定注意力…' },
+      { label: '强化', rounds: 12, mode: '5-5',   hint: '心率同调，进入心流…' },
+      { label: '锁定', rounds: 10, mode: '4-4-4', hint: '保持清醒，专注当下…' },
+    ],
+  },
+  {
+    key: 'anxiety',
+    name: '焦虑急救',
+    emoji: '🫧',
+    desc: '快速平复紧张情绪，降低焦虑和压力反应',
+    totalMin: 7,
+    color: '#4AB8A0',
+    stages: [
+      { label: '稳定', rounds: 10, mode: '4-4-4', hint: '先稳住呼吸节奏…' },
+      { label: '释放', rounds: 8,  mode: '4-7-8', hint: '用呼气释放紧绷感…' },
+      { label: '平复', rounds: 12, mode: '5-5',   hint: '回归平静，感受当下…' },
+    ],
+  },
+  {
+    key: 'meditation',
+    name: '冥想入定',
+    emoji: '🧘',
+    desc: '逐步引导进入深度冥想，扩展觉察与专注',
+    totalMin: 16,
+    color: '#B57BCA',
+    stages: [
+      { label: '收心', rounds: 10, mode: '4-4-4', hint: '将注意力收回到呼吸…' },
+      { label: '沉淀', rounds: 12, mode: '5-5',   hint: '随着呼吸，思绪慢慢沉淀…' },
+      { label: '扩展', rounds: 8,  mode: '4-7-8', hint: '在静默中扩展觉察…' },
+      { label: '安住', rounds: 12, mode: '5-5',   hint: '安住于此刻，不迎不拒…' },
+    ],
+  },
+  {
+    key: 'morning',
+    name: '晨间唤醒',
+    emoji: '🌅',
+    desc: '温和激活身体与大脑，迎接充满活力的一天',
+    totalMin: 7,
+    color: '#F5A623',
+    stages: [
+      { label: '苏醒', rounds: 10, mode: '4-4-4', hint: '轻柔地唤醒身体…' },
+      { label: '注入', rounds: 12, mode: '5-5',   hint: '深呼吸，为身体注入氧气…' },
+      { label: '振奋', rounds: 10, mode: '4-4-4', hint: '感受清醒与能量…' },
+    ],
+  },
+];
+
 const MODES = [
   {
     key: '4-7-8',
@@ -224,14 +350,18 @@ const DURATION_OPTIONS = [
 ];
 
 // ── 状态 ───────────────────────────────────────────────────────
-const modeKey          = ref('4-7-8');
-const selectedDuration = ref(5);
-const showModeSheet    = ref(false);
-const showStyleSheet   = ref(false);
-const isRunning        = ref(false);
-const isPaused         = ref(false);
-const ballStyleKey     = ref('solid');
-const customColor      = ref('#4A7A9E');
+const modeKey           = ref('4-7-8');
+const isProgramMode     = ref(false);
+const programKey        = ref('sleep');
+const programStageIndex = ref(0);
+const selectedDuration  = ref(5);
+const selectedCycles    = ref(1);  // 课程周期数（1/2/3）
+const showModeSheet     = ref(false);
+const showStyleSheet    = ref(false);
+const isRunning         = ref(false);
+const isPaused          = ref(false);
+const ballStyleKey      = ref('solid');
+const customColor       = ref('#4A7A9E');
 
 // 动画状态
 const ballScale  = ref(0.55);
@@ -241,8 +371,35 @@ const round      = ref(1);
 const guideText  = ref('');
 
 // ── 计算属性 ──────────────────────────────────────────────────
-const currentMode = computed(() => MODES.find(m => m.key === modeKey.value));
-const activeColor = computed(() => customColor.value);
+const currentMode    = computed(() => MODES.find(m => m.key === modeKey.value));
+const currentProgram = computed(() => PROGRAMS.find(p => p.key === programKey.value));
+
+// 当前实际执行的 steps（课程模式取当前段的 mode）
+const activeSteps = computed(() => {
+  if (isProgramMode.value) {
+    const stage = currentProgram.value.stages[programStageIndex.value];
+    return MODES.find(m => m.key === stage.mode).steps;
+  }
+  return currentMode.value.steps;
+});
+
+const activeColor = computed(() => {
+  if (isProgramMode.value) return currentProgram.value.color;
+  return customColor.value;
+});
+
+// 当前段总轮数（乘以周期数）
+const currentStageRounds = computed(() => {
+  if (!isProgramMode.value) return totalRounds.value;
+  return currentProgram.value.stages[programStageIndex.value].rounds * selectedCycles.value;
+});
+
+// 课程整体进度（用于段落进度条）
+const stageProgress = computed(() => {
+  const total = currentStageRounds.value;
+  const cur   = round.value - 1 + Math.min(elapsed.value / (activeSteps.value.reduce((s, st) => s + st.duration, 0) || 1), 1) / total;
+  return Math.min(100, (cur / total) * 100);
+});
 
 const totalRounds = computed(() => {
   const cycleDur = currentMode.value.steps.reduce((s, st) => s + st.duration, 0);
@@ -251,12 +408,12 @@ const totalRounds = computed(() => {
 
 const phaseLabel = computed(() => {
   if (!isRunning.value && !isPaused.value) return '准备好了吗？';
-  return currentMode.value.steps[phaseIndex.value].label;
+  return activeSteps.value[phaseIndex.value].label;
 });
 
 const displayCount = computed(() => {
   if (!isRunning.value && !isPaused.value) return '';
-  const step = currentMode.value.steps[phaseIndex.value];
+  const step = activeSteps.value[phaseIndex.value];
   return String(Math.max(1, Math.ceil(step.duration - elapsed.value)));
 });
 
@@ -369,11 +526,10 @@ function tick(ts) {
   const dt = Math.min((ts - lastTime) / 1000, 0.1);
   lastTime = ts;
 
-  const steps = currentMode.value.steps;
+  const steps = activeSteps.value;
   const step  = steps[phaseIndex.value];
   elapsed.value += dt;
 
-  // 阶段刚切换时触发引导词
   if (phaseIndex.value !== lastPhaseIdx) {
     lastPhaseIdx = phaseIndex.value;
     updateGuide(step.phase);
@@ -390,11 +546,29 @@ function tick(ts) {
     const nextIdx = phaseIndex.value + 1;
     if (nextIdx >= steps.length) {
       phaseIndex.value = 0;
-      if (round.value >= totalRounds.value) {
-        finishSession();
-        return;
+      const stageRounds = isProgramMode.value
+        ? currentProgram.value.stages[programStageIndex.value].rounds
+        : totalRounds.value;
+      if (round.value >= stageRounds) {
+        if (isProgramMode.value) {
+          const nextStage = programStageIndex.value + 1;
+          if (nextStage >= currentProgram.value.stages.length) {
+            finishSession();
+            return;
+          }
+          // 切换到下一段，显示提示
+          const nextStageDef = currentProgram.value.stages[nextStage];
+          programStageIndex.value = nextStage;
+          round.value = 1;
+          lastPhaseIdx = -1;
+          uni.showToast({ title: nextStageDef.hint, icon: 'none', duration: 2500 });
+        } else {
+          finishSession();
+          return;
+        }
+      } else {
+        round.value += 1;
       }
-      round.value += 1;
     } else {
       phaseIndex.value = nextIdx;
     }
@@ -404,9 +578,14 @@ function tick(ts) {
 }
 
 function startLoop() {
-  lastTime     = null;
-  lastPhaseIdx = -1;
-  rafId        = requestAnimationFrame(tick);
+  try {
+    lastTime     = null;
+    lastPhaseIdx = -1;
+    rafId        = requestAnimationFrame(tick);
+  } catch (e) {
+    uni.showToast({ title: '动画启动失败，请重试', icon: 'none' });
+    isRunning.value = false;
+  }
 }
 
 function stopLoop() {
@@ -417,13 +596,15 @@ function stopLoop() {
 
 function resetState() {
   stopLoop();
-  phaseIndex.value = 0;
-  elapsed.value    = 0;
-  round.value      = 1;
-  ballScale.value  = 0.55;
-  guideText.value  = '';
-  isRunning.value  = false;
-  isPaused.value   = false;
+  phaseIndex.value        = 0;
+  elapsed.value           = 0;
+  round.value             = 1;
+  programStageIndex.value = 0;
+  selectedCycles.value    = 1;
+  ballScale.value         = 0.55;
+  guideText.value         = '';
+  isRunning.value         = false;
+  isPaused.value          = false;
 }
 
 function finishSession() {
@@ -468,6 +649,22 @@ function onPickDuration(val) {
   }
 }
 
+function onPickCycles(val) {
+  if (isRunning.value || isPaused.value) {
+    uni.showModal({
+      title: '重置练习',
+      content: '更改周期将重置当前练习，确定吗？',
+      success: (res) => {
+        if (!res.confirm) return;
+        resetState();
+        selectedCycles.value = val;
+      },
+    });
+  } else {
+    selectedCycles.value = val;
+  }
+}
+
 function pickMode(key) {
   if (isRunning.value || isPaused.value) {
     uni.showModal({
@@ -476,12 +673,34 @@ function pickMode(key) {
       success: (res) => {
         if (!res.confirm) return;
         resetState();
+        isProgramMode.value = false;
         modeKey.value = key;
         showModeSheet.value = false;
       },
     });
   } else {
+    isProgramMode.value = false;
     modeKey.value = key;
+    showModeSheet.value = false;
+  }
+}
+
+function pickProgram(key) {
+  if (isRunning.value || isPaused.value) {
+    uni.showModal({
+      title: '切换课程',
+      content: '切换课程将重置当前练习，确定吗？',
+      success: (res) => {
+        if (!res.confirm) return;
+        resetState();
+        isProgramMode.value = true;
+        programKey.value    = key;
+        showModeSheet.value = false;
+      },
+    });
+  } else {
+    isProgramMode.value = true;
+    programKey.value    = key;
     showModeSheet.value = false;
   }
 }
@@ -768,9 +987,10 @@ $accent:   #4A7A9E;
 .duration-btn {
   padding: 12rpx 32rpx;
   border-radius: 40rpx;
-  transition: background 0.2s;
+  transition: background 0.2s $zj-ease-out;
 
   &.active { background: $accent; }
+  &:hover  { background: rgba(255,255,255,0.08); }
   &:active  { opacity: 0.7; }
 }
 
@@ -839,6 +1059,120 @@ $accent:   #4A7A9E;
 }
 
 /* 模式列表 */
+.sheet-section-label {
+  display: block;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: $text-2;
+  letter-spacing: 0.12em;
+  margin: 8rpx 0 16rpx;
+}
+
+.sheet-divider {
+  height: 1rpx;
+  background: rgba(255,255,255,0.08);
+  margin: 20rpx 0;
+}
+
+.program-item {
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.program-emoji-wrap {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 16rpx;
+  background: rgba(255,255,255,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+
+.program-emoji { font-size: 32rpx; }
+
+.program-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 6rpx;
+}
+
+.program-duration-tag {
+  font-size: 18rpx;
+  color: $text-2;
+  background: rgba(255,255,255,0.07);
+  border-radius: 20rpx;
+  padding: 2rpx 12rpx;
+}
+
+.program-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 10rpx;
+}
+
+.program-stage-tag {
+  font-size: 18rpx;
+  color: $text-2;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20rpx;
+  padding: 2rpx 14rpx;
+}
+
+/* 课程段落进度 */
+.program-progress {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  width: 100%;
+  padding: 0 20rpx;
+}
+
+.prog-stage-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.prog-stage-bar {
+  width: 100%;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: rgba(255,255,255,0.10);
+  overflow: hidden;
+  position: relative;
+
+  &.done .prog-stage-fill {
+    width: 100%;
+    background: rgba(255,255,255,0.55);
+  }
+
+  &.current { background: rgba(255,255,255,0.15); }
+}
+
+.prog-stage-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: $accent;
+  border-radius: 3rpx;
+  transition: width 0.3s;
+  width: 0%;
+}
+
+.prog-stage-name {
+  font-size: 18rpx;
+  color: $text-2;
+  letter-spacing: 0.04em;
+}
+
 .sheet-item {
   display: flex;
   align-items: center;
@@ -847,9 +1181,10 @@ $accent:   #4A7A9E;
   border-radius: 20rpx;
   margin-bottom: 12rpx;
   background: rgba(255,255,255,0.04);
-  transition: background 0.15s;
+  transition: background 0.15s $zj-ease-out;
 
   &.active { background: rgba(74,122,158,0.22); }
+  &:hover  { background: rgba(255,255,255,0.07); }
   &:active  { opacity: 0.7; }
 }
 

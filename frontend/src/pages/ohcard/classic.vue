@@ -79,6 +79,20 @@
 <script setup>
 import { ref, computed, onMounted, nextTick , watch } from 'vue';
 import { onBackPress, onLoad } from '@dcloudio/uni-app';
+
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    const pages = getCurrentPages();
+    const vm = pages[pages.length - 1]?.$vm;
+    const name = vm?.selDeck?.name || '心理图卡';
+    return { title: `我在用「${name}」探索内心，快来试试`, path: '/pages/ohcard/index' };
+  },
+  onShareTimeline() {
+    return { title: '卓见心理图卡 — 让图像成为语言，看见内心深处的声音' };
+  },
+});
+// #endif
 import { ohcardApi } from '../../api/index';
 import ZjIcon from '../../components/ZjIcon.vue';
 import { useUserStore } from '../../store/user';

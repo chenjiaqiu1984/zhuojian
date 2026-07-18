@@ -98,6 +98,17 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
 
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    return { title: '我在卓见心理玩解压捏捏乐，超解压！快来试试', path: '/pages/squeeze/index' };
+  },
+  onShareTimeline() {
+    return { title: '卓见心理解压捏捏乐 — 戳破泡泡，释放压力' };
+  },
+});
+// #endif
+
 // ── 常量 ──────────────────────────────────────────────────────────────────
 const MODES = [
   {
@@ -218,8 +229,9 @@ function resetBubbles() {
 
 // ── 绘制 ──────────────────────────────────────────────────────────────────
 function drawBubbles() {
-  const mode = currentMode.value;
-  const ctx = uni.createCanvasContext('squeezeCanvas');
+  try {
+    const mode = currentMode.value;
+    const ctx = uni.createCanvasContext('squeezeCanvas');
   ctx.clearRect(0, 0, canvasW.value, canvasH.value);
 
   bubbles.value.forEach(b => {
@@ -314,6 +326,9 @@ function drawBubbles() {
   });
 
   ctx.draw();
+  } catch (e) {
+    uni.showToast({ title: '画布加载失败，请重试', icon: 'none' });
+  }
 }
 
 function hexToRgba(hex, a) {
@@ -559,14 +574,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.06);
   box-shadow: 0 8rpx 32rpx rgba(123,78,158,0.28);
 }
 .hero-glow {
-  position: absolute;
-  top: -80rpx;
-  right: -80rpx;
-  width: 320rpx;
-  height: 280rpx;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(255,255,255,0.14) 0%, transparent 70%);
-  pointer-events: none;
+  display: none;
 }
 .hero-emoji {
   display: block;
@@ -578,7 +586,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.06);
   font-size: 40rpx;
   font-weight: 800;
   color: #fff;
-  font-family: "Noto Serif SC", serif;
+  font-family: $zj-font-display;
   margin-bottom: 8rpx;
 }
 .hero-desc {
@@ -624,7 +632,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.06);
   position: relative;
   margin: 20rpx 24rpx 0;
   border-radius: $card-r;
-  background: #fff;
+  background: $zj-card-bg;
   box-shadow: $card-shadow;
   overflow: hidden;
   flex: 1;

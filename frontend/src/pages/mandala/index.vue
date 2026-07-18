@@ -186,25 +186,11 @@ $card-bg: #FFFFFF;
 }
 
 .hero-glow {
-  position: absolute;
-  top: -160rpx;
-  right: -120rpx;
-  width: 560rpx;
-  height: 480rpx;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(255,255,255,0.14) 0%, transparent 66%);
-  pointer-events: none;
+  display: none;
 }
 
 .hero-blob {
-  position: absolute;
-  bottom: -80rpx;
-  left: -60rpx;
-  width: 300rpx;
-  height: 300rpx;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(255,255,255,0.06) 0%, transparent 70%);
-  pointer-events: none;
+  display: none;
 }
 
 .hero-content {
@@ -229,7 +215,7 @@ $card-bg: #FFFFFF;
   letter-spacing: 0.06em;
   line-height: 1.18;
   margin-bottom: 24rpx;
-  font-family: "Noto Serif SC", serif;
+  font-family: $zj-font-display;
 }
 
 .hero-sub {
@@ -295,13 +281,17 @@ $card-bg: #FFFFFF;
 }
 
 .guide-card {
-  background: $card-bg;
+  background: $zj-card-bg;
   border-radius: 24rpx;
   padding: 32rpx 28rpx;
   display: flex;
   align-items: flex-start;
   gap: 24rpx;
   box-shadow: 0 2rpx 16rpx rgba(58,110,128,0.07);
+  transition: box-shadow 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
+
+  &:hover { transform: translateY(-2rpx); box-shadow: $zj-shadow-card-hover; }
+  &:active { transform: scale(0.98); }
 }
 
 .guide-icon-wrap {

@@ -62,6 +62,20 @@
 <script setup>
 import { ref, computed, nextTick } from 'vue';
 import { onLoad, onReady } from '@dcloudio/uni-app';
+
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    const pages = getCurrentPages();
+    const vm = pages[pages.length - 1]?.$vm;
+    const title = vm?.sel?.title || '跨卡牌组合';
+    return { title: `我在用「${title}」做心理探索，快来试试`, path: '/pages/ohcard/index' };
+  },
+  onShareTimeline() {
+    return { title: '卓见心理图卡 — 多卡组合，深度探索内心世界' };
+  },
+});
+// #endif
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { SERVER } from '../../config';

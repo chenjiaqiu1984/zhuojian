@@ -94,6 +94,20 @@
 <script setup>
 import { computed, ref, nextTick } from 'vue';
 import { onLoad, onReady } from '@dcloudio/uni-app';
+
+// #ifndef H5
+defineOptions({
+  onShareAppMessage() {
+    const pages = getCurrentPages();
+    const vm = pages[pages.length - 1]?.$vm;
+    const title = vm?.item?.fullTitle || '人生困境';
+    return { title: `我在用卓见心理探索「${title}」，快来看看`, path: '/pages/ohcard/index' };
+  },
+  onShareTimeline() {
+    return { title: '卓见心理图卡 — 人生困境玩法，看见卡住你的那个结' };
+  },
+});
+// #endif
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { SERVER } from '../../config';
