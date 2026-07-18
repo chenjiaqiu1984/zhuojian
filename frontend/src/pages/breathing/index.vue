@@ -153,8 +153,7 @@
     </view>
 
     <!-- 外观选择弹层 -->
-    <view v-if="showStyleSheet" class="sheet-mask" @click="showStyleSheet = false">
-      <view class="sheet" @click.stop>
+    <view v-if="showStyleSheet" class="sheet-mask" @click="showStyleSheet = false">      <view class="sheet" @click.stop>
         <text class="sheet-title">外观设置</text>
 
         <!-- 球样式 -->
@@ -193,12 +192,57 @@
       </view>
     </view>
   </view>
+
+    <!-- 练习完成弹窗 -->
+    <view v-if="showFinishModal" class="sheet-mask" @click.stop>
+      <view class="sheet finish-sheet">
+        <text class="finish-emoji">🎉</text>
+        <text class="finish-title">练习完成</text>
+        <text class="finish-sub">坚持呼吸练习，让身心更健康</text>
+        <view class="finish-stats">
+          <view class="finish-stat">
+            <text class="finish-stat-num">{{ finishInfo.rounds }}</text>
+            <text class="finish-stat-label">轮</text>
+          </view>
+          <view class="finish-stat-divider" />
+          <view class="finish-stat">
+            <text class="finish-stat-num">{{ Math.round((finishInfo.durationSec||0)/60) || 1 }}</text>
+            <text class="finish-stat-label">分钟</text>
+          </view>
+        </view>
+        <button class="finish-share-btn" open-type="share">分享给朋友</button>
+        <view class="finish-close-btn" @click="showFinishModal = false">继续练习</view>
+      </view>
+    </view>
+
+    <!-- 成就解锁弹窗 -->
+    <view v-if="showAchievement && newAchievements[achievementIdx]" class="sheet-mask" @click.stop>
+      <view class="sheet achievement-sheet">
+        <text class="ach-unlock-tag">成就解锁</text>
+        <text class="ach-unlock-icon">{{ newAchievements[achievementIdx].icon }}</text>
+        <text class="ach-unlock-name">{{ newAchievements[achievementIdx].name }}</text>
+        <text class="ach-unlock-desc">{{ newAchievements[achievementIdx].desc }}</text>
+        <view class="ach-unlock-btn" @click="onNextAchievement">
+          {{ achievementIdx < newAchievements.length - 1 ? '下一个 →' : '太棒了！' }}
+        </view>
+      </view>
+    </view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { SERVER } from '../../config';
 
 const fromSelect = ref(false);
+
+// 成就弹窗
+const newAchievements = ref([]);
+const showAchievement = ref(false);
+const achievementIdx  = ref(0);
+
+// 练习完成弹窗
+const showFinishModal = ref(false);
+const finishInfo      = ref({ mode: '', rounds: 0, durationSec: 0 });
 
 // ── 球体样式 ──────────────────────────────────────────────────
 const BALL_STYLES = [
@@ -614,6 +658,11 @@ function resetState() {
 
 function finishSession() {
   stopLoop();
+  const durationSec = Math.round(
+    activeSteps.value.reduce((s, st) => s + st.duration, 0) * (round.value - 1)
+  );
+  const modeKey_ = isProgramMode.value ? programKey.value : modeKey.value;
+
   isRunning.value  = false;
   isPaused.value   = false;
   ballScale.value  = 0.55;
@@ -621,7 +670,28 @@ function finishSession() {
   elapsed.value    = 0;
   round.value      = 1;
   guideText.value  = '';
-  uni.showToast({ title: '练习完成 ✨', icon: 'none', duration: 2000 });
+
+  // 记录历史 + 检查成就
+  const token = uni.getStorageSync('token');
+  if (token) {
+    uni.request({
+      url:    `${SERVER}/api/breathing/finish`,
+      method: 'POST',
+      header: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data:   { mode: modeKey_, isProgramMode: isProgramMode.value, rounds: round.value, durationSec },
+      success: (res) => {
+        if (res.data?.newAchievements?.length) {
+          newAchievements.value = res.data.newAchievements;
+          achievementIdx.value  = 0;
+          showAchievement.value = true;
+        }
+      },
+    });
+  }
+
+  // 完成弹窗
+  finishInfo.value = { mode: modeKey_, rounds: round.value, durationSec };
+  showFinishModal.value = true;
 }
 
 // ── 控件 ─────────────────────────────────────────────────────
@@ -738,8 +808,7 @@ function darken(hex, amt) {
   return `rgb(${d(r)},${d(g)},${d(b)})`;
 }
 
-onMounted(() => {
-  const pages = getCurrentPages();
+onMounted(() => {  const pages = getCurrentPages();
   const page  = pages[pages.length - 1];
   const opts  = page.$page?.options ?? page.options ?? {};
   const { type, key } = opts;
@@ -754,6 +823,15 @@ onMounted(() => {
     }
   }
 });
+
+function onNextAchievement() {
+  if (achievementIdx.value < newAchievements.value.length - 1) {
+    achievementIdx.value++;
+  } else {
+    showAchievement.value = false;
+    newAchievements.value = [];
+  }
+}
 
 onUnmounted(() => stopLoop());
 </script>
@@ -1331,5 +1409,50 @@ $accent:   #4A7A9E;
   font-weight: 600;
   color: #FFFFFF;
   letter-spacing: 0.08em;
+}
+
+/* ── 练习完成弹窗 ── */
+.finish-sheet {
+  text-align: center;
+  padding: 48rpx 40rpx;
+}
+.finish-emoji { font-size: 72rpx; display: block; margin-bottom: 16rpx; }
+.finish-title { display: block; color: #EEF4F2; font-size: 40rpx; font-weight: 700; margin-bottom: 8rpx; }
+.finish-sub   { display: block; color: #8DAAB8; font-size: 26rpx; margin-bottom: 32rpx; }
+.finish-stats {
+  display: flex; align-items: center; justify-content: center; gap: 0;
+  background: rgba(255,255,255,0.05); border-radius: 20rpx;
+  padding: 24rpx 40rpx; margin-bottom: 32rpx;
+}
+.finish-stat { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.finish-stat-num   { color: #4AB8A0; font-size: 52rpx; font-weight: 700; }
+.finish-stat-label { color: #8DAAB8; font-size: 24rpx; margin-top: 4rpx; }
+.finish-stat-divider { width: 2rpx; height: 60rpx; background: rgba(255,255,255,0.1); }
+.finish-share-btn {
+  width: 100%; background: #4A7A9E; color: #fff;
+  border: none; border-radius: 16rpx; padding: 20rpx 0;
+  font-size: 28rpx; margin-bottom: 16rpx;
+}
+.finish-close-btn {
+  color: #8DAAB8; font-size: 26rpx; padding: 12rpx 0;
+}
+
+/* ── 成就解锁弹窗 ── */
+.achievement-sheet {
+  text-align: center;
+  padding: 48rpx 40rpx;
+}
+.ach-unlock-tag {
+  display: inline-block; background: #F5A62320; color: #F5A623;
+  font-size: 22rpx; padding: 6rpx 20rpx; border-radius: 20rpx;
+  margin-bottom: 24rpx; border: 1rpx solid #F5A62340;
+}
+.ach-unlock-icon { display: block; font-size: 80rpx; margin-bottom: 16rpx; }
+.ach-unlock-name { display: block; color: #EEF4F2; font-size: 36rpx; font-weight: 700; margin-bottom: 8rpx; }
+.ach-unlock-desc { display: block; color: #8DAAB8; font-size: 26rpx; margin-bottom: 32rpx; }
+.ach-unlock-btn {
+  background: linear-gradient(135deg, #F5A623, #FFD166);
+  color: #1A1A1A; font-size: 28rpx; font-weight: 600;
+  padding: 20rpx 60rpx; border-radius: 16rpx; display: inline-block;
 }
 </style>

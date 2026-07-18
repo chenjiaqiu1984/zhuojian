@@ -82,6 +82,7 @@ const menus = computed(() => {
     { label: '我的订单',   icon: 'receipt',        action: () => uni.navigateTo({ url: '/pages/orders/index' }) },
     { label: '心理测评',   icon: 'clipboard-pen',  action: () => uni.navigateTo({ url: '/pages/assessment/my' }) },
     { label: '测评记录',   icon: 'clipboard-list', action: () => uni.navigateTo({ url: '/pages/assessment/results' }) },
+    { label: '我的成就',   icon: 'trophy',         action: () => uni.navigateTo({ url: '/pages/profile/achievements' }) },
     { label: '抽卡记录',   icon: 'layers',         action: () => uni.navigateTo({ url: '/pages/ohcard/record' }) },
     { label: '我的券码',   icon: 'ticket',         action: () => uni.navigateTo({ url: '/pages/profile/coupons' }) },
     { label: '设置',       icon: 'settings',       action: () => uni.navigateTo({ url: '/pages/profile/settings' }) },

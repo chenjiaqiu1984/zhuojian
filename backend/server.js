@@ -78,6 +78,8 @@ app.use('/api/payment', require('./routes/payment'));
 app.use('/api/packages', require('./routes/packages'));
 app.use('/api/coupons', require('./routes/coupons'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/achievements', require('./routes/achievements'));
+app.use('/api/breathing', require('./routes/breathing'));
 
 require('./socket/rooms')(io);
 

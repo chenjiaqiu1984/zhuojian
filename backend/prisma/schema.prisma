@@ -767,3 +767,31 @@ model MonsterFeedLog {
   monster    Monster  @relation(fields: [monsterId], references: [id])
   @@map("monster_feed_logs")
 }
+
+model BreathingSession {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  mode        String                    // 模式key，如 '4-7-8' 或课程key 'sleep'
+  isProgramMode Int    @default(0) @map("is_program_mode")
+  rounds      Int      @default(0)
+  durationSec Int      @default(0) @map("duration_sec")
+  createdAt   DateTime @default(now()) @map("created_at")
+  @@map("breathing_sessions")
+}
+
+model UserLoginLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  loginAt   DateTime @default(now()) @map("login_at")
+  dateStr   String   @map("date_str")  // 'YYYY-MM-DD'，用于去重按天统计
+  @@map("user_login_logs")
+}
+
+model UserAchievement {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  achievementKey String  @map("achievement_key")
+  unlockedAt    DateTime @default(now()) @map("unlocked_at")
+  @@unique([userId, achievementKey])
+  @@map("user_achievements")
+}
