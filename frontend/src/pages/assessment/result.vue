@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view v-if="loading" class="status-center"><text class="status-txt">加载中...</text></view>
+    <view v-if="loading" class="status-center"><text class="status-txt">加载中…</text></view>
     <view v-else>
 
       <!-- Score Card (Hero) -->
@@ -258,11 +258,6 @@ $border: #E8EFED;
 $card-r: 24rpx;
 $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
 
-@keyframes revealUp {
-  from { opacity: 0; transform: translateY(32rpx); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 .page {
   background: $bg;
   min-height: 100vh;
@@ -278,7 +273,6 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   background: linear-gradient(135deg, $teal 0%, $teal-dark 100%);
   padding: 80rpx 48rpx 64rpx;
   text-align: center;
-  animation: revealUp 0.5s ease both;
 }
 .score-hero-glow {
   position: absolute;
@@ -306,6 +300,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   line-height: 1;
   margin-bottom: 24rpx;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 .level-badge {
   display: inline-block;
@@ -364,11 +359,8 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   box-shadow: $card-shadow;
   margin: 24rpx 28rpx 0;
   padding: 36rpx 32rpx;
-  animation: revealUp 0.5s ease 0.1s both;
-  &:nth-child(3) { animation-delay: 0.2s; }
-  &:nth-child(4) { animation-delay: 0.3s; }
 }
-.card-accent { border-left: 6rpx solid $teal; }
+.card-accent { background: rgba(74,138,122,0.05); }
 
 .sec-header {
   display: flex;
@@ -436,6 +428,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   width: 60rpx;
   text-align: right;
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 .dim-detail {
   display: block;
@@ -488,7 +481,6 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   display: flex;
   gap: 28rpx;
   align-items: flex-start;
-  animation: revealUp 0.5s ease 0.38s both;
 }
 .consult-icon-wrap {
   width: 72rpx;
@@ -533,6 +525,5 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   margin: 28rpx 28rpx 0;
   display: flex;
   gap: 20rpx;
-  animation: revealUp 0.5s ease 0.46s both;
 }
 </style>

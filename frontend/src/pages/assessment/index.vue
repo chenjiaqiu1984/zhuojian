@@ -49,7 +49,7 @@
         <input
           :value="keyword"
           @input="keyword = $event.detail.value"
-          placeholder="搜索量表名称..."
+          placeholder="搜索量表名称…"
           placeholder-class="ph"
         />
       </view>
@@ -86,7 +86,7 @@
     </view>
 
     <!-- List -->
-    <view v-if="loading" class="status-center"><text class="status-txt">加载中...</text></view>
+    <view v-if="loading" class="status-center"><text class="status-txt">加载中…</text></view>
     <view v-else class="list">
       <view
         v-for="s in filtered"
@@ -264,7 +264,7 @@ async function toggleFav(id) {
 $teal:       #4A8A7A;
 $teal-dark:  #3A6E80;
 $teal-light: #EFF7F5;
-$bg:         #F2F5F4;
+$bg:         #F5F7F6;
 $surface:    #ffffff;
 $text-1:     #1C2A27;
 $text-2:     #617870;
@@ -317,10 +317,9 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
 .hero-eyebrow {
   display: block;
   font-size: 20rpx;
-  letter-spacing: 0.34em;
+  letter-spacing: 0.1em;
   color: rgba(255,255,255,0.68);
   margin-bottom: 24rpx;
-  text-transform: uppercase;
 }
 
 .hero-title {

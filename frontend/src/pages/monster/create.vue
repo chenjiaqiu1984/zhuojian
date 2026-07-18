@@ -4,7 +4,8 @@
     <view class="steps-bar">
       <view class="step" :class="{ active: step === 1, done: step > 1 }">
         <view class="step-dot">
-          <text class="step-num">{{ step > 1 ? '✓' : '1' }}</text>
+          <ZjIcon v-if="step > 1" name="check" :size="24" color="#fff" />
+          <text v-else class="step-num">1</text>
         </view>
         <text class="step-label">绘制怪兽</text>
       </view>
@@ -178,7 +179,7 @@
         <input
           v-model="form.name"
           class="field-input"
-          placeholder="如：焦虑怪、小悲伤..."
+          placeholder="如：焦虑怪、小悲伤…"
           maxlength="12"
           placeholder-style="color: #C0B0D8"
         />
@@ -230,6 +231,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { monsterApi } from '@/api';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 const step = ref(1);
 const drawMode = ref('parts');
@@ -333,7 +335,7 @@ async function save() {
     : JSON.stringify({ type: 'canvas', paths: canvasPaths.value });
   const color = drawMode.value === 'parts' ? parts.color : form.color;
 
-  uni.showLoading({ title: '创建中...' });
+  uni.showLoading({ title: '创建中…' });
   try {
     await monsterApi.create({ name: form.name.trim(), emotion: form.emotion, color, drawingData, drawingType: drawMode.value });
     uni.hideLoading();

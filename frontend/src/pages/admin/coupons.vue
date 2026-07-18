@@ -238,7 +238,7 @@ async function openUsers(c) {
 .toolbar { display: flex; justify-content: flex-end; margin-bottom: 20rpx; }
 
 .coupon-row {
-  background: #fff; border-radius: 16rpx; padding: 24rpx 28rpx;
+  background: #fff; border-radius: $zj-radius-card; padding: 24rpx 28rpx;
   margin-bottom: 16rpx;
 
   .coupon-meta { display: flex; align-items: center; gap: 12rpx; margin-bottom: 8rpx; }
@@ -248,10 +248,10 @@ async function openUsers(c) {
     &.discount  { background: #E8F5F1; color: #4A8A7A; }
     &.direct    { background: #FFF3E0; color: #C8821A; }
     &.threshold { background: #FFF0F0; color: #E07050; }
-    &.activity  { background: #F0F0FF; color: #6A7ABA; }
+    &.activity  { background: #F0F2F1; color: #617870; }
   }
-  .coupon-value-text { font-size: 36rpx; font-weight: 700; color: #E05A4A; display: block; }
-  .coupon-sub { font-size: 20rpx; color: #8A9E97; display: block; margin-top: 6rpx; }
+  .coupon-value-text { font-size: 36rpx; font-weight: 700; color: #E05A4A; display: block; font-variant-numeric: tabular-nums; }
+  .coupon-sub { font-size: 20rpx; color: #8A9E97; display: block; margin-top: 6rpx; font-variant-numeric: tabular-nums; }
   .coupon-actions {
     display: flex; align-items: center; gap: 12rpx; margin-top: 16rpx; flex-wrap: wrap;
   }

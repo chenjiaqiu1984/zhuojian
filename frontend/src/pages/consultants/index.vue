@@ -13,7 +13,7 @@
 
     <!-- Loading -->
     <view v-if="loading" class="status-center">
-      <text class="status-txt">加载中...</text>
+      <text class="status-txt">加载中…</text>
     </view>
 
     <!-- List -->
@@ -190,7 +190,6 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   background: #fff;
   border-radius: $card-r;
   border: 1rpx solid $border;
-  border-left: 6rpx solid $teal;
   box-shadow: $card-shadow;
   padding: 32rpx 32rpx 28rpx;
   margin-bottom: 24rpx;
@@ -264,7 +263,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   gap: 10rpx;
 }
 .stat { display: flex; align-items: baseline; gap: 3rpx; }
-.stat-num { font-size: 28rpx; font-weight: 700; color: $text-1; }
+.stat-num { font-size: 28rpx; font-weight: 700; color: $text-1; font-variant-numeric: tabular-nums; }
 .stat-unit { font-size: 20rpx; color: $muted; }
 .stat-sep {
   width: 1rpx;
@@ -279,7 +278,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   gap: 2rpx;
 }
 .price-sym { font-size: 22rpx; color: $teal; font-weight: 600; }
-.price-num { font-size: 40rpx; color: $teal; font-weight: 800; letter-spacing: -1rpx; }
+.price-num { font-size: 40rpx; color: $teal; font-weight: 800; letter-spacing: -1rpx; font-variant-numeric: tabular-nums; }
 .price-unit { font-size: 20rpx; color: $muted; }
 
 /* Bio */

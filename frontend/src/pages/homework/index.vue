@@ -21,7 +21,7 @@
       >
         <view class="icon-wrap" :style="{ background: tool.bg }">
           <view class="icon-shine" />
-          <text class="icon-text">{{ tool.icon }}</text>
+          <ZjIcon class="icon-text" :name="tool.icon" :size="48" color="#fff" />
         </view>
         <view class="info">
           <text class="name">{{ tool.name }}</text>
@@ -37,37 +37,39 @@
 </template>
 
 <script setup>
+import ZjIcon from '../../components/ZjIcon.vue';
+
 const tools = [
   {
-    icon: '📓',
+    icon: 'notebook-pen',
     name: '情绪日记',
     desc: '每日记录情绪变化，追踪心理状态',
     url: '/pages/homework/mood',
     bg: 'linear-gradient(140deg, #62A090 0%, #4A8A7A 100%)'
   },
   {
-    icon: '🧠',
+    icon: 'brain',
     name: '认知记录表（CBT）',
     desc: '识别并重构负性自动想法',
     url: '/pages/homework/cbt',
     bg: 'linear-gradient(140deg, #4E8898 0%, #3A6E80 100%)'
   },
   {
-    icon: '🌙',
+    icon: 'moon',
     name: '梦的工作记录',
     desc: '记录梦境、自由联想与治疗师解释',
     url: '/pages/homework/dream',
     bg: 'linear-gradient(140deg, #6E5A8A 0%, #5A4A7A 100%)'
   },
   {
-    icon: '🏔',
+    icon: 'mountain',
     name: '冰山模型自我分析',
     desc: '探索规条背后的感受、期待与渴望',
     url: '/pages/homework/iceberg',
     bg: 'linear-gradient(140deg, #3E6E8A 0%, #2A5A7A 100%)'
   },
   {
-    icon: '📜',
+    icon: 'scroll',
     name: '规条转换练习',
     desc: '将刚性规条改写为有弹性的生活原则',
     url: '/pages/homework/rule',
@@ -90,7 +92,7 @@ function nav(url) { uni.navigateTo({ url }); }
   position: relative;
   padding: 96rpx 48rpx 80rpx;
   overflow: hidden;
-  background: linear-gradient(155deg, #4A8A7A 0%, #2E5870 100%);
+  background: $zj-gradient-header;
 }
 
 .hero-glow {
@@ -124,8 +126,7 @@ function nav(url) { uni.navigateTo({ url }); }
 .hero-eyebrow {
   display: block;
   font-size: 20rpx;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: rgba(255,255,255,0.68);
   margin-bottom: 28rpx;
 }
@@ -196,7 +197,7 @@ function nav(url) { uni.navigateTo({ url }); }
 }
 
 .icon-text {
-  font-size: 44rpx;
+  width: 48rpx;
   position: relative;
   z-index: 1;
 }

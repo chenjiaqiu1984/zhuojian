@@ -7,7 +7,7 @@
     <view v-else>
       <view class="record" v-for="r in records" :key="r.id" @click="toggle(r.id)">
         <view class="r-header">
-          <u-tag :text="typeLabel[r.type] || r.type" :type="typeColor[r.type] || 'info'" />
+          <text class="r-type-tag">{{typeLabel[r.type] || r.type}}</text>
           <text class="r-date">{{fmt(r.created_at || r.createdAt)}}</text>
         </view>
         <!-- 名称标题 (combo/scene/dilemma) -->
@@ -65,7 +65,6 @@ const expandedId = ref(null);
 const fsCard = ref(null);
 
 const typeLabel = { imgonly:'心理图卡', classic:'图卡+字卡', sort:'图卡排序', match:'图字匹配', room:'房间抽卡', combo:'跨卡牌组合', scene:'场景选卡', dilemma:'人生困境' };
-const typeColor = { imgonly:'success', classic:'primary', sort:'warning', match:'success', room:'error', combo:'info', scene:'info', dilemma:'warning' };
 
 onMounted(async () => {
   if (!store.isLoggedIn()) return;
@@ -87,6 +86,7 @@ function previewCard(c) { fsCard.value = c; }
 .empty { display:flex; flex-direction:column; align-items:center; padding:100rpx 0; gap:28rpx; }
 .record { background:#FFFFFF; border:1rpx solid #E8EFED; border-radius:20rpx; padding:26rpx 24rpx; margin-bottom:16rpx; box-shadow:0 4rpx 18rpx rgba(28,42,39,0.04); }
 .r-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12rpx; }
+.r-type-tag { font-size:22rpx; color:$zj-teal; background:$zj-teal-light; padding:4rpx 16rpx; border-radius:20rpx; }
 .r-date { font-size:22rpx; color:#B7C6C1; }
 .r-name { font-size:28rpx; font-weight:600; color:#1C2A27; display:block; margin-bottom:12rpx; }
 .r-preview { display:flex; align-items:center; gap:16rpx; margin-bottom:8rpx; }
@@ -109,7 +109,7 @@ function previewCard(c) { fsCard.value = c; }
 .ec-cat { font-size:18rpx; color:#B7C6C1; text-align:center; }
 
 /* 全屏 */
-.fs-overlay { position:fixed; inset:0; z-index:9999; background:rgba(20,32,29,.94); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20rpx; }
+.fs-overlay { position:fixed; inset:0; z-index:$zj-z-modal; background:rgba(20,32,29,.94); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20rpx; }
 .fs-img { width:100vw; height:80vh; }
 .fs-word { width:80vw; height:80vw; border:4rpx solid #C8A84B; border-radius:20rpx; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#1E3A34,#2C5249); }
 .fs-word-text { font-size:120rpx; font-weight:bold; color:#fff; }

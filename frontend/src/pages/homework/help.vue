@@ -2,7 +2,7 @@
   <view class="page">
     <view class="page-header">
       <view class="hdr-glow" />
-      <text class="hdr-icon">🩺</text>
+      <ZjIcon class="hdr-icon" name="stethoscope" :size="60" color="#FFFFFF" />
       <text class="hdr-title">申请咨询解读</text>
       <text class="hdr-desc">选择咨询师，由专业治疗师为您深度解读</text>
     </view>
@@ -20,7 +20,7 @@
           <text class="c-price">¥{{c.price}} / 次</text>
         </view>
         <view class="check-wrap" :class="{active: selectedId===c.id}">
-          <text v-if="selectedId===c.id" class="check-icon">✓</text>
+          <ZjIcon v-if="selectedId===c.id" class="check-icon" name="check" :size="28" color="#fff" />
         </view>
       </view>
 
@@ -39,6 +39,7 @@ import { onLoad } from '@dcloudio/uni-app';
 import { consultantApi, homeworkApi } from '../../api/index';
 import { SERVER } from '../../config';
 import { requireActive } from '../../utils/requireActive';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 
 const consultants = ref([]);
@@ -81,7 +82,7 @@ $text-muted: #9BBCB4;
   position: relative;
   overflow: hidden;
   padding: 56rpx 36rpx 44rpx;
-  background: linear-gradient(155deg, #4A8A7A 0%, #2E5870 100%);
+  background: $zj-gradient-header;
 }
 
 .hdr-glow {
@@ -95,7 +96,7 @@ $text-muted: #9BBCB4;
   pointer-events: none;
 }
 
-.hdr-icon { display: block; font-size: 52rpx; margin-bottom: 16rpx; position: relative; z-index: 1; }
+.hdr-icon { display: block; width: 60rpx; margin-bottom: 16rpx; position: relative; z-index: 1; }
 
 .hdr-title {
   display: block;
@@ -122,11 +123,10 @@ $text-muted: #9BBCB4;
 .content { padding: 28rpx; }
 
 .tip-card {
-  background: #fff;
+  background: $zj-teal-light;
   border-radius: 18rpx;
   padding: 20rpx 24rpx;
   margin-bottom: 24rpx;
-  border-left: 5rpx solid $primary;
   box-shadow: 0 2rpx 12rpx rgba(28,42,39,0.05);
 }
 
@@ -147,7 +147,9 @@ $text-muted: #9BBCB4;
   gap: 24rpx;
   border: 2rpx solid transparent;
   box-shadow: 0 2rpx 12rpx rgba(28,42,39,0.05);
-  transition: all 0.15s;
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+
+  &:active { opacity: 0.88; }
 
   &.selected {
     border-color: $primary;
@@ -198,7 +200,7 @@ $text-muted: #9BBCB4;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.15s;
+  transition: background-color 0.15s, border-color 0.15s;
 
   &.active {
     background: $primary;
@@ -207,8 +209,7 @@ $text-muted: #9BBCB4;
 }
 
 .check-icon {
-  font-size: 26rpx;
-  color: #fff;
+  width: 28rpx;
 }
 
 /* Submit Button */
@@ -226,5 +227,7 @@ $text-muted: #9BBCB4;
   font-weight: 700;
   letter-spacing: 0.04em;
   box-shadow: 0 8rpx 28rpx rgba(74,138,122,0.30);
+
+  &:active { opacity: 0.88; }
 }
 </style>

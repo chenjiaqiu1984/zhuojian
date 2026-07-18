@@ -39,7 +39,7 @@
     <view class="comment-section" :class="{ 'comment-section--with-reg': isActivity && !isExpired }">
       <text class="section-title">留言</text>
       <view class="comment-input-row">
-        <input class="comment-input" v-model="commentText" placeholder="写下你的留言..." />
+        <input class="comment-input" v-model="commentText" placeholder="写下你的留言…" />
         <text class="send-btn" @click="submitComment()">发送</text>
       </view>
       <view class="comment-list">
@@ -301,7 +301,7 @@ function registerActivity() {
 .content :deep(th) { background: #f5f5f5; font-weight: bold; }
 .content :deep(iframe), .content :deep(video) { max-width: 100%; }
 .action-bar { display: flex; gap: 48rpx; justify-content: center; padding: 32rpx; border-top: 1rpx solid #f0f0f0; margin-top: 32rpx; }
-.action-btn { display: flex; flex-direction: column; align-items: center; gap: 8rpx; }
+.action-btn { display: flex; flex-direction: column; align-items: center; gap: 8rpx; &:active { opacity: 0.7; } }
 .action-label { font-size: 24rpx; color: #999; }
 .active { color: #4A8A7A; }
 .active-fav { color: #E6A23C; }
@@ -310,13 +310,13 @@ function registerActivity() {
 .section-title { font-size: 30rpx; font-weight: 600; color: #1C2A27; display: block; margin-bottom: 20rpx; }
 .comment-input-row { display: flex; gap: 16rpx; margin-bottom: 24rpx; }
 .comment-input { flex: 1; border: 1rpx solid #e0e0e0; border-radius: 12rpx; padding: 16rpx; font-size: 26rpx; }
-.send-btn { background: #4A8A7A; color: #fff; border-radius: 12rpx; padding: 16rpx 28rpx; font-size: 26rpx; white-space: nowrap; }
+.send-btn { background: #4A8A7A; color: #fff; border-radius: 12rpx; padding: 16rpx 28rpx; font-size: 26rpx; white-space: nowrap; &:active { opacity: 0.88; } }
 .comment-item { padding: 20rpx; background: #f9f9f9; border-radius: 12rpx; margin-bottom: 16rpx; }
 .comment-item.reply { background: #eef6f4; margin-left: 32rpx; }
 .comment-meta { display: flex; align-items: center; gap: 16rpx; margin-bottom: 8rpx; }
 .comment-who { font-size: 24rpx; font-weight: 600; color: #4A8A7A; }
 .comment-time { font-size: 22rpx; color: #999; flex: 1; }
-.del-btn { font-size: 22rpx; color: #f56c6c; }
+.del-btn { font-size: 22rpx; color: #f56c6c; &:active { opacity: 0.7; } }
 .comment-content { font-size: 26rpx; color: #444; line-height: 1.6; display: block; }
 
 .reg-bar {

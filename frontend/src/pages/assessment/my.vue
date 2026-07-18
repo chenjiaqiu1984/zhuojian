@@ -128,7 +128,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   margin-bottom: 20rpx;
   &:active { transform: scale(0.99); }
 }
-.pushed-card { border-left: 6rpx solid $teal; }
+.pushed-card { background: $zj-teal-light; }
 
 .card-top {
   display: flex;
@@ -163,6 +163,8 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   border-radius: 16rpx;
   padding: 16rpx 0;
   gap: 8rpx;
+
+  &:active { opacity: 0.88; }
 }
 .btn-go-txt { font-size: 26rpx; color: #fff; font-weight: 600; letter-spacing: 0.04em; }
 .btn-go-arrow { font-size: 36rpx; color: rgba(255,255,255,0.8); line-height: 1; }

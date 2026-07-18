@@ -177,7 +177,7 @@ async function changePassword() {
 <style scoped lang="scss">
 .page {
   min-height: 100vh;
-  background: #F0F4F3;
+  background: $zj-bg;
   padding: 24rpx;
   display: flex;
   flex-direction: column;
@@ -186,9 +186,9 @@ async function changePassword() {
 
 .section {
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: $zj-radius-card;
   padding: 32rpx 28rpx;
-  box-shadow: 0 2rpx 12rpx rgba(74, 138, 122, 0.06);
+  box-shadow: $zj-shadow-card;
 }
 
 .section-title {
@@ -198,7 +198,6 @@ async function changePassword() {
   display: block;
   margin-bottom: 24rpx;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .row { display: flex; align-items: center; gap: 16rpx; margin-bottom: 24rpx; }
@@ -233,6 +232,7 @@ async function changePassword() {
   font-size: 28rpx;
   font-weight: 600;
   letter-spacing: 0.04em;
+  &:active { opacity: 0.88; }
 }
 
 .btn-cancel { background: #F0F4F3; color: #7A9E97; }

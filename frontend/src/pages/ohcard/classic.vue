@@ -9,7 +9,7 @@
 
     <!-- Cards -->
     <view v-if="selDeck" class="step">
-      <view class="deck-tag"><text class="deck-tag-text">📦 {{selDeck?.name}}</text></view>
+      <view class="deck-tag"><ZjIcon class="deck-tag-icon" name="package" :size="28" color="#617870" /><text class="deck-tag-text">{{selDeck?.name}}</text></view>
       <text class="reflect-hint">保持你的问题在心中，翻开卡牌，看看它想对你说什么</text>
       <view class="cards-row">
         <!-- Image card (left) -->
@@ -65,9 +65,9 @@
           </view>
         </view>
         <text class="section-label" style="margin-top:28rpx">此刻感受</text>
-        <textarea class="note-input" v-model="note" placeholder="写下你的感想..." placeholder-class="note-ph" maxlength="500" />
+        <textarea class="note-input" v-model="note" placeholder="写下你的感想…" placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
-          <view class="btn btn-primary" :class="{disabled:saving}" @click="saveRecord()">{{saving?'保存中...':'保存记录'}}</view>
+          <view class="btn btn-primary" :class="{disabled:saving}" @click="saveRecord()">{{saving?'保存中…':'保存记录'}}</view>
           <view class="btn btn-ghost" @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</view>
           <view class="btn btn-ghost" @click="uni.navigateBack()">返回抽卡菜单</view>
         </view>
@@ -80,6 +80,7 @@
 import { ref, computed, onMounted, nextTick , watch } from 'vue';
 import { onBackPress, onLoad } from '@dcloudio/uni-app';
 import { ohcardApi } from '../../api/index';
+import ZjIcon from '../../components/ZjIcon.vue';
 import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
 import { SERVER } from '../../config';
@@ -306,8 +307,9 @@ const deckGuides = computed(() => DECK_GUIDES[selDeck.value?.name] || []);
 .section-label { font-size: 26rpx; font-weight: 600; color: #617870; display: block; margin-bottom: 16rpx; letter-spacing: 0.04em; }
 
 /* Intro & guide */
-.deck-tag { text-align: center; margin-bottom: 22rpx; }
-.deck-tag-text { font-size: 24rpx; color: #4A8A7A; background: #EDF4F0; padding: 10rpx 30rpx; border-radius: 32rpx; }
+.deck-tag { display: flex; justify-content: center; align-items: center; gap: 8rpx; margin-bottom: 22rpx; background: #EDF4F0; padding: 10rpx 30rpx; border-radius: 32rpx; width: fit-content; margin-left: auto; margin-right: auto; }
+.deck-tag-icon { flex-shrink: 0; }
+.deck-tag-text { font-size: 24rpx; color: #4A8A7A; }
 .reflect-hint { display: block; text-align: center; font-size: 24rpx; color: #9BBCB4; margin-bottom: 44rpx; line-height: 1.7; padding: 0 24rpx; }
 
 /* Cards row */
@@ -377,7 +379,7 @@ const deckGuides = computed(() => DECK_GUIDES[selDeck.value?.name] || []);
 
 /* Fullscreen */
 .fs-overlay {
-  position: fixed; inset: 0; z-index: 9999;
+  position: fixed; inset: 0; z-index: $zj-z-modal;
   background: rgba(20,32,29,.94);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }

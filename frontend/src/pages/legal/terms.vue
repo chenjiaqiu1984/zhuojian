@@ -6,8 +6,8 @@
       <text class="update-date">版本日期：2026年7月1日　生效日期：2026年7月1日</text>
 
       <text class="preamble">
-        欢迎使用卓见心理平台。本协议由你（"用户"）与卓见心理平台运营主体（"本平台"）订立，
-        具有法律约束力，请在使用前仔细阅读。点击"同意"或使用本平台服务，即视为你已充分理解并接受本协议全部条款。
+        欢迎使用卓见心理平台。本协议由你（“用户”）与卓见心理平台运营主体（“本平台”）订立，
+        具有法律约束力，请在使用前仔细阅读。点击“同意”或使用本平台服务，即视为你已充分理解并接受本协议全部条款。
       </text>
 
       <text class="section-title">一、平台性质与服务范围</text>
@@ -50,7 +50,7 @@
       <text class="body">6.3 如需将本平台内容用于科研等非商业目的，须事先获得本平台书面同意，并对用户数据进行完全匿名化处理。</text>
 
       <text class="section-title">七、账户注销与数据删除</text>
-      <text class="body">7.1 你可随时在"设置-账户"中申请注销账户。本平台将在收到申请后15个工作日内完成注销。</text>
+      <text class="body">7.1 你可随时在“设置-账户”中申请注销账户。本平台将在收到申请后15个工作日内完成注销。</text>
       <text class="body">7.2 账户注销后，本平台将删除你的个人信息及内容数据，法律法规要求保留的除外（如支付记录须依法保留5年）。</text>
       <text class="body">7.3 注销前，已预约且未完成的咨询须先行处理（完成、取消并退款）。</text>
 
@@ -67,7 +67,7 @@
       <text class="section-title">十、其他</text>
       <text class="body">10.1 本平台运营主体依法持有互联网信息服务许可证，备案号：<text class="em">苏ICP备2026043098号</text>。用户数据存储于中国境内服务器，符合《数据安全法》及《个人信息保护法》关于数据本地化的要求。</text>
       <text class="body">10.2 本协议任何条款被认定无效或不可执行时，不影响其他条款的效力。</text>
-      <text class="body">10.3 如有疑问或需行使数据权利，请发送邮件至平台客服邮箱：<text class="em">345958875@qq.com</text>，或通过"关于我们"页面联系我们。</text>
+      <text class="body">10.3 如有疑问或需行使数据权利，请发送邮件至平台客服邮箱：<text class="em">345958875@qq.com</text>，或通过“关于我们”页面联系我们。</text>
 
     </view>
     </scroll-view>
@@ -78,7 +78,8 @@
       <text class="sign-btn" @click="signTerms()">同意并签署</text>
     </view>
     <view v-else-if="signed" class="signed-bar">
-      <text class="signed-text">✅ 已签署 · {{fmtDate(store.user.termsAcceptedAt)}}</text>
+      <ZjIcon class="signed-icon" name="circle-check" :size="32" color="#4A8A7A" />
+      <text class="signed-text">已签署 · {{fmtDate(store.user.termsAcceptedAt)}}</text>
     </view>
   </view>
 </template>
@@ -87,6 +88,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 // 微信小程序 scroll-view 必须有明确的 height，flex:1 无效
 // 根据是否显示 sign-bar 动态计算可滚动区域高度
@@ -180,8 +182,10 @@ async function signTerms() {
 }
 .signed-bar {
   flex-shrink: 0;
-  padding: 24rpx 32rpx; text-align: center;
+  padding: 24rpx 32rpx;
   background: #EDF7F4;
+  display: flex; align-items: center; justify-content: center; gap: 10rpx;
 }
+.signed-icon { flex-shrink: 0; }
 .signed-text { font-size: 24rpx; color: #4A8A7A; }
 </style>

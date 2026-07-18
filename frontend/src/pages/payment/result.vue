@@ -6,14 +6,14 @@
     </view>
 
     <view v-else-if="status === 'paid'" class="state-box success">
-      <text class="state-icon">✅</text>
+      <ZjIcon class="state-icon" name="circle-check" :size="96" color="#4A8A7A" />
       <text class="state-msg">支付成功</text>
       <text class="state-sub">预约已确认，感谢您的选择</text>
       <button class="action-btn" @click="goHome()">返回首页</button>
     </view>
 
     <view v-else class="state-box fail">
-      <text class="state-icon">❌</text>
+      <ZjIcon class="state-icon" name="circle-x" :size="96" color="#D9534F" />
       <text class="state-msg">支付未完成</text>
       <text class="state-sub">{{ errorMsg }}</text>
       <button class="action-btn" @click="goBack()">重新支付</button>
@@ -24,6 +24,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { paymentApi } from '../../api/index';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 const status   = ref('checking');   // 'checking' | 'paid' | 'fail'
 const errorMsg = ref('');
@@ -73,7 +74,7 @@ onMounted(async () => {
   }
 
   status.value   = 'fail';
-  errorMsg.value = '支付结果未收到，请稍后在"我的订单"中查看状态';
+  errorMsg.value = '支付结果未收到，请稍后在“我的订单”中查看状态';
 });
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -102,7 +103,7 @@ function goBack() {
   gap: 24rpx;
   padding: 60rpx 40rpx;
 
-  .state-icon { font-size: 100rpx; }
+  .state-icon { width: 96rpx; }
   .state-msg  { font-size: 40rpx; font-weight: 700; color: #1C2A27; }
   .state-sub  { font-size: 26rpx; color: #8A9E97; text-align: center; line-height: 1.6; }
 

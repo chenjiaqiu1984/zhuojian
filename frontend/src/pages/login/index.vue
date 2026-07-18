@@ -28,7 +28,7 @@
         :disabled="loading"
         @getphonenumber="(e) => onGetPhoneNumber(e)"
         @tap="() => onBtnTap()"
-      >{{ loading ? '登录中...' : '微信一键登录' }}</button>
+      >{{ loading ? '登录中…' : '微信一键登录' }}</button>
 
       <view class="mp-terms">
         <text class="mp-terms-text">登录即代表同意</text>
@@ -86,7 +86,7 @@
             <input class="ipt" v-model="pwd.password" placeholder="请输入密码" type="password" />
           </view>
         </view>
-        <text class="submit-btn" @click="loginPwd()">{{loading ? '登录中...' : '登 录'}}</text>
+        <text class="submit-btn" @click="loginPwd()">{{loading ? '登录中…' : '登 录'}}</text>
         <view class="remember-row" @click="rememberMe=!rememberMe">
           <view :class="['checkbox', rememberMe && 'checked']" />
           <text class="remember-txt">记住登录状态（30天）</text>
@@ -125,7 +125,7 @@
             </view>
           </view>
         </view>
-        <text class="submit-btn" @click="loginPhone()">{{loading ? '登录中...' : '登录 / 注册'}}</text>
+        <text class="submit-btn" @click="loginPhone()">{{loading ? '登录中…' : '登录 / 注册'}}</text>
         <view class="remember-row" @click="rememberMe=!rememberMe">
           <view :class="['checkbox', rememberMe && 'checked']" />
           <text class="remember-txt">记住登录状态（30天）</text>
@@ -642,6 +642,7 @@ function success() {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  &:active { opacity: 0.88; }
 }
 .send-btn text {
   font-size: 24rpx;
@@ -668,6 +669,7 @@ function success() {
   box-shadow: 0 16rpx 48rpx rgba(30,84,72,.30), inset 0 1rpx 0 rgba(255,255,255,.15);
   margin-top: 12rpx;
   box-sizing: border-box;
+  &:active { opacity: 0.88; }
 }
 
 /* 记住我 */
@@ -685,7 +687,7 @@ function success() {
   border-radius: 8rpx;
   background: #fff;
   flex-shrink: 0;
-  transition: all 0.2s;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 .checkbox.checked {
   background: #4A8A7A;

@@ -11,21 +11,14 @@
     </view>
 
     <!-- 督导与咨询时长 -->
-    <view class="stat-row">
-      <view class="stat-item">
-        <text class="stat-num">{{consultant.yearsExp}}</text>
-        <text class="stat-label">年从业经验</text>
-      </view>
-      <view class="stat-divider" />
-      <view class="stat-item">
-        <text class="stat-num">8000小时+</text>
-        <text class="stat-label">咨询时长</text>
-      </view>
-      <view class="stat-divider" />
-      <view class="stat-item">
-        <text class="stat-num">1000小时+</text>
-        <text class="stat-label">督导时长</text>
-      </view>
+    <view class="stat-row" v-if="stats.length">
+      <template v-for="(s, i) in stats" :key="s.label">
+        <view class="stat-divider" v-if="i > 0" />
+        <view class="stat-item">
+          <text class="stat-num">{{s.value}}</text>
+          <text class="stat-label">{{s.label}}</text>
+        </view>
+      </template>
     </view>
 
     <!-- 个人简介 -->
@@ -47,7 +40,7 @@
       <text class="card-title">执业资质</text>
       <view class="cert-badge-wrap">
         <view class="cert-badge" v-for="c in certifications" :key="c">
-          <text class="cert-icon">🏅</text>
+          <ZjIcon class="cert-icon" name="award" :size="32" color="#4A8A7A" />
           <text class="cert-text">{{c}}</text>
         </view>
       </view>
@@ -57,7 +50,7 @@
     <view class="card" v-if="credentials.length">
       <text class="card-title">教育背景</text>
       <view class="cred-item" v-for="c in credentials" :key="c">
-        <text class="cred-dot">🎖</text>
+        <ZjIcon class="cred-dot" name="medal" :size="28" color="#4A8A7A" />
         <text class="cred-text">{{c}}</text>
       </view>
     </view>
@@ -120,13 +113,14 @@
       <button class="book-btn" @click="onBookClick()">{{rescheduleId ? '确认修改' : '立即预约'}}</button>
     </view>
   </view>
-  <view v-else-if="loading" class="loading">加载中...</view>
+  <view v-else-if="loading" class="loading">加载中…</view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { consultantApi, bookingApi } from '../../api/index';
+import ZjIcon from '../../components/ZjIcon.vue';
 import { useUserStore } from '../../store/user';
 import { SERVER } from '../../config';
 import { track } from '../../utils/track';
@@ -164,6 +158,16 @@ const store = useUserStore();
 const specialties = computed(() =>
   consultant.value?.specialties ? consultant.value.specialties.split(',').map(s => s.trim()).filter(Boolean) : []
 );
+// 统计项：仅展示后端返回的真实数值，无数据的项不渲染
+const stats = computed(() => {
+  const c = consultant.value;
+  if (!c) return [];
+  const list = [];
+  if (c.yearsExp > 0)         list.push({ value: c.yearsExp,          label: '年从业经验' });
+  if (c.consultHours > 0)     list.push({ value: c.consultHours + '+', label: '咨询时长(小时)' });
+  if (c.supervisionHours > 0) list.push({ value: c.supervisionHours + '+', label: '督导时长(小时)' });
+  return list;
+});
 // 执业资质（certifications 字段，每行一条）
 const certifications = computed(() =>
   consultant.value?.certifications ? consultant.value.certifications.split('\n').map(s => s.trim()).filter(Boolean) : []
@@ -409,7 +413,7 @@ $border: #E8EFED;
 }
 
 .stat-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6rpx; }
-.stat-num { font-size: 36rpx; font-weight: 800; color: $primary; }
+.stat-num { font-size: 36rpx; font-weight: 800; color: $primary; font-variant-numeric: tabular-nums; }
 .stat-label { font-size: 22rpx; color: $text-muted; }
 .stat-divider { width: 1rpx; background: $border; margin: 4rpx 0; }
 
@@ -462,7 +466,7 @@ $border: #E8EFED;
   &:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 }
 
-.cred-dot { font-size: 28rpx; flex-shrink: 0; margin-top: 2rpx; }
+.cred-dot { width: 28rpx; flex-shrink: 0; margin-top: 2rpx; }
 .cred-text { font-size: 28rpx; color: $text-main; line-height: 1.7; }
 
 /* Certifications */
@@ -476,7 +480,7 @@ $border: #E8EFED;
   border-radius: 16rpx;
   padding: 20rpx 22rpx;
 }
-.cert-icon { font-size: 32rpx; flex-shrink: 0; }
+.cert-icon { width: 32rpx; flex-shrink: 0; }
 .cert-text { font-size: 26rpx; color: #5A4000; line-height: 1.75; flex: 1; }
 
 /* Policy */

@@ -30,7 +30,8 @@ $zj-radius-sm:   14rpx;     // 小控件圆角
 $zj-shadow-card: 0 4rpx 18rpx rgba(28, 42, 39, 0.04);   // 中性轻阴影（不染色）
 
 // ── 渐变 ──
-$zj-gradient-hero: linear-gradient(135deg, #{$zj-teal} 0%, #{$zj-teal-dark} 100%);
+$zj-gradient-hero:   linear-gradient(135deg, #{$zj-teal} 0%, #{$zj-teal-dark} 100%);
+$zj-gradient-header: linear-gradient(155deg, #4A8A7A 0%, #2E5870 100%);   // 深色页头（练习/工具页）统一渐变
 
 // ── 字体 ──
 $zj-font-serif:  "Noto Serif SC", serif;   // 标题衬线体

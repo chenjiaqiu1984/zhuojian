@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view v-if="loading" class="status-center"><text class="status-txt">加载中...</text></view>
+    <view v-if="loading" class="status-center"><text class="status-txt">加载中…</text></view>
 
     <!-- Instruction Page -->
     <view v-else-if="scale && showInstruction" class="inst-page">
@@ -22,7 +22,7 @@
         </view>
         <button class="btn-start" @click="startTest()">开始测评</button>
         <view class="data-notice">
-          <text class="data-notice-icon">🔒</text>
+          <ZjIcon class="data-notice-icon" name="lock" :size="28" color="#617870" />
           <text class="data-notice-text">您的测评数据将被加密保存，可能被用于咨询前的背景分析与专业解读，以帮助咨询师更好地了解您的状况。我们承诺严格保密，不向任何第三方泄露您的个人信息。</text>
         </view>
       </view>
@@ -73,7 +73,7 @@
           class="btn-submit"
           :disabled="!allAnswered || submitting"
           @click="trySubmit()"
-        >{{ submitting ? '提交中...' : '提交测评' }}</button>
+        >{{ submitting ? '提交中…' : '提交测评' }}</button>
       </view>
     </view>
 
@@ -109,6 +109,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { assessmentApi } from '../../api/index.js';
+import ZjIcon from '../../components/ZjIcon.vue';
 import { useUserStore } from '../../store/user.js';
 import { track } from '../../utils/track.js';
 
@@ -342,9 +343,9 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   border-radius: 16rpx;
 }
 .data-notice-icon {
-  font-size: 28rpx;
+  width: 28rpx;
   flex-shrink: 0;
-  line-height: 1.6;
+  margin-top: 4rpx;
 }
 .data-notice-text {
   font-size: 22rpx;
@@ -369,7 +370,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   padding: 16rpx 28rpx;
 }
 .progress-label { font-size: 24rpx; color: $teal; font-weight: 600; }
-.progress-total { font-size: 22rpx; color: $muted; }
+.progress-total { font-size: 22rpx; color: $muted; font-variant-numeric: tabular-nums; }
 
 /* Guide */
 .guide-banner {
@@ -408,7 +409,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   border: 1rpx solid $border;
   border-radius: 20rpx;
   background: #fff;
-  transition: all 0.18s ease;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
   &.selected {
     border-color: $teal;
     background: rgba(74,138,122,0.06);
@@ -422,7 +423,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   border-radius: 50%;
   border: 3rpx solid $border;
   flex-shrink: 0;
-  transition: all 0.18s ease;
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
   &.opt-dot-on {
     border-color: $teal;
     background: $teal;

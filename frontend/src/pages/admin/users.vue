@@ -19,7 +19,10 @@
             {{u.status === 'pending' ? '待完善' : '正常'}}
           </view>
         </view>
-        <text class="user-phone">📱 {{u.phone || '未绑定手机'}}</text>
+        <view class="user-phone">
+          <ZjIcon class="user-phone-icon" name="smartphone" :size="28" color="#617870" />
+          <text class="user-phone-text">{{u.phone || '未绑定手机'}}</text>
+        </view>
         <view class="user-meta">
           <text class="meta-item">{{roleLabel[u.role] || u.role}}</text>
           <text class="meta-item">{{fmtDate(u.createdAt)}}</text>
@@ -47,6 +50,7 @@
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '../../store/user';
 import { SERVER } from '../../config';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 const store = useUserStore();
 const BASE_URL = `${SERVER}/api`;
@@ -142,33 +146,38 @@ onMounted(load);
 .search-btn {
   background: #4A8A7A; color: #fff; font-size: 28rpx; padding: 0 32rpx;
   border-radius: 16rpx; height: 80rpx; line-height: 80rpx; flex-shrink: 0;
+  &:active { opacity: 0.88; }
 }
 .filter-row { display: flex; gap: 16rpx; margin-bottom: 24rpx; flex-wrap: wrap; }
 .filter-chip {
   padding: 10rpx 28rpx; border-radius: 50rpx; font-size: 24rpx;
   background: #fff; color: #617870; border: 2rpx solid #E8EDEB;
+  &:active { opacity: 0.88; }
 }
 .filter-chip.active { background: #4A8A7A; color: #fff; border-color: #4A8A7A; }
 
 .user-list { display: flex; flex-direction: column; gap: 16rpx; }
-.user-card { background: #fff; border-radius: 16rpx; padding: 24rpx; }
+.user-card { background: #fff; border-radius: $zj-radius-card; padding: 24rpx; }
 .user-top { display: flex; align-items: center; gap: 16rpx; margin-bottom: 12rpx; }
 .user-name { font-size: 30rpx; font-weight: 700; color: #1C2A27; flex: 1; }
 .status-tag { font-size: 22rpx; padding: 4rpx 16rpx; border-radius: 50rpx; flex-shrink: 0; }
 .status-pending { background: #FFF3E0; color: #F57C00; }
 .status-active   { background: #E8F5E9; color: #388E3C; }
-.user-phone { font-size: 24rpx; color: #617870; display: block; margin-bottom: 12rpx; }
+.user-phone { display: flex; align-items: center; gap: 8rpx; margin-bottom: 12rpx; }
+.user-phone-icon { flex-shrink: 0; }
+.user-phone-text { font-size: 24rpx; color: #617870; }
 .user-meta { display: flex; gap: 24rpx; margin-bottom: 16rpx; }
 .meta-item { font-size: 22rpx; color: #9BBCB4; }
 .role-btns { display: flex; gap: 12rpx; flex-wrap: wrap; }
 .role-btn {
   font-size: 22rpx; padding: 8rpx 24rpx; border-radius: 50rpx;
   background: #F7F9F8; color: #617870; border: 2rpx solid #E8EDEB;
+  &:active { opacity: 0.88; }
 }
 .role-btn-active { background: #4A8A7A; color: #fff; border-color: #4A8A7A; }
 
 .pagination { display: flex; justify-content: center; align-items: center; gap: 32rpx; margin-top: 32rpx; padding: 24rpx; }
-.pg-btn { font-size: 28rpx; color: #4A8A7A; padding: 12rpx 24rpx; background: #fff; border-radius: 12rpx; }
+.pg-btn { font-size: 28rpx; color: #4A8A7A; padding: 12rpx 24rpx; background: #fff; border-radius: 12rpx; &:active { opacity: 0.88; } }
 .pg-disabled { color: #C0CCC8; }
-.pg-info { font-size: 26rpx; color: #617870; }
+.pg-info { font-size: 26rpx; color: #617870; font-variant-numeric: tabular-nums; }
 </style>

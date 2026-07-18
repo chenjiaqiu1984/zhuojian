@@ -114,41 +114,41 @@ onMounted(() => track('page_view', '/pages/ohcard/room'));
 </script>
 
 <style scoped lang="scss">
-.page { padding: 32rpx; min-height: 100vh; }
+.page { padding: 32rpx; min-height: 100vh; background: $zj-bg; }
 .join { display: flex; flex-direction: column; }
-.title { font-size: 36rpx; font-weight: bold; color: #333; display: block; margin-bottom: 8rpx; }
-.desc { font-size: 26rpx; color: #777; display: block; }
-.room-header { display: flex; justify-content: space-between; align-items: center; background: #4A7BBA; padding: 16rpx 24rpx; border-radius: 16rpx; color: #fff; margin-bottom: 16rpx; }
+.title { font-size: 36rpx; font-weight: bold; color: $zj-text-1; display: block; margin-bottom: 8rpx; font-family: $zj-font-serif; }
+.desc { font-size: 26rpx; color: $zj-text-2; display: block; }
+.room-header { display: flex; justify-content: space-between; align-items: center; background: $zj-gradient-hero; padding: 16rpx 24rpx; border-radius: $zj-radius-sm; color: #fff; margin-bottom: 16rpx; }
 .room-id { font-size: 28rpx; font-weight: 600; }
-.member { background: #fff; border-radius: 16rpx; padding: 20rpx; margin-bottom: 12rpx; }
+.member { background: $zj-surface; border-radius: $zj-radius-sm; padding: 20rpx; margin-bottom: 12rpx; box-shadow: $zj-shadow-card; }
 .member-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
-.m-name { font-size: 28rpx; font-weight: 600; color: #333; }
+.m-name { font-size: 28rpx; font-weight: 600; color: $zj-text-1; }
 .shared-cards, .hidden-cards, .my-card-row { display: flex; gap: 12rpx; }
-.mini-card { width: 100rpx; height: 130rpx; border-radius: 10rpx; overflow: hidden; background: #f5f7fa; display: flex; align-items: center; justify-content: center; }
-.mini-card.back { background: linear-gradient(135deg,#4A7BBA,#7B68EE); }
+.mini-card { width: 100rpx; height: 130rpx; border-radius: 10rpx; overflow: hidden; background: $zj-bg; display: flex; align-items: center; justify-content: center; }
+.mini-card.back { background: $zj-gradient-hero; }
 .mini-img { width: 100%; height: 100%; }
-.mini-word { font-size: 22rpx; font-weight: bold; color: #4A7BBA; }
-.my-cards { background: #fff; border-radius: 16rpx; padding: 20rpx; margin: 16rpx 0; }
-.my-title { font-size: 28rpx; font-weight: 600; color: #333; display: block; margin-bottom: 16rpx; }
-.my-card { width: 150rpx; height: 200rpx; flex-shrink: 0; border-radius: 12rpx; overflow: hidden; background: #f5f7fa; display: flex; align-items: center; justify-content: center; }
+.mini-word { font-size: 22rpx; font-weight: bold; color: $zj-teal; }
+.my-cards { background: $zj-surface; border-radius: $zj-radius-sm; padding: 20rpx; margin: 16rpx 0; box-shadow: $zj-shadow-card; }
+.my-title { font-size: 28rpx; font-weight: 600; color: $zj-text-1; display: block; margin-bottom: 16rpx; }
+.my-card { width: 150rpx; height: 200rpx; flex-shrink: 0; border-radius: 12rpx; overflow: hidden; background: $zj-bg; display: flex; align-items: center; justify-content: center; }
 .card-img { width: 100%; height: 100%; }
-.card-word { font-size: 32rpx; font-weight: bold; color: #4A7BBA; }
+.card-word { font-size: 32rpx; font-weight: bold; color: $zj-teal; }
 .actions { display: flex; flex-direction: column; gap: 16rpx; margin-top: 24rpx; }
 .action-btn {
   text-align: center; padding: 22rpx 0; border-radius: 14rpx;
-  &--primary     { background: #4A8A7A; }
-  &--warning     { background: #C88A2A; }
-  &--success     { background: #3A8A5A; }
-  &--danger-plain { border: 1.5rpx solid #C03030; background: #FFF5F5; }
-  &--plain       { border: 1.5rpx solid #ccc; background: #fff; }
-  &--mini        { padding: 12rpx 24rpx; }
+  &--primary     { background: $zj-teal; &:active { opacity: 0.88; } }
+  &--warning     { background: #C88A2A; &:active { opacity: 0.88; } }
+  &--success     { background: $zj-teal-dark; &:active { opacity: 0.88; } }
+  &--danger-plain { border: 1.5rpx solid #C03030; background: #FFF5F5; &:active { opacity: 0.7; } }
+  &--plain       { border: 1.5rpx solid $zj-border; background: $zj-surface; &:active { opacity: 0.7; } }
+  &--mini        { padding: 12rpx 24rpx; &:active { opacity: 0.88; } }
   &--disabled    { opacity: 0.5; }
 }
 .action-btn-text {
   font-size: 28rpx; font-weight: 600;
   .action-btn--primary &, .action-btn--warning &, .action-btn--success & { color: #fff; }
   .action-btn--danger-plain & { color: #C03030; }
-  .action-btn--plain & { color: #555; }
+  .action-btn--plain & { color: $zj-text-2; }
   .action-btn--mini & { font-size: 24rpx; }
 }
 </style>

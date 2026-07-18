@@ -18,7 +18,7 @@
       </view>
       <view class="menus">
         <view class="menu-item" v-for="m in menus" :key="m.label" @click="menuClick(m)">
-          <text class="menu-emoji">{{m.icon}}</text>
+          <ZjIcon class="menu-icon" :name="m.icon" :size="40" color="#4A8A7A" />
           <text class="menu-label">{{m.label}}</text>
           <text class="menu-arrow">›</text>
         </view>
@@ -35,6 +35,7 @@
 <script setup>
 import { computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
+import ZjIcon from '../../components/ZjIcon.vue';
 import { useUserStore } from '../../store/user';
 import { authApi, bookingApi, paymentApi } from '../../api/index';
 import { SERVER } from '../../config';
@@ -77,16 +78,16 @@ function menuClick(m) {
 
 const menus = computed(() => {
   const base = [
-    { label: '我的预约',   icon: '📅',  action: () => uni.navigateTo({ url: '/pages/booking/index' }) },
-    { label: '我的订单',   icon: '🧾',  action: () => uni.navigateTo({ url: '/pages/orders/index' }) },
-    { label: '心理测评',   icon: '📝',  action: () => uni.navigateTo({ url: '/pages/assessment/my' }) },
-    { label: '测评记录',   icon: '📋',  action: () => uni.navigateTo({ url: '/pages/assessment/results' }) },
-    { label: '抽卡记录',   icon: '🃏',  action: () => uni.navigateTo({ url: '/pages/ohcard/record' }) },
-    { label: '我的券码',   icon: '🎟️',  action: () => uni.navigateTo({ url: '/pages/profile/coupons' }) },
-    { label: '设置',       icon: '⚙️',  action: () => uni.navigateTo({ url: '/pages/profile/settings' }) },
+    { label: '我的预约',   icon: 'calendar',       action: () => uni.navigateTo({ url: '/pages/booking/index' }) },
+    { label: '我的订单',   icon: 'receipt',        action: () => uni.navigateTo({ url: '/pages/orders/index' }) },
+    { label: '心理测评',   icon: 'clipboard-pen',  action: () => uni.navigateTo({ url: '/pages/assessment/my' }) },
+    { label: '测评记录',   icon: 'clipboard-list', action: () => uni.navigateTo({ url: '/pages/assessment/results' }) },
+    { label: '抽卡记录',   icon: 'layers',         action: () => uni.navigateTo({ url: '/pages/ohcard/record' }) },
+    { label: '我的券码',   icon: 'ticket',         action: () => uni.navigateTo({ url: '/pages/profile/coupons' }) },
+    { label: '设置',       icon: 'settings',       action: () => uni.navigateTo({ url: '/pages/profile/settings' }) },
   ];
   if (store.user?.role === 'consultant') {
-    base.splice(1, 0, { label: '排班管理', icon: '🕐', action: () => uni.navigateTo({ url: '/pages/consultants/schedule' }) });
+    base.splice(1, 0, { label: '排班管理', icon: 'clock', action: () => uni.navigateTo({ url: '/pages/consultants/schedule' }) });
   }
   return base;
 });
@@ -131,13 +132,20 @@ function logout() {
 .badges-row { display: flex; align-items: center; gap: 12rpx; flex-wrap: wrap; }
 .pending-badge { background: #FFF3E0; color: #F57C00; font-size: 22rpx; padding: 4rpx 16rpx; border-radius: 20rpx; }
 
-.menus { background: #fff; margin: 24rpx; border-radius: 16rpx; overflow: hidden; }
-.menu-item { display: flex; align-items: center; gap: 20rpx; padding: 32rpx 24rpx; border-bottom: 1rpx solid #f0f2f1; }
-.menu-emoji { font-size: 36rpx; width: 44rpx; text-align: center; }
+.menus { background: #fff; margin: 24rpx; border-radius: $zj-radius-card; overflow: hidden; }
+.menu-item {
+  display: flex; align-items: center; gap: 20rpx; padding: 32rpx 24rpx;
+  border-bottom: 1rpx solid #f0f2f1;
+  &:active { opacity: 0.88; }
+}
+.menu-icon { width: 44rpx; }
 .menu-label { flex: 1; font-size: 28rpx; color: #1C2A27; }
 .menu-arrow { font-size: 32rpx; color: #ccc; }
 
-.logout { display: block; text-align: center; color: #9BBCB4; font-size: 28rpx; margin: 24rpx; background: #fff; padding: 30rpx; border-radius: 16rpx; }
+.logout {
+  display: block; text-align: center; color: #9BBCB4; font-size: 28rpx;
+  margin: 24rpx; background: #fff; padding: 30rpx; border-radius: $zj-radius-card;
+}
 
 .footer-info {
   display: flex; flex-direction: column; align-items: center; gap: 12rpx;

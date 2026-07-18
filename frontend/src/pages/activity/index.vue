@@ -13,7 +13,7 @@
 
     <!-- Loading -->
     <view v-if="loading" class="status-center">
-      <text class="status-txt">加载中...</text>
+      <text class="status-txt">加载中…</text>
     </view>
 
     <!-- List -->
@@ -269,13 +269,11 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   background: #fff;
   border-radius: $card-r;
   border: 1rpx solid $border;
-  border-left: 6rpx solid $teal;
   box-shadow: $card-shadow;
   margin-bottom: 28rpx;
   overflow: hidden;
   &:active { transform: scale(0.99); }
   &.act-card--expired {
-    border-left-color: #C8D2CE;
     opacity: 0.72;
   }
 }

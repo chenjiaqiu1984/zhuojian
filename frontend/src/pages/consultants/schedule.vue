@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <view v-if="noProfile" class="empty-state">
-      <text class="empty-icon">📋</text>
+      <ZjIcon class="empty-icon" name="clipboard-list" :size="96" color="#9BBCB4" />
       <text class="empty-text">您还没有咨询师档案</text>
       <text class="empty-sub">请联系管理员为您创建档案后再使用排班功能</text>
     </view>
@@ -69,6 +69,7 @@
 <script setup>
 import {ref, computed, onMounted, watch } from 'vue';
 import { consultantApi } from '../../api/index';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 
 const HALVES = Array.from({ length: 28 }, (_, i) => i); // 08:00–21:30
@@ -187,17 +188,17 @@ onMounted(async () => {
 .page { background: #F5F7F6; min-height: 100vh; padding-bottom: 40rpx; }
 
 .empty-state { display: flex; flex-direction: column; align-items: center; padding: 120rpx 32rpx; gap: 16rpx; }
-.empty-icon { font-size: 80rpx; }
+.empty-icon { width: 96rpx; }
 .empty-text { font-size: 30rpx; font-weight: 600; color: #1C2A27; }
 .empty-sub { font-size: 24rpx; color: #9BBCB4; text-align: center; line-height: 1.6; }
 
 .section.settings { background: #fff; margin: 24rpx; padding: 28rpx; border-radius: 16rpx; }
 .row-between { display: flex; justify-content: space-between; align-items: center; }
 .label { font-size: 28rpx; color: #1C2A27; }
-.btn-save { margin-top: 20rpx; background: #4A8A7A; color: #fff; font-size: 26rpx; text-align: center; padding: 18rpx; border-radius: 12rpx; }
+.btn-save { margin-top: 20rpx; background: #4A8A7A; color: #fff; font-size: 26rpx; text-align: center; padding: 18rpx; border-radius: 12rpx; &:active { opacity: 0.88; } }
 
 .tabs { display: flex; background: #fff; margin: 0 24rpx 16rpx; border-radius: 16rpx; overflow: hidden; }
-.tab { flex: 1; text-align: center; padding: 24rpx; font-size: 26rpx; color: #617870; }
+.tab { flex: 1; text-align: center; padding: 24rpx; font-size: 26rpx; color: #617870; &:active { opacity: 0.7; } }
 .tab-active { color: #4A8A7A; font-weight: 600; border-bottom: 4rpx solid #4A8A7A; }
 
 .grid-wrap { margin: 0 24rpx; background: #fff; border-radius: 16rpx; }
@@ -217,6 +218,6 @@ onMounted(async () => {
 .hint { display: block; text-align: center; font-size: 22rpx; color: #9BBCB4; margin-top: 16rpx; }
 
 .btn-row { display: flex; gap: 16rpx; margin: 20rpx 24rpx 0; }
-.btn-tpl { flex: 1; text-align: center; padding: 20rpx; border-radius: 12rpx; font-size: 26rpx; background: #617870; color: #fff; }
+.btn-tpl { flex: 1; text-align: center; padding: 20rpx; border-radius: 12rpx; font-size: 26rpx; background: #617870; color: #fff; &:active { opacity: 0.88; } }
 .btn-tpl.apply { background: #4A8A7A; }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view v-if="loading" class="status-center"><text class="status-txt">加载中...</text></view>
+    <view v-if="loading" class="status-center"><text class="status-txt">加载中…</text></view>
     <view v-else-if="!list.length" class="status-center"><text class="status-txt">暂无测评记录</text></view>
     <view v-else class="list">
       <view class="item" v-for="r in list" :key="r.id" @click="goDetail(r.id)">
@@ -116,7 +116,7 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   align-items: center;
   margin-bottom: 16rpx;
 }
-.meta-score { font-size: 26rpx; color: $teal; font-weight: 600; }
+.meta-score { font-size: 26rpx; color: $teal; font-weight: 600; font-variant-numeric: tabular-nums; }
 .meta-flex { flex: 1; }
 .meta-date { font-size: 22rpx; color: $muted; }
 .dim-strip {

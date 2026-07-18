@@ -53,7 +53,7 @@
     <!-- 空状态 -->
     <view v-else-if="monsters.length === 0" class="empty-wrap">
       <view class="empty-circle">
-        <text class="empty-emoji">🐾</text>
+        <ZjIcon class="empty-emoji" name="paw-print" :size="96" color="#9BBCB4" />
       </view>
       <text class="empty-title">小屋还空着</text>
       <text class="empty-desc">创建你的第一只怪兽，让它住进来吧</text>
@@ -106,7 +106,11 @@
             <view class="emotion-tag" :style="{ background: `${m.color}18`, color: m.color }">
               <text class="emotion-tag-text">{{ m.emotion }}</text>
             </view>
-            <text class="streak-text">{{ m.streak > 0 ? `🔥 ${m.streak} 天` : '尚未签到' }}</text>
+            <view v-if="m.streak > 0" class="streak-wrap">
+              <ZjIcon class="streak-icon" name="flame" :size="24" color="#4A8A7A" />
+              <text class="streak-text">{{ m.streak }} 天</text>
+            </view>
+            <text v-else class="streak-text">尚未签到</text>
           </view>
           <view class="progress-track">
             <view class="progress-fill" :style="{ width: growthPct(m.totalDays) + '%', background: m.color }" />
@@ -126,6 +130,7 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
 import { monsterApi } from '@/api';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 const monsters = ref([]);
 const loading = ref(true);
@@ -450,7 +455,7 @@ $white: #FFFFFF;
   background: linear-gradient(135deg, #EDE5F5 0%, #D8C8F0 100%);
   display: flex; align-items: center; justify-content: center; margin-bottom: 8rpx;
 }
-.empty-emoji { font-size: 80rpx; }
+.empty-emoji { width: 96rpx; }
 .empty-title {
   display: block; font-size: 34rpx; font-weight: 700; color: $text-main;
   font-family: "Noto Serif SC", serif;
@@ -556,6 +561,8 @@ $white: #FFFFFF;
 .card-meta { display: flex; align-items: center; gap: 10rpx; margin-bottom: 12rpx; }
 .emotion-tag { border-radius: 10rpx; padding: 4rpx 12rpx; }
 .emotion-tag-text { font-size: 20rpx; font-weight: 600; }
+.streak-wrap { display: flex; align-items: center; gap: 6rpx; }
+.streak-icon { flex-shrink: 0; }
 .streak-text { font-size: 20rpx; color: $text-muted; }
 .progress-track {
   height: 6rpx; background: $purple-light; border-radius: 6rpx;

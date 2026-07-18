@@ -18,8 +18,11 @@
         </view>
         <view class="card-grid">
           <view class="card-chip" v-for="d in visibleSingle" :key="d.name" @click="navDeck(d)">
-            <text class="chip-name">{{d.name}}</text>
-            <text v-if="d.sub" class="chip-sub">{{d.sub}}</text>
+            <view class="chip-icon"><ZjIcon :name="d.icon" :size="40" color="#4A8A7A" /></view>
+            <view class="chip-body">
+              <text class="chip-name">{{d.name}}</text>
+              <text v-if="d.sub" class="chip-sub">{{d.sub}}</text>
+            </view>
           </view>
         </view>
         <view v-if="singleDecks.length > PAGE_SIZE && !showAllSingle" class="more-btn" @click="showAllSingle=true">
@@ -37,8 +40,11 @@
         <view class="card-grid">
           <view class="card-chip" v-for="c in visibleCombo" :key="c.id"
             @click="nav('/pages/ohcard/combo?id='+c.id,{cat:'combo',id:c.id,name:c.title})">
-            <text class="chip-name">{{c.title}}</text>
-            <text v-if="c.for" class="chip-sub">{{c.for}}</text>
+            <view class="chip-icon"><ZjIcon :name="c.icon" :size="40" color="#4A8A7A" /></view>
+            <view class="chip-body">
+              <text class="chip-name">{{c.title}}</text>
+              <text v-if="c.for" class="chip-sub">{{c.for}}</text>
+            </view>
           </view>
         </view>
         <view v-if="comboPreviews.length > PAGE_SIZE && !showAllCombo" class="more-btn" @click="showAllCombo=true">
@@ -56,8 +62,11 @@
         <view class="card-grid">
           <view class="card-chip" v-for="s in visibleScene" :key="s.id"
             @click="nav('/pages/ohcard/scene?id='+s.id,{cat:'scene',id:s.id,name:s.title})">
-            <text class="chip-name">{{s.title}}</text>
-            <text v-if="s.sub" class="chip-sub">{{s.sub}}</text>
+            <view class="chip-icon"><ZjIcon :name="s.icon" :size="40" color="#4A8A7A" /></view>
+            <view class="chip-body">
+              <text class="chip-name">{{s.title}}</text>
+              <text v-if="s.sub" class="chip-sub">{{s.sub}}</text>
+            </view>
           </view>
         </view>
         <view v-if="scenePreviews.length > PAGE_SIZE && !showAllScene" class="more-btn" @click="showAllScene=true">
@@ -98,6 +107,7 @@ import { onMounted, ref, computed } from 'vue';
 import { track } from '../../utils/track';
 import { SERVER } from '../../config';
 import { ohcardApi } from '../../api/index';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 // #ifndef H5
 defineOptions({

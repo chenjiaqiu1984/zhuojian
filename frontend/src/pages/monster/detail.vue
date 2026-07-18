@@ -69,7 +69,7 @@
         <!-- 已喂食 -->
         <view v-if="fedToday" class="fed-state">
           <view class="fed-icon-wrap">
-            <text class="fed-icon">✨</text>
+            <ZjIcon class="fed-icon" name="sparkles" :size="32" color="#4A8A7A" />
           </view>
           <view class="fed-body">
             <text class="fed-title">今天已经喂过啦</text>
@@ -81,7 +81,7 @@
         <!-- 未喂食 -->
         <view v-else class="unfed-state" @click="openFeedPopup">
           <view class="unfed-icon-wrap" :style="{ background: `${monster.color}18` }">
-            <text class="unfed-icon">🍭</text>
+            <ZjIcon class="unfed-icon" name="candy" :size="32" color="#4A8A7A" />
           </view>
           <view class="unfed-body">
             <text class="unfed-title">今天还没喂食</text>
@@ -125,7 +125,7 @@
         <textarea
           v-model="feedNote"
           class="feed-textarea"
-          placeholder="写下今天的心情，或就这样静静陪着它..."
+          placeholder="写下今天的心情，或就这样静静陪着它…"
           placeholder-style="color: #B8A8D8"
           maxlength="200"
         />
@@ -146,6 +146,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { monsterApi } from '@/api';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 const monster = ref(null);
 const feedLogs = ref([]);
@@ -250,7 +251,7 @@ function replayCanvas(str) {
 
 async function doFeed() {
   closeFeedPopup();
-  uni.showLoading({ title: '喂食中...' });
+  uni.showLoading({ title: '喂食中…' });
   try {
     const updated = await monsterApi.feed(monster.value.id, { note: feedNote.value.trim() || null });
     monster.value = { ...monster.value, ...updated };
@@ -491,7 +492,7 @@ $white: #FFFFFF;
   flex-shrink: 0;
 }
 
-.fed-icon { font-size: 36rpx; }
+.fed-icon { width: 32rpx; }
 
 .fed-title {
   display: block;
@@ -528,7 +529,7 @@ $white: #FFFFFF;
   flex-shrink: 0;
 }
 
-.unfed-icon { font-size: 36rpx; }
+.unfed-icon { width: 32rpx; }
 
 .unfed-title {
   display: block;
@@ -630,7 +631,7 @@ $white: #FFFFFF;
   color: $text-main;
   line-height: 1.6;
 
-  &.muted { color: $text-muted; font-style: italic; }
+  &.muted { color: $text-muted; }
 }
 
 /* 喂食弹窗 */

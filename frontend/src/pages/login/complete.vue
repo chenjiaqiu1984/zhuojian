@@ -37,7 +37,7 @@
       </view>
 
       <view class="submit-btn" @click="submit()">
-        <text>{{loading ? '保存中...' : '完成设置'}}</text>
+        <text>{{loading ? '保存中…' : '完成设置'}}</text>
       </view>
     </view>
   </view>
@@ -106,7 +106,7 @@ async function submit() {
 .checkbox {
   width: 40rpx; height: 40rpx; flex-shrink: 0; margin-top: 2rpx;
   border: 2rpx solid #C0CCC8; border-radius: 8rpx; background: #fff;
-  transition: all 0.2s;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 .checkbox.checked { background: #4A8A7A; border-color: #4A8A7A; position: relative; }
 .checkbox.checked::after {
@@ -120,6 +120,7 @@ async function submit() {
   background: linear-gradient(135deg, #4A8A7A, #3A6E80);
   border-radius: 16rpx; padding: 28rpx 0;
   text-align: center;
+  &:active { opacity: 0.88; }
 }
 .submit-btn text { color: #fff; font-size: 30rpx; font-weight: 700; letter-spacing: 1rpx; }
 </style>

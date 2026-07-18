@@ -1,8 +1,8 @@
 <template>
   <view class="page">
-    <view v-if="loading" class="empty"><text class="empty-text">加载中...</text></view>
+    <view v-if="loading" class="empty"><text class="empty-text">加载中…</text></view>
     <view v-else-if="orders.length === 0" class="empty">
-      <text class="empty-icon">🧾</text>
+      <ZjIcon class="empty-icon" name="receipt" :size="96" color="#9BBCB4" />
       <text class="empty-text">暂无订单记录</text>
     </view>
     <view v-else class="list">
@@ -95,6 +95,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { paymentApi } from '../../api/index';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 const SUPPORT_EMAIL = '345958875@qq.com';
 
@@ -244,7 +245,7 @@ function confirmDelete(orderNo) {
 
 <style scoped lang="scss">
 $primary: #4A8A7A;
-$bg: #F0F4F3;
+$bg: $zj-bg;
 $text-main: #1C2A27;
 $text-sub: #8A9E97;
 $text-muted: #9BBCB4;
@@ -253,16 +254,16 @@ $divider: #EEF4F2;
 .page { min-height: 100vh; background: $bg; padding: 24rpx; padding-bottom: 60rpx; }
 
 .empty { display: flex; flex-direction: column; align-items: center; padding: 120rpx 32rpx; gap: 20rpx; }
-.empty-icon { font-size: 80rpx; }
+.empty-icon { width: 96rpx; }
 .empty-text { font-size: 28rpx; color: $text-muted; }
 
 .list { display: flex; flex-direction: column; gap: 20rpx; }
 
 .order-card {
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: $zj-radius-card;
   padding: 32rpx 28rpx;
-  box-shadow: 0 2rpx 16rpx rgba(74,138,122,0.07);
+  box-shadow: $zj-shadow-card;
 
   .order-head {
     display: flex;
@@ -283,16 +284,16 @@ $divider: #EEF4F2;
     align-self: flex-start;
     padding: 5rpx 16rpx;
     border-radius: 10rpx;
-    &.tag--activity { background: #E8F5EE; }
-    &.tag--consult  { background: #EEF0FA; }
+    &.tag--activity { background: $zj-teal-light; }
+    &.tag--consult  { background: $zj-teal-light; }
   }
 
   .tag-text {
     font-size: 20rpx;
     font-weight: 700;
     letter-spacing: 0.04em;
-    .tag--activity & { color: #3A8A5A; }
-    .tag--consult &  { color: #4A5AA8; }
+    .tag--activity & { color: $primary; }
+    .tag--consult &  { color: $primary; }
   }
 
   .order-name {
@@ -311,7 +312,7 @@ $divider: #EEF4F2;
     font-weight: 600;
     &.status--paid     { background: #E8F5F1; }
     &.status--pending  { background: #FFF8E6; }
-    &.status--refunded { background: #F3F0FF; }
+    &.status--refunded { background: #F2F4F3; }
     &.status--dead     { background: #F2F4F3; }
   }
 
@@ -319,7 +320,7 @@ $divider: #EEF4F2;
     font-size: 22rpx;
     .status--paid &     { color: $primary; }
     .status--pending &  { color: #C88A2A; }
-    .status--refunded & { color: #7A4AC8; }
+    .status--refunded & { color: $text-muted; }
     .status--dead &     { color: #AABAB5; }
   }
 
@@ -334,7 +335,7 @@ $divider: #EEF4F2;
 
   .label { font-size: 26rpx; color: $text-sub; }
   .value { font-size: 26rpx; color: $text-main; }
-  .amount { color: $primary; font-weight: 700; font-size: 28rpx; }
+  .amount { color: $primary; font-weight: 700; font-size: 28rpx; font-variant-numeric: tabular-nums; }
   .order-no { font-size: 22rpx; color: $text-muted; font-family: monospace; }
 
   .refund-policy {
@@ -352,7 +353,6 @@ $divider: #EEF4F2;
     font-weight: 700;
     color: $text-muted;
     letter-spacing: 0.1em;
-    text-transform: uppercase;
   }
 
   .refund-rule-row {
@@ -401,6 +401,7 @@ $divider: #EEF4F2;
     border: 1.5rpx solid rgba($primary, 0.4);
     border-radius: 12rpx;
     background: #F5FAF8;
+    &:active { opacity: 0.88; }
   }
 
   .refund-btn {
@@ -410,6 +411,7 @@ $divider: #EEF4F2;
     border: 1.5rpx solid rgba(192,48,48,0.3);
     border-radius: 12rpx;
     background: #FFF5F5;
+    &:active { opacity: 0.88; }
   }
 
   .delete-btn {

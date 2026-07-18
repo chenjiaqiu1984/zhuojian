@@ -2,7 +2,7 @@
   <view class="page">
     <view class="page-header">
       <view class="hdr-glow" />
-      <text class="hdr-icon">🏔</text>
+      <ZjIcon class="hdr-icon" name="mountain" :size="60" color="#FFFFFF" />
       <text class="hdr-title">冰山模型分析</text>
       <text class="hdr-desc">从水面到深海，探索内心层层感受</text>
     </view>
@@ -62,7 +62,7 @@
               <text class="note-text">{{n.text}}</text>
             </view>
             <view class="note-input-row">
-              <textarea class="note-input" v-model="noteInput" placeholder="写下新的思考..." />
+              <textarea class="note-input" v-model="noteInput" placeholder="写下新的思考…" />
               <text class="note-add-btn" @click="appendNote()">追加</text>
             </view>
           </view>
@@ -79,6 +79,7 @@ import { homeworkApi } from '../../api/index';
 import { track } from '../../utils/track';
 import CrisisAlert from '../../components/CrisisAlert.vue';
 import { requireActive } from '../../utils/requireActive';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 
 const fields = [
@@ -179,7 +180,7 @@ $text-muted: #9BBCB4;
   position: relative;
   overflow: hidden;
   padding: 56rpx 36rpx 44rpx;
-  background: linear-gradient(155deg, #3E6E8A 0%, #1A3A5A 100%);
+  background: $zj-gradient-header;
 }
 
 .hdr-glow {
@@ -193,7 +194,7 @@ $text-muted: #9BBCB4;
   pointer-events: none;
 }
 
-.hdr-icon { display: block; font-size: 52rpx; margin-bottom: 16rpx; position: relative; z-index: 1; }
+.hdr-icon { display: block; width: 60rpx; margin-bottom: 16rpx; position: relative; z-index: 1; }
 
 .hdr-title {
   display: block;
@@ -229,9 +230,8 @@ $text-muted: #9BBCB4;
 
 .intro-bar {
   padding: 16rpx 20rpx;
-  background: $surface;
+  background: $zj-teal-light;
   border-radius: 12rpx;
-  border-left: 4rpx solid #3A6E80;
   margin-bottom: 32rpx;
 }
 
@@ -315,6 +315,8 @@ $text-muted: #9BBCB4;
   font-weight: 700;
   letter-spacing: 0.04em;
   margin-top: 16rpx;
+
+  &:active { opacity: 0.88; }
 }
 
 /* History */
@@ -347,6 +349,8 @@ $text-muted: #9BBCB4;
   margin-bottom: 14rpx;
   box-shadow: 0 2rpx 12rpx rgba(28,42,39,0.05);
   border: 1rpx solid #EDF2F0;
+
+  &:active { opacity: 0.88; }
 }
 
 .entry-header { display: flex; align-items: flex-start; gap: 12rpx; }
@@ -391,5 +395,5 @@ $text-muted: #9BBCB4;
 .note-text { font-size: 27rpx; color: $text-main; line-height: 1.65; }
 .note-input-row { display: flex; gap: 14rpx; align-items: flex-end; margin-top: 14rpx; }
 .note-input { flex: 1; min-height: 80rpx; background: $surface; border-radius: 14rpx; padding: 16rpx; font-size: 27rpx; box-sizing: border-box; }
-.note-add-btn { background: $primary; color: #fff; padding: 20rpx 28rpx; border-radius: 14rpx; font-size: 27rpx; white-space: nowrap; flex-shrink: 0; }
+.note-add-btn { background: $primary; color: #fff; padding: 20rpx 28rpx; border-radius: 14rpx; font-size: 27rpx; white-space: nowrap; flex-shrink: 0; &:active { opacity: 0.88; } }
 </style>

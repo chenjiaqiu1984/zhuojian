@@ -39,7 +39,7 @@
           <text class="q-num">{{i+1}}</text>
           <text class="q-text">{{q}}</text>
         </view>
-        <textarea class="note-input" v-model="note" placeholder="写下你的感受..." placeholder-class="note-ph" maxlength="500" />
+        <textarea class="note-input" v-model="note" placeholder="写下你的感受…" placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
           <view class="btn btn-primary" @click="save()">保存记录</view>
           <view class="btn btn-ghost" @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</view>
@@ -207,6 +207,6 @@ function reset() { step.value = 0; sel.value = null; cards.value = []; note.valu
 .btn-primary { background: linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-weight:600; box-shadow: 0 8rpx 22rpx rgba(74,138,122,0.24); }
 .btn-ghost { background: #FFFFFF; color: #617870; border:1rpx solid #E8EFED; }
 
-.fs-overlay { position:fixed; inset:0; z-index:9999; background:rgba(20,32,29,.94); display:flex; align-items:center; justify-content:center; }
+.fs-overlay { position:fixed; inset:0; z-index:$zj-z-modal; background:rgba(20,32,29,.94); display:flex; align-items:center; justify-content:center; }
 .fs-img { width:100vw; height:90vh; }
 </style>

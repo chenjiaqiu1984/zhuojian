@@ -667,7 +667,7 @@ async function cancel() {
 $teal:        #4A8A7A;
 $teal-dark:   #3A7060;
 $teal-light:  #EFF7F5;
-$bg:          #F2F5F4;
+$bg:          $zj-bg;
 $surface:     #ffffff;
 $text-1:      #1C2A27;
 $text-2:      #617870;
@@ -690,7 +690,7 @@ $r-inner:     14rpx;
   background: $surface;
   border-radius: $r-card;
   padding: 36rpx 36rpx 32rpx;
-  box-shadow: 0 4rpx 28rpx rgba(28,42,39,0.08);
+  box-shadow: $zj-shadow-card;
   position: relative;
   overflow: hidden;
 
@@ -749,7 +749,6 @@ $r-inner:     14rpx;
   font-weight: 700;
   color: $text-3;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
   margin-bottom: 16rpx;
 }
 
@@ -843,6 +842,7 @@ $r-inner:     14rpx;
   color: $teal;
   line-height: 1;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .discount-chip {
@@ -913,7 +913,7 @@ $r-inner:     14rpx;
   background: $surface;
   border-radius: $r-card;
   padding: 32rpx 36rpx;
-  box-shadow: 0 2rpx 16rpx rgba(28,42,39,0.05);
+  box-shadow: $zj-shadow-card;
 }
 
 .section-label {
@@ -922,7 +922,6 @@ $r-inner:     14rpx;
   font-weight: 700;
   color: $text-3;
   letter-spacing: 0.09em;
-  text-transform: uppercase;
   margin-bottom: 20rpx;
 }
 

@@ -2,7 +2,7 @@
   <view class="page">
     <view class="page-header">
       <view class="hdr-glow" />
-      <text class="hdr-icon">📓</text>
+      <ZjIcon class="hdr-icon" name="notebook-pen" :size="60" color="#FFFFFF" />
       <text class="hdr-title">情绪日记</text>
       <text class="hdr-desc">每日记录情绪变化，追踪心理状态</text>
     </view>
@@ -50,6 +50,7 @@ import { homeworkApi } from '../../api/index';
 import { track } from '../../utils/track';
 import CrisisAlert from '../../components/CrisisAlert.vue';
 import { requireActive } from '../../utils/requireActive';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 
 const EMOJIS = ['😔','😕','😐','🙂','😊'];
@@ -112,7 +113,7 @@ $text-muted: #9BBCB4;
   position: relative;
   overflow: hidden;
   padding: 56rpx 36rpx 44rpx;
-  background: linear-gradient(155deg, #62A090 0%, #3A7068 100%);
+  background: $zj-gradient-header;
 }
 
 .hdr-glow {
@@ -128,7 +129,7 @@ $text-muted: #9BBCB4;
 
 .hdr-icon {
   display: block;
-  font-size: 52rpx;
+  width: 60rpx;
   margin-bottom: 16rpx;
   position: relative;
   z-index: 1;
@@ -193,7 +194,9 @@ $text-muted: #9BBCB4;
   border-radius: 18rpx;
   background: $surface;
   border: 2rpx solid transparent;
-  transition: all 0.15s;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+  &:active { opacity: 0.88; }
 
   &.active {
     background: #EAF5F1;
@@ -237,6 +240,8 @@ $text-muted: #9BBCB4;
   font-weight: 700;
   margin-top: 22rpx;
   letter-spacing: 0.04em;
+
+  &:active { opacity: 0.88; }
 }
 
 /* History */

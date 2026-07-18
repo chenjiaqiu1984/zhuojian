@@ -20,7 +20,7 @@
       <view class="input-wrap"><input class="ipt" v-model="form.newPwd" placeholder="新密码（含字母和数字，至少6位）" password /></view>
       <view class="input-wrap" style="margin-top:16rpx"><input class="ipt" v-model="form.confirmPwd" placeholder="再次输入新密码" password /></view>
       <view class="submit-btn" :class="{'submit-btn--loading': loading}" @click="!loading && doReset()" style="margin-top:32rpx">
-        <text class="submit-btn-text">{{ loading ? '重置中...' : '确认重置' }}</text>
+        <text class="submit-btn-text">{{ loading ? '重置中…' : '确认重置' }}</text>
       </view>
     </view>
   </view>
@@ -88,11 +88,13 @@ async function doReset() {
   flex-shrink: 0; margin-left: 16rpx;
   border: 1.5rpx solid #4A8A7A; border-radius: 12rpx; padding: 18rpx 20rpx; background: #fff;
   &--disabled { border-color: #ccc; }
+  &:active { opacity: 0.88; }
 }
 .send-code-btn-text { font-size: 24rpx; color: #4A8A7A; .send-code-btn--disabled & { color: #ccc; } }
 .submit-btn {
   background: #4A8A7A; border-radius: 16rpx; padding: 26rpx 0; text-align: center;
   &--loading { opacity: 0.7; }
+  &:active { opacity: 0.88; }
 }
 .submit-btn-text { color: #fff; font-size: 30rpx; font-weight: 700; }
 </style>

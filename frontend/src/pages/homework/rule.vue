@@ -2,7 +2,7 @@
   <view class="page">
     <view class="page-header">
       <view class="hdr-glow" />
-      <text class="hdr-icon">📜</text>
+      <ZjIcon class="hdr-icon" name="scroll" :size="60" color="#FFFFFF" />
       <text class="hdr-title">规条转换练习</text>
       <text class="hdr-desc">将刚性规条改写为有弹性的生活原则</text>
     </view>
@@ -54,7 +54,7 @@
               <text class="note-text">{{n.text}}</text>
             </view>
             <view class="note-input-row">
-              <textarea class="note-input" v-model="noteInput" placeholder="写下新的思考..." />
+              <textarea class="note-input" v-model="noteInput" placeholder="写下新的思考…" />
               <text class="note-add-btn" @click="appendNote()">追加</text>
             </view>
           </view>
@@ -71,6 +71,7 @@ import { homeworkApi } from '../../api/index';
 import { track } from '../../utils/track';
 import CrisisAlert from '../../components/CrisisAlert.vue';
 import { requireActive } from '../../utils/requireActive';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 
 const fields = [
@@ -165,7 +166,7 @@ $text-muted: #9BBCB4;
   position: relative;
   overflow: hidden;
   padding: 56rpx 36rpx 44rpx;
-  background: linear-gradient(155deg, #8E5E4E 0%, #5A2E1E 100%);
+  background: $zj-gradient-header;
 }
 
 .hdr-glow {
@@ -179,7 +180,7 @@ $text-muted: #9BBCB4;
   pointer-events: none;
 }
 
-.hdr-icon { display: block; font-size: 52rpx; margin-bottom: 16rpx; position: relative; z-index: 1; }
+.hdr-icon { display: block; width: 60rpx; margin-bottom: 16rpx; position: relative; z-index: 1; }
 
 .hdr-title {
   display: block;
@@ -257,6 +258,8 @@ $text-muted: #9BBCB4;
   font-weight: 700;
   letter-spacing: 0.04em;
   margin-top: 12rpx;
+
+  &:active { opacity: 0.88; }
 }
 
 /* History */
@@ -289,6 +292,8 @@ $text-muted: #9BBCB4;
   margin-bottom: 14rpx;
   box-shadow: 0 2rpx 12rpx rgba(28,42,39,0.05);
   border: 1rpx solid #EDF2F0;
+
+  &:active { opacity: 0.88; }
 }
 
 .entry-header {
@@ -359,5 +364,5 @@ $text-muted: #9BBCB4;
 .note-text { font-size: 27rpx; color: $text-main; line-height: 1.65; }
 .note-input-row { display: flex; gap: 14rpx; align-items: flex-end; margin-top: 14rpx; }
 .note-input { flex: 1; min-height: 80rpx; background: $surface; border-radius: 14rpx; padding: 16rpx; font-size: 27rpx; box-sizing: border-box; }
-.note-add-btn { background: $primary; color: #fff; padding: 20rpx 28rpx; border-radius: 14rpx; font-size: 27rpx; white-space: nowrap; flex-shrink: 0; }
+.note-add-btn { background: $primary; color: #fff; padding: 20rpx 28rpx; border-radius: 14rpx; font-size: 27rpx; white-space: nowrap; flex-shrink: 0; &:active { opacity: 0.88; } }
 </style>

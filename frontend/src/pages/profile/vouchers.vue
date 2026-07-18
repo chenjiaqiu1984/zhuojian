@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view v-if="loading" class="empty">加载中...</view>
+    <view v-if="loading" class="empty">加载中…</view>
     <view v-else-if="!vouchers.length" class="empty">暂无券码</view>
     <view v-else class="list">
       <view v-for="v in vouchers" :key="v.id" :class="['card', statusClass(v)]">
@@ -48,33 +48,32 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
-.page { background: #F0F4F3; min-height: 100vh; padding: 24rpx; }
+<style scoped lang="scss">
+.page { background: $zj-bg; min-height: 100vh; padding: 24rpx; }
 
 .empty {
   text-align: center;
-  padding: 80px;
+  padding: 160rpx;
   color: #9BBCB4;
-  font-size: 14px;
+  font-size: 28rpx;
 }
 
 .list { display: flex; flex-direction: column; gap: 16rpx; }
 
 .card {
   background: #fff;
-  border-radius: 20rpx;
+  border-radius: $zj-radius-card;
   padding: 28rpx 28rpx 24rpx;
-  border-left: 6rpx solid #4A8A7A;
-  box-shadow: 0 2rpx 12rpx rgba(74,138,122,0.07);
+  box-shadow: $zj-shadow-card;
 }
 
 .card.used {
-  border-left-color: #C8D4D0;
+  background: #F7F9F8;
   opacity: .65;
 }
 
 .card.expired {
-  border-left-color: #E07050;
+  background: #FBF4F2;
   opacity: .65;
 }
 
@@ -116,7 +115,7 @@ onMounted(async () => {
   display: flex;
   gap: 24rpx;
   padding-top: 14rpx;
-  border-top: 1rpx solid #F0F4F3;
+  border-top: 1rpx solid $zj-border;
 }
 
 .meta { font-size: 22rpx; color: #9BBCB4; }

@@ -11,7 +11,7 @@
     </view>
     <view class="coming-wrap">
       <view class="coming-circle">
-        <text class="coming-emoji">🌸</text>
+        <ZjIcon class="coming-emoji" name="flower-2" :size="120" color="#9BBCB4" />
       </view>
       <text class="coming-title">即将开放</text>
       <text class="coming-desc">曼达拉绘画功能正在精心打磨中，敬请期待</text>
@@ -19,7 +19,9 @@
   </view>
 </template>
 
-<script setup></script>
+<script setup>
+import ZjIcon from '../../components/ZjIcon.vue';
+</script>
 
 <style scoped lang="scss">
 $teal: #3A6E80;
@@ -113,7 +115,7 @@ $text-muted: #9BBCB4;
   margin-bottom: 8rpx;
 }
 
-.coming-emoji { font-size: 80rpx; }
+.coming-emoji { width: 120rpx; }
 
 .coming-title {
   display: block;

@@ -21,7 +21,7 @@
       </view>
 
       <view class="submit-btn" :class="{'submit-btn--loading': loading}" @click="!loading && doRegister()" style="margin-top:24rpx">
-        <text class="submit-btn-text">{{ loading ? '注册中...' : '注册' }}</text>
+        <text class="submit-btn-text">{{ loading ? '注册中…' : '注册' }}</text>
       </view>
     </view>
   </view>
@@ -69,6 +69,7 @@ async function doRegister() {
 .submit-btn {
   background: #4A8A7A; border-radius: 16rpx; padding: 26rpx 0; text-align: center;
   &--loading { opacity: 0.7; }
+  &:active { opacity: 0.88; }
 }
 .submit-btn-text { color: #fff; font-size: 30rpx; font-weight: 700; }
 </style>

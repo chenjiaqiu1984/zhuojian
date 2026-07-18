@@ -76,7 +76,7 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 $primary: #4A8A7A;
-$bg: #F0F4F3;
+$bg: $zj-bg;
 $text-main: #1C2A27;
 $text-muted: #9BBCB4;
 $text-sub: #8A9E97;
@@ -87,17 +87,18 @@ $text-sub: #8A9E97;
   display: flex; flex-direction: column; align-items: center; padding: 120rpx 0;
 }
 .action-btn {
-  text-align: center; padding: 20rpx 40rpx; border-radius: 14rpx;
+  text-align: center; padding: 20rpx 40rpx; border-radius: $zj-radius-sm;
   &--primary { background: #4A8A7A; }
+  &:active { opacity: 0.88; }
 }
 .action-btn-text { font-size: 28rpx; font-weight: 600; color: #fff; }
 
 .pkg-card {
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: $zj-radius-card;
   padding: 36rpx 32rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 16rpx rgba(74,138,122,0.07);
+  box-shadow: $zj-shadow-card;
 
   .pkg-header {
     display: flex;
@@ -143,7 +144,7 @@ $text-sub: #8A9E97;
       }
     }
 
-    .progress-text { font-size: 22rpx; color: $text-sub; flex-shrink: 0; }
+    .progress-text { font-size: 22rpx; color: $text-sub; flex-shrink: 0; font-variant-numeric: tabular-nums; }
   }
 
   .detail-row {
@@ -153,15 +154,16 @@ $text-sub: #8A9E97;
     padding-top: 4rpx;
 
     .detail-item { font-size: 24rpx; color: $text-sub; }
-    .highlight { color: $primary; font-weight: 700; font-size: 28rpx; }
+    .highlight { color: $primary; font-weight: 700; font-size: 28rpx; font-variant-numeric: tabular-nums; }
   }
 
   .paid-tip {
     font-size: 22rpx;
     color: $text-muted;
     padding-top: 12rpx;
-    border-top: 1rpx solid #F0F4F3;
+    border-top: 1rpx solid $zj-border;
     margin-top: 4rpx;
+    font-variant-numeric: tabular-nums;
   }
 }
 </style>

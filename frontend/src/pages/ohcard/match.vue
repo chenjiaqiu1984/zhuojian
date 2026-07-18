@@ -12,7 +12,7 @@
           <image v-if="img.image_url" :src="img.image_url" mode="aspectFit" class="card-img" />
           <text v-else class="card-word">{{img.word}}</text>
         </view>
-        <u-icon name="arrow-right" color="#ccc" size="24" />
+        <u-icon name="arrow-right" color="#9BBCB4" size="24" />
         <scroll-view scroll-x class="word-scroll">
           <view class="word-chip" v-for="w in wordCards" :key="w.id"
             :class="{selected: matches[i] === w.id}" @click="matches[i] = w.id">
@@ -74,25 +74,25 @@ onMounted(() => track('page_view', '/pages/ohcard/match'));
 </script>
 
 <style scoped lang="scss">
-.page { padding: 32rpx; min-height: 100vh; }
-.title { font-size: 34rpx; font-weight: bold; color: #333; display: block; margin-bottom: 12rpx; }
-.desc { font-size: 26rpx; color: #777; display: block; }
-.match-item { display: flex; align-items: center; gap: 16rpx; background: #fff; border-radius: 16rpx; padding: 16rpx; margin-bottom: 16rpx; }
-.img-card { width: 130rpx; height: 170rpx; flex-shrink: 0; border-radius: 12rpx; overflow: hidden; background: #f5f7fa; display: flex; align-items: center; justify-content: center; }
+.page { padding: 32rpx; min-height: 100vh; background: $zj-bg; }
+.title { font-size: 34rpx; font-weight: bold; color: $zj-text-1; display: block; margin-bottom: 12rpx; font-family: $zj-font-serif; }
+.desc { font-size: 26rpx; color: $zj-text-2; display: block; }
+.match-item { display: flex; align-items: center; gap: 16rpx; background: $zj-surface; border-radius: $zj-radius-sm; padding: 16rpx; margin-bottom: 16rpx; box-shadow: $zj-shadow-card; }
+.img-card { width: 130rpx; height: 170rpx; flex-shrink: 0; border-radius: 12rpx; overflow: hidden; background: $zj-bg; display: flex; align-items: center; justify-content: center; }
 .card-img { width: 100%; height: 100%; }
-.card-word { font-size: 32rpx; font-weight: bold; color: #4A7BBA; }
+.card-word { font-size: 32rpx; font-weight: bold; color: $zj-teal; }
 .word-scroll { flex: 1; white-space: nowrap; }
-.word-chip { display: inline-block; padding: 10rpx 20rpx; border: 2rpx solid #ddd; border-radius: 30rpx; margin-right: 12rpx; font-size: 26rpx; color: #555; }
-.word-chip.selected { border-color: #4A7BBA; background: #EBF2FF; color: #4A7BBA; font-weight: 600; }
+.word-chip { display: inline-block; padding: 10rpx 20rpx; border: 2rpx solid $zj-border; border-radius: 30rpx; margin-right: 12rpx; font-size: 26rpx; color: $zj-text-2; &:active { opacity: 0.7; } }
+.word-chip.selected { border-color: $zj-teal; background: $zj-teal-light; color: $zj-teal; font-weight: 600; }
 .action-btn {
   display: block; text-align: center; padding: 22rpx 0; border-radius: 14rpx;
-  &--primary     { background: #4A7BBA; }
-  &--plain       { border: 1.5rpx solid #ccc; background: #fff; }
+  &--primary     { background: $zj-teal; &:active { opacity: 0.88; } }
+  &--plain       { border: 1.5rpx solid $zj-border; background: $zj-surface; &:active { opacity: 0.7; } }
   &--disabled    { opacity: 0.5; }
 }
 .action-btn-text {
   font-size: 28rpx; font-weight: 600;
   .action-btn--primary & { color: #fff; }
-  .action-btn--plain &   { color: #555; }
+  .action-btn--plain &   { color: $zj-text-2; }
 }
 </style>

@@ -30,7 +30,7 @@
 
       <view v-if="flipped" class="save-section">
         <text class="section-label">此刻感受</text>
-        <textarea class="note-input" v-model="note" placeholder="写下你的感想..." placeholder-class="note-ph" maxlength="500" />
+        <textarea class="note-input" v-model="note" placeholder="写下你的感想…" placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
           <view class="btn btn-primary" @click="save()">保存记录</view>
           <view class="btn btn-ghost" @click="reset()">重新抽卡</view>
@@ -166,7 +166,7 @@ function reset() {
 .btn-primary { background: linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-weight:600; box-shadow: 0 8rpx 22rpx rgba(74,138,122,0.24); }
 .btn-ghost { background: #FFFFFF; color: #617870; border:1rpx solid #E8EFED; }
 
-.fs-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(20,32,29,.94); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.fs-overlay { position: fixed; inset: 0; z-index: $zj-z-modal; background: rgba(20,32,29,.94); display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .fs-img { width: 100vw; height: 90vh; }
 .fs-hint { color: rgba(255,255,255,.5); font-size: 22rpx; margin-top: 20rpx; }
 </style>

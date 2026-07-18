@@ -186,28 +186,29 @@ async function saveDiscount(c) {
 .section-divider { height: 16rpx; }
 
 .pkg-row {
-  background: #fff; border-radius: 16rpx; padding: 24rpx 28rpx;
+  background: #fff; border-radius: $zj-radius-card; padding: 24rpx 28rpx;
   margin-bottom: 16rpx;
   display: flex; justify-content: space-between; align-items: flex-start; gap: 16rpx;
   .pkg-info { flex: 1; }
   .pkg-name { font-size: 28rpx; font-weight: 600; color: #1C2A27; display: block; }
-  .pkg-sub  { font-size: 22rpx; color: #4A8A7A; display: block; margin-top: 6rpx; }
+  .pkg-sub  { font-size: 22rpx; color: #4A8A7A; display: block; margin-top: 6rpx; font-variant-numeric: tabular-nums; }
   .pkg-desc { font-size: 20rpx; color: #8A9E97; display: block; margin-top: 4rpx; }
   .pkg-actions { display: flex; align-items: center; gap: 12rpx; flex-shrink: 0; }
 }
 
 .discount-row {
-  background: #fff; border-radius: 16rpx; padding: 20rpx 28rpx;
+  background: #fff; border-radius: $zj-radius-card; padding: 20rpx 28rpx;
   margin-bottom: 12rpx;
   display: flex; justify-content: space-between; align-items: center;
   .consultant-info { flex: 1; }
   .c-name  { font-size: 28rpx; color: #1C2A27; display: block; }
-  .c-price { font-size: 22rpx; color: #8A9E97; }
+  .c-price { font-size: 22rpx; color: #8A9E97; font-variant-numeric: tabular-nums; }
   .discount-input-wrap {
     display: flex; align-items: center; gap: 8rpx;
     .discount-input {
       width: 100rpx; border: 1rpx solid #EEF2F0; border-radius: 8rpx;
       padding: 8rpx 12rpx; font-size: 26rpx; text-align: center;
+      font-variant-numeric: tabular-nums;
     }
     .discount-hint { font-size: 18rpx; color: #B0B8B5; }
   }

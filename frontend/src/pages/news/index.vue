@@ -31,7 +31,7 @@
 
     <!-- Loading -->
     <view v-if="loading" class="status-center">
-      <text class="status-txt">加载中...</text>
+      <text class="status-txt">加载中…</text>
     </view>
 
     <!-- List -->
@@ -185,7 +185,7 @@ function share(n) {
 $teal:       #4A8A7A;
 $teal-dark:  #3A6E80;
 $teal-light: #EFF7F5;
-$bg:         #F2F5F4;
+$bg:         #F5F7F6;
 $surface:    #ffffff;
 $text-1:     #1C2A27;
 $text-2:     #617870;
@@ -239,10 +239,9 @@ $shadow:     0 4rpx 24rpx rgba(28,42,39,0.06);
 .hero-eyebrow {
   display: block;
   font-size: 20rpx;
-  letter-spacing: 0.34em;
+  letter-spacing: 0.1em;
   color: rgba(255,255,255,0.68);
   margin-bottom: 24rpx;
-  text-transform: uppercase;
 }
 
 .hero-title {
@@ -253,6 +252,7 @@ $shadow:     0 4rpx 24rpx rgba(28,42,39,0.06);
   letter-spacing: 0.12em;
   line-height: 1.15;
   margin-bottom: 22rpx;
+  font-family: "Noto Serif SC", serif;
 }
 
 .hero-sub {

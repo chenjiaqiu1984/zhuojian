@@ -66,7 +66,7 @@
 
       <!-- 活动券领取入口 -->
       <view class="activity-banner" @click="showActivityModal = true">
-        <text class="activity-icon">🎁</text>
+        <ZjIcon class="activity-icon" name="gift" :size="40" color="#4A8A7A" />
         <text class="activity-text">输入兑换码领取优惠券</text>
         <u-icon name="arrow-right" color="#4A8A7A" />
       </view>
@@ -78,7 +78,7 @@
         <text class="modal-title">输入兑换码</text>
         <u-input v-model="claimCode" placeholder="请输入优惠码" clearable
           style="margin:16rpx 0" />
-        <view class="action-btn action-btn--primary action-btn--block" @click="doClaim()"><text class="action-btn-text">{{ claiming ? '领取中...' : '立即领取' }}</text></view>
+        <view class="action-btn action-btn--primary action-btn--block" @click="doClaim()"><text class="action-btn-text">{{ claiming ? '领取中…' : '立即领取' }}</text></view>
       </view>
     </u-popup>
   </view>
@@ -87,6 +87,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { couponApi } from '../../api/index';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 const tabs     = [{ name: '可用' }, { name: '已用' }, { name: '已过期' }];
 const tab      = ref(0);
@@ -138,7 +139,7 @@ onMounted(async () => {
 <style scoped lang="scss">
 $primary: #4A8A7A;
 $primary-grad: linear-gradient(135deg, #4A8A7A, #6AADA0);
-$bg: #F0F4F3;
+$bg: $zj-bg;
 $text-main: #1C2A27;
 $text-muted: #9BBCB4;
 $text-sub: #8A9E97;
@@ -147,10 +148,11 @@ $text-sub: #8A9E97;
 
 .empty-wrap { display: flex; flex-direction: column; align-items: center; padding: 100rpx 32rpx; }
 .action-btn {
-  text-align: center; padding: 20rpx 40rpx; border-radius: 14rpx;
+  text-align: center; padding: 20rpx 40rpx; border-radius: $zj-radius-sm;
   &--primary { background: #4A8A7A; }
   &--block   { width: 100%; box-sizing: border-box; }
   &--mini    { padding: 12rpx 24rpx; }
+  &:active { opacity: 0.88; }
 }
 .action-btn-text { font-size: 28rpx; font-weight: 600; color: #fff; }
 
@@ -160,10 +162,10 @@ $text-sub: #8A9E97;
   display: flex;
   align-items: stretch;
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: $zj-radius-card;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 2rpx 16rpx rgba(74,138,122,0.08);
+  box-shadow: $zj-shadow-card;
 
   &.used, &.expired { opacity: .55; }
 
@@ -178,7 +180,7 @@ $text-sub: #8A9E97;
     padding: 28rpx 16rpx;
 
     .coupon-unit  { font-size: 26rpx; color: rgba(255,255,255,.75); }
-    .coupon-value { font-size: 60rpx; font-weight: 800; color: #fff; line-height: 1; }
+    .coupon-value { font-size: 60rpx; font-weight: 800; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; }
     .coupon-value.activity { font-size: 36rpx; }
     .coupon-type-label { font-size: 20rpx; color: rgba(255,255,255,.85); margin-top: 6rpx; letter-spacing: 0.04em; }
   }
@@ -237,10 +239,11 @@ $text-sub: #8A9E97;
   display: flex;
   align-items: center;
   gap: 16rpx;
-  box-shadow: 0 1rpx 8rpx rgba(74,138,122,0.06);
+  box-shadow: $zj-shadow-card;
 
-  .activity-icon { font-size: 36rpx; }
+  .activity-icon { width: 40rpx; }
   .activity-text { flex: 1; font-size: 28rpx; color: $text-main; font-weight: 500; }
+  &:active { opacity: 0.88; }
 }
 
 .modal-body {
