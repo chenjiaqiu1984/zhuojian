@@ -184,3 +184,12 @@ export const homeworkApi = {
   ruleUpdate: (id, d) => put(`/homework/rule/${id}`, d),
   ruleDel: id => del(`/homework/rule/${id}`),
 };
+
+export const monsterApi = {
+  list: () => get('/monster'),
+  create: d => post('/monster', d),
+  detail: id => get(`/monster/${id}`),
+  update: (id, d) => put(`/monster/${id}`, d),
+  del: id => del(`/monster/${id}`),
+  feed: (id, d) => post(`/monster/${id}/feed`, d),
+};

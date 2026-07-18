@@ -35,7 +35,12 @@
     { "path": "pages/booking/index",       "style": { "navigationBarTitleText": "我的预约" } },
     { "path": "pages/payment/index",       "style": { "navigationBarTitleText": "确认支付" } },
     { "path": "pages/payment/result",      "style": { "navigationBarTitleText": "支付结果" } },
-    { "path": "pages/orders/index",        "style": { "navigationBarTitleText": "我的订单" } }
+    { "path": "pages/orders/index",        "style": { "navigationBarTitleText": "我的订单" } },
+    { "path": "pages/monster/index",       "style": { "navigationBarTitleText": "怪兽小屋" } },
+    { "path": "pages/monster/create",      "style": { "navigationBarTitleText": "创建怪兽" } },
+    { "path": "pages/monster/detail",      "style": { "navigationBarTitleText": "我的怪兽" } },
+    { "path": "pages/mandala/index",       "style": { "navigationBarTitleText": "曼达拉" } },
+    { "path": "pages/breathing/index",     "style": { "navigationBarTitleText": "正念呼吸球" } }
   ],
   "subPackages": [
     {

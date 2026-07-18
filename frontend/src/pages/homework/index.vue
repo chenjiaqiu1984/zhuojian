@@ -32,6 +32,7 @@
         </view>
       </view>
     </view>
+
   </view>
 </template>
 
@@ -239,4 +240,5 @@ function nav(url) { uni.navigateTo({ url }); }
   font-weight: 300;
   line-height: 1;
 }
+
 </style>

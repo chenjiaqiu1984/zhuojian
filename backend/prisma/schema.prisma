@@ -31,6 +31,7 @@ model User {
   orders       Order[]
   userPackages UserPackage[]
   userCoupons  UserCoupon[]
+  monsters     Monster[]
 }
 
 model VerifyCode {
@@ -737,4 +738,32 @@ model RuleRecord {
   notes            String?
   createdAt        DateTime @default(now()) @map("created_at")
   @@map("rule_records")
+}
+
+model Monster {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  name        String
+  emotion     String
+  color       String
+  drawingData String   @map("drawing_data")
+  drawingType String   @default("parts") @map("drawing_type")
+  imageUrl    String?  @map("image_url")
+  totalDays   Int      @default(0) @map("total_days")
+  streak      Int      @default(0)
+  lastFedAt   DateTime? @map("last_fed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
+  feedLogs    MonsterFeedLog[]
+  @@map("monsters")
+}
+
+model MonsterFeedLog {
+  id         Int      @id @default(autoincrement())
+  monsterId  Int      @map("monster_id")
+  note       String?
+  emotion    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  monster    Monster  @relation(fields: [monsterId], references: [id])
+  @@map("monster_feed_logs")
 }

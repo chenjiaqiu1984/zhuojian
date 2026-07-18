@@ -148,6 +148,9 @@ const menuGroups = ref([
       { path: '/pages/ohcard/index',      label: '心理图卡', icon: '/static/icons/grid/ohcard.svg',     color: '#3A6E80' },
       { path: '/pages/homework/index',    label: '咨询工具', icon: '/static/icons/grid/homework.svg',   color: '#3A6E80' },
       { path: '/pages/learning/index',    label: '学习进阶', icon: '/static/icons/grid/learning.svg',   color: '#3A6E80' },
+      { path: '/pages/monster/index',     label: '心里怪兽', icon: '/static/icons/grid/monster.svg',    color: '#7B4E9E' },
+      { path: '/pages/mandala/index',     label: '曼达拉',   icon: '/static/icons/grid/mandala.svg',    color: '#3A6E80' },
+      { path: '/pages/breathing/index',   label: '正念呼吸', icon: '/static/icons/grid/breathing.svg',  color: '#3A6E80' },
     ],
   },
 ]);

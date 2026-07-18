@@ -100,3 +100,5 @@ desktop.ini
 /backend/backups/
 /backend/cert414
 *.har
+/.agents/skills
+/.claude/skills
