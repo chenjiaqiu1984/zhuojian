@@ -32,53 +32,56 @@
 
       <!-- 部件拼装 -->
       <view v-if="drawMode === 'parts'" class="parts-wrap">
-        <!-- 预览 -->
+        <!-- 预览 / 编辑画布：可直接拖动部件 -->
         <view class="preview-outer">
-          <view class="preview-box" :style="{ background: `${parts.color}18` }">
-            <view class="preview-glow" :style="{ background: `radial-gradient(circle, ${parts.color}30 0%, transparent 68%)` }" />
-            <!-- 尾巴和脚在身体后面渲染 -->
-            <view v-if="parts.tail" class="p-tail" v-html="partSvg('tail')" />
-            <view v-if="parts.legs" class="p-legs" v-html="partSvg('legs')" />
-            <view v-if="parts.legs && getPartTexture('legs')" class="p-legs p-texture-layer" v-html="partTextureSvg('legs')" />
-            <!-- 身体 -->
-            <view v-if="parts.arms" class="p-arms" v-html="partSvg('arms')" />
-            <view v-if="parts.arms && getPartTexture('arms')" class="p-arms p-texture-layer" v-html="partTextureSvg('arms')" />
-            <view v-if="parts.body" class="p-body" v-html="partSvg('body')" />
-            <view v-if="parts.body && getPartTexture('body')" class="p-body p-texture-layer" v-html="partTextureSvg('body')" />
-            <!-- 面部在身体前面 -->
-            <view v-if="parts.horn" class="p-horn" v-html="partSvg('horn')" />
-            <view v-if="parts.eyes" class="p-eyes" v-html="partSvg('eyes')" />
-            <view v-if="parts.mouth" class="p-mouth" v-html="partSvg('mouth')" />
+          <view
+            class="preview-box"
+            @touchstart="e => onStageTouchStart(e)"
+            @touchmove.stop.prevent="e => onStageTouchMove(e)"
+            @touchend="e => onStageTouchEnd(e)"
+            @mousedown="e => onStageMouseDown(e)"
+            @mousemove="e => onStageMouseMove(e)"
+            @mouseup="e => onStageMouseUp(e)"
+            @mouseleave="e => onStageMouseUp(e)"
+            @click="onPreviewTap()"
+            @dblclick="openFullscreen()"
+          >
+            <view class="preview-glow" />
+            <MonsterView :parts="parts" :active-slot="activeSlot" />
+          </view>
+          <view class="stage-hint">
+            <text class="stage-hint-text">拖动部件可移动位置 · 双击画布可全屏编辑</text>
           </view>
         </view>
 
-        <!-- 全局颜色 + 材质 面板（跟随 activePart） -->
-        <view class="style-panel">
-          <view class="style-panel-title">
-            <text class="style-panel-hint" v-if="activePart">正在编辑：{{ PART_DEFS.find(p=>p.key===activePart)?.label }}</text>
-            <text class="style-panel-hint" v-else>选择一个部件后可设置颜色和材质</text>
-            <view v-if="activePart" class="apply-all-btn" @click="applyStyleToAll">
-              <text class="apply-all-text">应用到全部</text>
+        <!-- 选中部件的调节面板 -->
+        <view v-if="activeSlot" class="adjust-panel">
+          <view class="adjust-head">
+            <text class="adjust-title">调整：{{ labelOf(activeSlot) }}</text>
+            <view class="adjust-reset" @click="e => resetActive(e)">
+              <text class="adjust-reset-text">复位</text>
             </view>
           </view>
-          <view class="color-row" style="margin-bottom:16rpx">
-            <view v-for="c in COLORS" :key="c"
-              class="color-dot"
-              :class="{ selected: activePart && getPartColor(activePart) === c }"
-              :style="{ background: c }"
-              @click="setPartColor(c)"
-            />
+          <view class="adjust-row">
+            <text class="adjust-label">大小</text>
+            <slider class="adjust-slider" :value="activeScale" :min="30" :max="200" :step="1"
+              activeColor="#7B4E9E" block-size="20" @changing="e => onScaleSlide(e)" @change="e => onScaleSlide(e)" />
+            <text class="adjust-val">{{ activeScale }}%</text>
           </view>
-          <view class="chips-row">
-            <view v-for="tx in TEXTURES" :key="tx.key"
-              class="texture-chip"
-              :class="{ selected: activePart && getPartTexture(activePart) === tx.key }"
-              @click="setPartTexture(tx.key)"
-            >
-              <view v-if="tx.key === ''" class="texture-preview texture-none"><text class="chip-none">无</text></view>
-              <view v-else class="texture-preview"><image :src="`/static/monster/texture/${tx.key}.svg`" mode="aspectFit" class="texture-img" /></view>
-              <text class="texture-label">{{ tx.label }}</text>
-            </view>
+          <view class="adjust-row">
+            <text class="adjust-label">旋转</text>
+            <slider class="adjust-slider" :value="activeRot" :min="-180" :max="180" :step="1"
+              activeColor="#7B4E9E" block-size="20" @changing="e => onRotSlide(e)" @change="e => onRotSlide(e)" />
+            <text class="adjust-val">{{ activeRot }}°</text>
+          </view>
+        </view>
+
+        <view class="tools-row">
+          <view class="tool-btn" @click="e => randomize(e)">
+            <text class="tool-btn-text">🎲 随机一只</text>
+          </view>
+          <view class="tool-btn" @click="e => resetAllLayout(e)">
+            <text class="tool-btn-text">↺ 复位全部</text>
           </view>
         </view>
 
@@ -92,10 +95,10 @@
             <view
               v-for="item in part.items" :key="item"
               class="part-chip"
-              :class="{ selected: parts[part.key] === item, active: activePart === part.key && parts[part.key] === item }"
+              :class="{ selected: parts[part.key] === item, active: activeSlot === part.key && parts[part.key] === item }"
               @click="selectPart(part.key, item)"
             >
-              <image :src="`/static/monster/${part.key}/${item}.svg`" mode="aspectFit" class="chip-img" />
+              <image :src="partUrl(part.key, item)" mode="aspectFit" class="chip-img" />
             </view>
           </view>
         </view>
@@ -108,12 +111,12 @@
             canvas-id="monsterCanvas"
             id="monsterCanvas"
             class="draw-canvas"
-            @touchstart.prevent="onTouchStart"
-            @touchmove.prevent="onTouchMove"
-            @touchend="onTouchEnd"
-            @mousedown="onMouseDown"
-            @mousemove="onMouseMove"
-            @mouseup="onMouseUp"
+            @touchstart.prevent="e => onTouchStart(e)"
+            @touchmove.prevent="e => onTouchMove(e)"
+            @touchend="e => onTouchEnd(e)"
+            @mousedown="e => onMouseDown(e)"
+            @mousemove="e => onMouseMove(e)"
+            @mouseup="e => onMouseUp(e)"
           />
         </view>
 
@@ -145,7 +148,7 @@
                 @click="brushSize = s"
               />
             </view>
-            <view class="clear-btn" @click="clearCanvas">
+            <view class="clear-btn" @click="e => clearCanvas(e)">
               <text class="clear-text">清空</text>
             </view>
           </view>
@@ -153,9 +156,55 @@
       </view>
 
       <view class="bottom-bar">
-        <view class="btn-primary" @click="goStep2">
+        <view class="btn-primary" @click="e => goStep2(e)">
           <text class="btn-text">下一步：命名怪兽</text>
           <text class="btn-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 全屏编辑：双击拼装画布进入，可大范围拖动部件 -->
+    <view v-if="fullscreen" class="fs-mask">
+      <view
+        class="fs-stage"
+        @touchstart="e => onStageTouchStart(e)"
+        @touchmove.stop.prevent="e => onStageTouchMove(e)"
+        @touchend="e => onStageTouchEnd(e)"
+        @mousedown="e => onStageMouseDown(e)"
+        @mousemove="e => onStageMouseMove(e)"
+        @mouseup="e => onStageMouseUp(e)"
+        @mouseleave="e => onStageMouseUp(e)"
+      >
+        <MonsterView :parts="parts" :active-slot="activeSlot" />
+      </view>
+
+      <!-- 顶部工具条 -->
+      <view class="fs-topbar">
+        <text class="fs-title">拖动部件调整位置</text>
+        <view class="fs-close" @click="closeFullscreen()">
+          <text class="fs-close-text">完成 ✕</text>
+        </view>
+      </view>
+
+      <!-- 底部：选中部件的缩放/旋转 -->
+      <view v-if="activeSlot" class="fs-adjust">
+        <view class="fs-adjust-head">
+          <text class="fs-adjust-title">调整：{{ labelOf(activeSlot) }}</text>
+          <view class="fs-reset" @click="resetActive()">
+            <text class="fs-reset-text">复位</text>
+          </view>
+        </view>
+        <view class="fs-adjust-row">
+          <text class="fs-adjust-label">大小</text>
+          <slider class="fs-slider" :value="activeScale" :min="30" :max="200" :step="1"
+            activeColor="#B57BCA" block-size="22" @changing="e => onScaleSlide(e)" @change="e => onScaleSlide(e)" />
+          <text class="fs-adjust-val">{{ activeScale }}%</text>
+        </view>
+        <view class="fs-adjust-row">
+          <text class="fs-adjust-label">旋转</text>
+          <slider class="fs-slider" :value="activeRot" :min="-180" :max="180" :step="1"
+            activeColor="#B57BCA" block-size="22" @changing="e => onRotSlide(e)" @change="e => onRotSlide(e)" />
+          <text class="fs-adjust-val">{{ activeRot }}°</text>
         </view>
       </view>
     </view>
@@ -209,7 +258,7 @@
         <view class="btn-secondary" @click="step = 1">
           <text class="btn-text">返回修改</text>
         </view>
-        <view class="btn-primary" :class="{ disabled: !canSave }" @click="save">
+        <view class="btn-primary" :class="{ disabled: !canSave }" @click="e => save(e)">
           <text class="btn-text">创建怪兽</text>
         </view>
       </view>
@@ -218,30 +267,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { monsterApi } from '@/api';
 import ZjIcon from '../../components/ZjIcon.vue';
+import MonsterView from '../../components/MonsterView.vue';
+import { PART_DEFS, defaultParts, defaultTransforms, partUrl, bodyColor, LAYOUT, LAYER_ORDER, layoutOf } from '@/utils/monsterParts';
 
 const step = ref(1);
 const drawMode = ref('parts');
+const fullscreen = ref(false);
 
 const COLORS = ['#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#E91E8C','#1ABC9C','#F06292','#00BCD4','#8BC34A','#FF7043'];
-const BODIES = ['body_01','body_02','body_03','body_04','body_05','body_06','body_07','body_08'];
-const EYES = ['eyes_01','eyes_02','eyes_03','eyes_04','eyes_05','eyes_06','eyes_07','eyes_08','eyes_09'];
-const MOUTHS = ['mouth_01','mouth_02','mouth_03','mouth_04','mouth_05','mouth_06','mouth_07','mouth_08','mouth_09'];
-const HORNS = ['horn_01','horn_02','horn_03','horn_04','horn_05'];
-const TAILS = ['tail_01','tail_02','tail_03','tail_04','tail_05'];
-const ARMS = ['arms_01','arms_02','arms_03','arms_04','arms_05','arms_06'];
-const LEGS = ['legs_01','legs_02','legs_03','legs_04','legs_05','legs_06'];
-const TEXTURES = [
-  { key: '', label: '无' },
-  { key: 'stripe', label: '条纹' },
-  { key: 'dots', label: '波点' },
-  { key: 'scales', label: '鳞片' },
-  { key: 'fluffy', label: '毛茸' },
-  { key: 'sparkle', label: '闪光' },
-  { key: 'crack', label: '裂纹' },
-];
 const BRUSH_SIZES = [3, 6, 11, 18];
 
 const EMOTIONS = [
@@ -253,126 +289,172 @@ const EMOTIONS = [
   { key: '其他', label: '其他', icon: '👾' },
 ];
 
-const PART_DEFS = [
-  { key: 'body',  label: '身体', optional: false, items: BODIES },
-  { key: 'eyes',  label: '眼睛', optional: false, items: EYES },
-  { key: 'mouth', label: '嘴巴', optional: false, items: MOUTHS },
-  { key: 'horn',  label: '角',   optional: true,  items: HORNS },
-  { key: 'tail',  label: '尾巴', optional: true,  items: TAILS },
-  { key: 'arms',  label: '手',   optional: true,  items: ARMS },
-  { key: 'legs',  label: '脚',   optional: true,  items: LEGS },
-];
+// 位图部件拼装（monster-v2）：固定配色、身体自带四肢、无换色
+const parts = reactive(defaultParts());
 
-// 每个部件的颜色和材质独立存储
-const partColors = reactive({ body: '#9B59B6', eyes: '#9B59B6', mouth: '#9B59B6', horn: '#9B59B6', tail: '#9B59B6', arms: '#9B59B6', legs: '#9B59B6' });
-const partTextures = reactive({ body: '', eyes: '', mouth: '', horn: '', tail: '', arms: '', legs: '' });
+// 随机生成一只怪兽：必选槽必出，可选槽随机（含"无"），并复位布局
+function randomize() {
+  PART_DEFS.forEach(p => {
+    const pool = p.optional ? ['', ...p.items] : p.items;
+    parts[p.key] = pool[Math.floor(Math.random() * pool.length)];
+  });
+  parts.transforms = defaultTransforms();
+}
 
-const parts = reactive({
-  body: 'body_01', eyes: 'eyes_01', mouth: 'mouth_01',
-  horn: '', tail: '', arms: '', legs: '',
-  color: '#9B59B6', texture: '',
-});
+// ── 部件编辑（拖动 / 缩放 / 旋转）────────────────────────────────────────────
+const activeSlot = ref('');
 
-// 当前正在编辑的部件
-const activePart = ref('body');
+function labelOf(slot) {
+  return PART_DEFS.find(p => p.key === slot)?.label || slot;
+}
 
+function ensureTransform(slot) {
+  if (!parts.transforms) parts.transforms = defaultTransforms();
+  if (!parts.transforms[slot]) {
+    parts.transforms[slot] = { ...(LAYOUT[slot] ? { x: LAYOUT[slot].x, y: LAYOUT[slot].y } : { x: 50, y: 50 }), scale: 1, rot: 0 };
+  }
+  return parts.transforms[slot];
+}
+
+// 选择部件：赋值并设为当前编辑对象
 function selectPart(key, val) {
   parts[key] = val;
-  if (val) activePart.value = key;
+  if (val) {
+    ensureTransform(key);
+    activeSlot.value = key;
+  } else if (activeSlot.value === key) {
+    activeSlot.value = '';
+  }
 }
 
-function getPartColor(key) {
-  return partColors[key] || parts.color;
+const activeScale = computed(() => activeSlot.value ? Math.round((ensureTransform(activeSlot.value).scale || 1) * 100) : 100);
+const activeRot = computed(() => activeSlot.value ? Math.round(ensureTransform(activeSlot.value).rot || 0) : 0);
+
+function onScaleSlide(e) {
+  if (!activeSlot.value) return;
+  ensureTransform(activeSlot.value).scale = (e.detail.value || 100) / 100;
+}
+function onRotSlide(e) {
+  if (!activeSlot.value) return;
+  ensureTransform(activeSlot.value).rot = e.detail.value || 0;
 }
 
-function getPartTexture(key) {
-  return partTextures[key] !== undefined ? partTextures[key] : parts.texture;
+function resetActive() {
+  if (!activeSlot.value) return;
+  const base = LAYOUT[activeSlot.value] || { x: 50, y: 50 };
+  parts.transforms[activeSlot.value] = { x: base.x, y: base.y, scale: 1, rot: 0 };
 }
 
-function setPartColor(c) {
-  if (!activePart.value) return;
-  partColors[activePart.value] = c;
-  parts.color = c;
+function resetAllLayout() {
+  parts.transforms = defaultTransforms();
 }
 
-function setPartTexture(tx) {
-  if (!activePart.value) return;
-  partTextures[activePart.value] = tx;
+// ── 舞台拖动：命中最上层部件后拖动其中心 ───────────────────────────────────
+let stageRect = null;
+let dragging = null; // { slot }
+let stageInited = false;
+
+function refreshStageRect(cb) {
+  // 全屏时拖动舞台是 .fs-stage，普通模式是 .preview-box
+  const sel = fullscreen.value ? '.fs-stage' : '.preview-box';
+  uni.createSelectorQuery().select(sel).boundingClientRect(rect => {
+    if (rect && rect.width > 0) stageRect = rect;
+    if (cb) cb();
+  }).exec();
 }
 
-function applyStyleToAll(c) {
-  const color = activePart.value ? partColors[activePart.value] : parts.color;
-  const texture = activePart.value ? partTextures[activePart.value] : parts.texture;
-  PART_DEFS.forEach(p => {
-    partColors[p.key] = color;
-    partTextures[p.key] = texture;
-  });
-  parts.color = color;
-  parts.texture = texture;
+// 双击检测：小程序没有 dblclick 事件，用两次 tap 间隔手动判定（H5 的 dblclick 也会触发，
+// 但都调 openFullscreen 且有 fullscreen 守卫，重复调用无副作用）
+let lastTapTime = 0;
+function onPreviewTap() {
+  const now = Date.now();
+  if (now - lastTapTime < 300) {
+    lastTapTime = 0;
+    openFullscreen();
+  } else {
+    lastTapTime = now;
+  }
 }
 
-function applyColorToAll(c) {
-  PART_DEFS.forEach(p => { partColors[p.key] = c; });
-  parts.color = c;
+// 进入/退出全屏：切换后舞台尺寸变了，重置测量标记让下次拖动重新取 rect
+function openFullscreen() {
+  fullscreen.value = true;
+  stageInited = false;
+  stageRect = null;
+}
+function closeFullscreen() {
+  fullscreen.value = false;
+  stageInited = false;
+  stageRect = null;
 }
 
-function applyTextureToAll(tx) {
-  PART_DEFS.forEach(p => { partTextures[p.key] = tx; });
-  parts.texture = tx;
+function stagePos(clientX, clientY) {
+  if (!stageRect) return null;
+  return {
+    x: ((clientX - stageRect.left) / stageRect.width) * 100,
+    y: ((clientY - stageRect.top) / stageRect.height) * 100,
+  };
 }
 
-// SVG 内联缓存
-const svgCache = reactive({});
-
-async function loadSvg(path) {
-  if (svgCache[path]) return;
-  try {
-    const res = await fetch(`/static/monster/${path}.svg`);
-    const text = await res.text();
-    svgCache[path] = text; // reactive 赋值会触发重渲染
-  } catch (e) { /* ignore */ }
+// 命中测试：从最上层往下找，落在部件包围盒内的第一个
+function hitTest(px, py) {
+  const slots = LAYER_ORDER.filter(s => parts[s]).reverse();
+  for (const slot of slots) {
+    const l = layoutOf(slot, parts.transforms);
+    // 用 width 百分比估算半宽；高度按经验取宽的 0.9，命中框稍放宽
+    const halfW = l.width / 2 * 1.15;
+    const halfH = l.width / 2 * 1.0 + 4;
+    if (px >= l.left - halfW && px <= l.left + halfW && py >= l.top - halfH && py <= l.top + halfH) {
+      return slot;
+    }
+  }
+  return '';
 }
 
-function coloredSvg(type, name, color) {
-  const key = `${type}/${name}`;
-  const raw = svgCache[key]; // 访问 reactive 属性，建立依赖
-  if (!raw) { loadSvg(key); return ''; }
-  return raw.replace(/currentColor/g, color || parts.color);
+function beginDrag(clientX, clientY) {
+  const p = stagePos(clientX, clientY);
+  if (!p) return;
+  const slot = hitTest(p.x, p.y);
+  if (slot) {
+    activeSlot.value = slot;
+    ensureTransform(slot);
+    dragging = { slot };
+  }
 }
 
-function partSvg(key) {
-  if (!parts[key]) return '';
-  const type = key; // body, eyes, mouth, etc.
-  const name = parts[key];
-  const cacheKey = `${type}/${name}`;
-  const raw = svgCache[cacheKey]; // 建立响应式依赖
-  if (!raw) { loadSvg(cacheKey); return ''; }
-  return raw.replace(/currentColor/g, getPartColor(key));
+function moveDrag(clientX, clientY) {
+  if (!dragging) return;
+  const p = stagePos(clientX, clientY);
+  if (!p) return;
+  const t = ensureTransform(dragging.slot);
+  t.x = Math.max(0, Math.min(100, p.x));
+  t.y = Math.max(0, Math.min(100, p.y));
 }
 
-function partTextureSvg(key) {
-  const tx = getPartTexture(key);
-  if (!tx) return '';
-  const cacheKey = `texture/${tx}`;
-  const raw = svgCache[cacheKey]; // 建立响应式依赖
-  if (!raw) { loadSvg(cacheKey); return ''; }
-  return raw;
-}
+function endDrag() { dragging = null; }
 
-// 预加载当前选中的部件
-watch(() => [parts.body, parts.eyes, parts.mouth, parts.horn, parts.tail, parts.arms, parts.legs, parts.texture], () => {
-  if (parts.body) loadSvg(`body/${parts.body}`);
-  if (parts.eyes) loadSvg(`eyes/${parts.eyes}`);
-  if (parts.mouth) loadSvg(`mouth/${parts.mouth}`);
-  if (parts.horn) loadSvg(`horn/${parts.horn}`);
-  if (parts.tail) loadSvg(`tail/${parts.tail}`);
-  if (parts.arms) loadSvg(`arms/${parts.arms}`);
-  if (parts.legs) loadSvg(`legs/${parts.legs}`);
-  PART_DEFS.forEach(p => {
-    const tx = getPartTexture(p.key);
-    if (tx) loadSvg(`texture/${tx}`);
-  });
-}, { immediate: true });
+function onStageTouchStart(e) {
+  const t = e.touches && e.touches[0];
+  if (!t) return;
+  const cx = t.clientX ?? t.pageX ?? 0;
+  const cy = t.clientY ?? t.pageY ?? 0;
+  if (!stageInited) { refreshStageRect(() => { stageInited = true; beginDrag(cx, cy); }); }
+  else beginDrag(cx, cy);
+}
+function onStageTouchMove(e) {
+  const t = e.touches && e.touches[0];
+  if (!t) return;
+  moveDrag(t.clientX ?? t.pageX ?? 0, t.clientY ?? t.pageY ?? 0);
+}
+function onStageTouchEnd() { endDrag(); }
+
+function onStageMouseDown(e) {
+  if (!stageInited) { refreshStageRect(() => { stageInited = true; beginDrag(e.clientX, e.clientY); }); }
+  else beginDrag(e.clientX, e.clientY);
+}
+function onStageMouseMove(e) { if (dragging) moveDrag(e.clientX, e.clientY); }
+function onStageMouseUp() { endDrag(); }
+
 const brushColor = ref('#9B59B6');
 const brushSize = ref(6);
 const isEraser = ref(false);
@@ -384,28 +466,40 @@ let isMouseDown = false;
 const form = reactive({ name: '', emotion: '', color: '#9B59B6' });
 const canSave = computed(() => form.name.trim() && form.emotion);
 
+// canvas 位置/尺寸缓存（跨平台，用 selectorQuery 替代 document）
+let canvasRect = null;
+
+function refreshCanvasRect(cb) {
+  const query = uni.createSelectorQuery();
+  query.select('#monsterCanvas').boundingClientRect(rect => {
+    if (rect && rect.width > 0) canvasRect = rect;
+    if (cb) cb();
+  }).exec();
+}
+
 onMounted(() => {
   ctx = uni.createCanvasContext('monsterCanvas');
+  // 延迟测量，等布局完成
+  setTimeout(() => refreshCanvasRect(), 120);
 });
 
+// 从触摸/鼠标事件提取相对 canvas 的坐标
 function getTouchPos(e) {
   const t = e.touches[0];
-  const el = document.getElementById('monsterCanvas');
-  if (el) {
-    const rect = el.getBoundingClientRect();
-    // uni-app canvas 内部坐标与 CSS 像素一致（H5），不需要缩放
-    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  if (canvasRect) {
+    // 小程序 touch 用 pageX/pageY；H5 用 clientX/clientY
+    const px = t.clientX ?? t.pageX ?? t.x ?? 0;
+    const py = t.clientY ?? t.pageY ?? t.y ?? 0;
+    return { x: px - canvasRect.left, y: py - canvasRect.top };
   }
-  return { x: t.x, y: t.y };
+  return { x: t.x ?? 0, y: t.y ?? 0 };
 }
 
 function getMousePos(e) {
-  const el = document.getElementById('monsterCanvas');
-  if (el) {
-    const rect = el.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  if (canvasRect) {
+    return { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
   }
-  return { x: e.offsetX, y: e.offsetY };
+  return { x: e.offsetX ?? 0, y: e.offsetY ?? 0 };
 }
 
 function startPath(pos) {
@@ -423,17 +517,23 @@ function addPoint(pos) {
   redrawCanvas();
 }
 
-function onTouchStart(e) { startPath(getTouchPos(e)); }
+function onTouchStart(e) {
+  if (!canvasRect) { refreshCanvasRect(() => startPath(getTouchPos(e))); return; }
+  startPath(getTouchPos(e));
+}
 function onTouchMove(e) { addPoint(getTouchPos(e)); }
 function onTouchEnd() { currentPath = null; }
 
-function onMouseDown(e) { isMouseDown = true; startPath(getMousePos(e)); }
+function onMouseDown(e) {
+  isMouseDown = true;
+  if (!canvasRect) { refreshCanvasRect(() => startPath(getMousePos(e))); return; }
+  startPath(getMousePos(e));
+}
 function onMouseMove(e) { if (isMouseDown) addPoint(getMousePos(e)); }
 function onMouseUp() { isMouseDown = false; currentPath = null; }
 
 function getCanvasSize() {
-  const el = document.getElementById('monsterCanvas');
-  if (el) return { w: el.offsetWidth, h: el.offsetHeight };
+  if (canvasRect) return { w: canvasRect.width, h: canvasRect.height };
   return { w: 600, h: 600 };
 }
 
@@ -474,16 +574,16 @@ function goStep2() {
     uni.showToast({ title: '请先画出你的怪兽', icon: 'none' });
     return;
   }
-  if (drawMode.value === 'parts') form.color = parts.color;
+  if (drawMode.value === 'parts') form.color = bodyColor(parts.body);
   step.value = 2;
 }
 
 async function save() {
   if (!canSave.value) return;
   const drawingData = drawMode.value === 'parts'
-    ? JSON.stringify({ type: 'parts', ...parts })
+    ? JSON.stringify({ ...parts, type: 'parts' })
     : JSON.stringify({ type: 'canvas', paths: canvasPaths.value });
-  const color = drawMode.value === 'parts' ? parts.color : form.color;
+  const color = drawMode.value === 'parts' ? bodyColor(parts.body) : form.color;
 
   uni.showLoading({ title: '创建中…' });
   try {
@@ -605,17 +705,20 @@ $white: #FFFFFF;
 }
 
 .preview-box {
-  width: 320rpx;
-  height: 320rpx;
+  width: 560rpx;
+  height: 560rpx;
   border-radius: 28rpx;
   position: relative;
   overflow: visible;
+  background: linear-gradient(160deg, #F3ECFB 0%, #E9DEF6 100%);
   border: 1rpx solid rgba(123,78,158,0.12);
 }
 
 .preview-outer {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
   margin-bottom: 24rpx;
   padding: 40rpx 0 24rpx;
 }
@@ -624,28 +727,88 @@ $white: #FFFFFF;
   position: absolute;
   inset: 0;
   pointer-events: none;
+  background: radial-gradient(circle at 50% 46%, rgba(255,255,255,0.55) 0%, transparent 64%);
+  border-radius: 28rpx;
 }
 
-.p-body { position: absolute; width: 210rpx; height: 210rpx; top: 50%; left: 50%; transform: translate(-50%, -46%); }
-.p-tail { position: absolute; width: 90rpx; height: 90rpx; bottom: 30rpx; right: 10rpx; }
-.p-horn { position: absolute; top: 14rpx; left: 50%; transform: translateX(-50%); width: 80rpx; height: 64rpx; }
-.p-eyes { position: absolute; top: 90rpx; left: 50%; transform: translateX(-50%); width: 160rpx; height: 50rpx; }
-.p-mouth { position: absolute; top: 148rpx; left: 50%; transform: translateX(-50%); width: 130rpx; height: 50rpx; }
-.p-arms { position: absolute; top: 120rpx; left: 50%; transform: translateX(-50%); width: 280rpx; height: 64rpx; }
-.p-legs { position: absolute; bottom: 10rpx; left: 50%; transform: translateX(-50%); width: 150rpx; height: 64rpx; }
+.stage-hint {
+  text-align: center;
+}
+.stage-hint-text {
+  font-size: 20rpx;
+  color: $text-muted;
+}
 
-.p-body, .p-tail, .p-horn, .p-eyes, .p-mouth {
+/* 选中部件调节面板 */
+.adjust-panel {
+  background: $white;
+  border-radius: 20rpx;
+  padding: 20rpx 22rpx;
+  margin-bottom: 20rpx;
+  border: 1rpx solid $purple-light;
+  box-shadow: 0 2rpx 12rpx rgba(123,78,158,0.07);
+}
+.adjust-head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  :deep(svg) { width: 100%; height: 100%; }
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+.adjust-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: $purple;
+}
+.adjust-reset {
+  padding: 6rpx 18rpx;
+  border-radius: 20rpx;
+  background: $purple-light;
+  &:active { opacity: 0.7; }
+}
+.adjust-reset-text { font-size: 20rpx; color: $purple; }
+.adjust-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+.adjust-label {
+  font-size: 22rpx;
+  color: $text-sub;
+  width: 64rpx;
+  flex-shrink: 0;
+}
+.adjust-slider {
+  flex: 1;
+  margin: 4rpx 0;
+}
+.adjust-val {
+  font-size: 20rpx;
+  color: $text-muted;
+  width: 72rpx;
+  text-align: right;
+  flex-shrink: 0;
 }
 
-.p-texture-layer {
-  opacity: 0.45;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-  :deep(svg) { width: 100%; height: 100%; }
+/* 工具行 */
+.tools-row {
+  display: flex;
+  gap: 14rpx;
+  margin-bottom: 28rpx;
+}
+.tool-btn {
+  flex: 1;
+  padding: 16rpx 0;
+  border-radius: 16rpx;
+  background: $white;
+  border: 1rpx solid $purple-light;
+  box-shadow: 0 2rpx 10rpx rgba(123,78,158,0.08);
+  text-align: center;
+  &:active { transform: scale(0.97); }
+}
+.tool-btn-text {
+  font-size: 24rpx;
+  color: $purple;
+  font-weight: 600;
 }
 
 /* 公共 section */
@@ -703,10 +866,10 @@ $white: #FFFFFF;
 }
 
 .part-chip {
-  width: 96rpx;
-  height: 76rpx;
+  width: 104rpx;
+  height: 92rpx;
   border-radius: 16rpx;
-  background: $white;
+  background: linear-gradient(160deg, #F7F2FC 0%, #EFE6F8 100%);
   border: 2rpx solid $purple-light;
   display: flex;
   align-items: center;
@@ -715,159 +878,17 @@ $white: #FFFFFF;
 
   &.selected {
     border: 2rpx solid $purple;
-    background: rgba(123,78,158,0.06);
+    background: rgba(123,78,158,0.1);
+    box-shadow: 0 0 0 3rpx rgba(123,78,158,0.15);
+  }
+  &.active {
+    border: 2rpx solid $purple;
+    box-shadow: 0 0 0 4rpx rgba(123,78,158,0.25);
   }
 }
 
-.chip-img { width: 68rpx; height: 60rpx; }
+.chip-img { width: 80rpx; height: 76rpx; }
 .chip-none { font-size: 22rpx; color: $text-muted; }
-
-.style-panel {
-  background: $white;
-  border-radius: 20rpx;
-  padding: 20rpx 20rpx 16rpx;
-  margin-bottom: 24rpx;
-  border: 1rpx solid $purple-light;
-  box-shadow: 0 2rpx 12rpx rgba(123,78,158,0.07);
-}
-
-.style-panel-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16rpx;
-}
-
-.style-panel-hint {
-  font-size: 22rpx;
-  color: $text-muted;
-}
-
-.apply-all-btn {
-  padding: 6rpx 18rpx;
-  border-radius: 20rpx;
-  background: $purple-light;
-}
-
-.apply-all-text {
-  font-size: 20rpx;
-  color: $purple;
-}
-
-.part-chip.active {
-  border: 2rpx solid $purple;
-  background: rgba(123,78,158,0.1);
-  box-shadow: 0 0 0 3rpx rgba(123,78,158,0.2);
-}
-
-.part-override-panel {
-  margin-top: 16rpx;
-  padding: 16rpx 18rpx;
-  background: rgba(123,78,158,0.05);
-  border-radius: 16rpx;
-  border: 1rpx solid $purple-light;
-}
-
-.override-label {
-  display: block;
-  font-size: 22rpx;
-  color: $text-muted;
-  margin-bottom: 10rpx;
-}
-
-.part-detail-toggle {
-  margin-top: 10rpx;
-  display: inline-flex;
-  padding: 6rpx 0;
-}
-
-.part-detail-text {
-  font-size: 22rpx;
-  color: $purple;
-}
-
-.override-reset, .override-reset-tx {
-  background: $white;
-  border: 2rpx solid $purple-light;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.part-label-row {
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-  margin-bottom: 14rpx;
-
-  .section-label { margin-bottom: 0; }
-}
-
-.part-color-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-}
-
-.part-color-dot {
-  width: 36rpx;
-  height: 36rpx;
-  border-radius: 50%;
-  border: 2rpx solid transparent;
-  box-sizing: border-box;
-  transition: transform 0.12s;
-
-  &.selected {
-    border-color: $text-main;
-    transform: scale(1.18);
-  }
-}
-
-.p-texture {
-  opacity: 0.6;
-  mix-blend-mode: multiply;
-}
-
-.texture-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6rpx;
-  cursor: pointer;
-
-  &.selected .texture-preview {
-    border: 2rpx solid $purple;
-    background: rgba(123,78,158,0.06);
-  }
-}
-
-.texture-preview {
-  width: 80rpx;
-  height: 64rpx;
-  border-radius: 14rpx;
-  background: $white;
-  border: 2rpx solid $purple-light;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.texture-none {
-  background: $white;
-}
-
-.texture-img {
-  width: 72rpx;
-  height: 58rpx;
-}
-
-.texture-label {
-  font-size: 20rpx;
-  color: $text-muted;
-}
-
-
 
 /* Canvas */
 .canvas-wrap { padding: 0 28rpx; }
@@ -883,7 +904,7 @@ $white: #FFFFFF;
 
 .draw-canvas {
   width: 100%;
-  height: 520rpx;
+  height: 780rpx;
   display: block;
 }
 
@@ -1038,5 +1059,108 @@ $white: #FFFFFF;
   font-size: 32rpx;
   color: rgba(255,255,255,0.80);
   line-height: 1;
+}
+
+/* ── 全屏编辑 ── */
+.fs-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: linear-gradient(160deg, #F3ECFB 0%, #E4D6F4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 拖动舞台占满可视区域，让部件有更大移动空间 */
+.fs-stage {
+  position: absolute;
+  top: 120rpx;
+  left: 40rpx;
+  right: 40rpx;
+  bottom: 260rpx;
+  border-radius: 24rpx;
+  background: radial-gradient(circle at 50% 42%, rgba(255,255,255,0.6) 0%, transparent 66%);
+}
+
+.fs-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32rpx;
+  padding-top: env(safe-area-inset-top);
+}
+.fs-title {
+  font-size: 26rpx;
+  color: $text-sub;
+  font-weight: 600;
+}
+.fs-close {
+  padding: 14rpx 28rpx;
+  border-radius: 40rpx;
+  background: $purple;
+  box-shadow: 0 4rpx 16rpx rgba(123,78,158,0.3);
+  &:active { transform: scale(0.95); }
+}
+.fs-close-text {
+  font-size: 26rpx;
+  color: #fff;
+  font-weight: 600;
+}
+
+.fs-adjust {
+  position: absolute;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 40rpx;
+  background: $white;
+  border-radius: 24rpx;
+  padding: 24rpx 26rpx;
+  box-shadow: 0 6rpx 24rpx rgba(123,78,158,0.16);
+}
+.fs-adjust-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+.fs-adjust-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $purple;
+}
+.fs-reset {
+  padding: 8rpx 22rpx;
+  border-radius: 20rpx;
+  background: $purple-light;
+  &:active { opacity: 0.7; }
+}
+.fs-reset-text { font-size: 22rpx; color: $purple; }
+.fs-adjust-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.fs-adjust-label {
+  font-size: 24rpx;
+  color: $text-sub;
+  width: 68rpx;
+  flex-shrink: 0;
+}
+.fs-slider {
+  flex: 1;
+  margin: 6rpx 0;
+}
+.fs-adjust-val {
+  font-size: 22rpx;
+  color: $text-muted;
+  width: 76rpx;
+  text-align: right;
+  flex-shrink: 0;
 }
 </style>

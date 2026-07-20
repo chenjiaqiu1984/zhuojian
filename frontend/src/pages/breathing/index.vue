@@ -2,7 +2,7 @@
   <view class="page">
     <!-- 顶部栏 -->
     <view class="top-bar">
-      <view class="icon-btn" @click="onBack">
+      <view class="icon-btn" @click="onBack()">
         <text class="icon-text">←</text>
       </view>
       <text class="top-title">呼吸球</text>
@@ -95,10 +95,7 @@
         </view>
       </view>
 
-      <view class="ctrl-btn" :class="{ running: isRunning }" :style="ctrlBtnStyle" @click="togglePlay">
-        <text class="ctrl-icon">{{ isRunning ? '⏸' : '▶' }}</text>
-        <text class="ctrl-label">{{ isRunning ? '暂停' : (isPaused ? '继续' : '开始') }}</text>
-      </view>
+      <button class="ctrl-btn" :class="{ running: isRunning }" :style="ctrlBtnStyle" @click="togglePlay()">{{ isRunning ? '⏸ 暂停' : (isPaused ? '▶ 继续' : '▶ 开始') }}</button>
     </view>
 
     <!-- 模式选择弹层 -->
@@ -191,8 +188,6 @@
         </view>
       </view>
     </view>
-  </view>
-
     <!-- 练习完成弹窗 -->
     <view v-if="showFinishModal" class="sheet-mask" @click.stop>
       <view class="sheet finish-sheet">
@@ -215,6 +210,9 @@
       </view>
     </view>
 
+    <!-- 背景音乐 -->
+    <BgmPlayer default-track="meditation" accent="#4A7A9E" dark />
+
     <!-- 成就解锁弹窗 -->
     <view v-if="showAchievement && newAchievements[achievementIdx]" class="sheet-mask" @click.stop>
       <view class="sheet achievement-sheet">
@@ -222,16 +220,19 @@
         <text class="ach-unlock-icon">{{ newAchievements[achievementIdx].icon }}</text>
         <text class="ach-unlock-name">{{ newAchievements[achievementIdx].name }}</text>
         <text class="ach-unlock-desc">{{ newAchievements[achievementIdx].desc }}</text>
-        <view class="ach-unlock-btn" @click="onNextAchievement">
+        <view class="ach-unlock-btn" @click="onNextAchievement()">
           {{ achievementIdx < newAchievements.length - 1 ? '下一个 →' : '太棒了！' }}
         </view>
       </view>
     </view>
+  </view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { SERVER } from '../../config';
+import { raf, caf } from '../../utils/raf';
+import BgmPlayer from '../../components/BgmPlayer.vue';
 
 const fromSelect = ref(false);
 
@@ -339,6 +340,58 @@ const PROGRAMS = [
       { label: '苏醒', rounds: 10, mode: '4-4-4', hint: '轻柔地唤醒身体…' },
       { label: '注入', rounds: 12, mode: '5-5',   hint: '深呼吸，为身体注入氧气…' },
       { label: '振奋', rounds: 10, mode: '4-4-4', hint: '感受清醒与能量…' },
+    ],
+  },
+  {
+    key: 'exam',
+    name: '考前冷静训练',
+    emoji: '📝',
+    desc: '稳定心率、集中注意，降低应激反应，从容应考',
+    totalMin: 8,
+    color: '#3A8AC9',
+    stages: [
+      { label: '稳定', rounds: 10, mode: '4-4-4', hint: '先让呼吸稳下来，放下紧张…' },
+      { label: '释压', rounds: 8,  mode: '4-7-8', hint: '用长呼气带走压力…' },
+      { label: '聚焦', rounds: 12, mode: '5-5',   hint: '心率同调，专注在当下这道题…' },
+    ],
+  },
+  {
+    key: 'stage',
+    name: '演讲/上台前',
+    emoji: '🎤',
+    desc: '快速沉稳，缓解怯场，让声音和身体都稳下来',
+    totalMin: 6,
+    color: '#4A7A9E',
+    stages: [
+      { label: '沉稳', rounds: 8,  mode: '4-4-4', hint: '站定，把呼吸放慢放稳…' },
+      { label: '松肩', rounds: 8,  mode: '4-7-8', hint: '呼气时松开肩膀和下巴…' },
+      { label: '登场', rounds: 8,  mode: '5-5',   hint: '感受稳定的节奏，准备好了…' },
+    ],
+  },
+  {
+    key: 'anger',
+    name: '愤怒平复',
+    emoji: '🌋',
+    desc: '延长呼气降低生理唤醒，让怒火慢慢降温',
+    totalMin: 7,
+    color: '#E8705A',
+    stages: [
+      { label: '降温', rounds: 10, mode: '4-7-8', hint: '用长长的呼气给情绪降温…' },
+      { label: '松开', rounds: 8,  mode: '4-2-6', hint: '松开紧握的拳头，继续呼气…' },
+      { label: '回稳', rounds: 12, mode: '5-5',   hint: '回到平稳，重新掌控自己…' },
+    ],
+  },
+  {
+    key: 'deepsleep',
+    name: '睡前深度放松',
+    emoji: '🛌',
+    desc: '更长的呼气节奏，深度放松身心，滑入沉睡',
+    totalMin: 14,
+    color: '#5A6FCD',
+    stages: [
+      { label: '卸力', rounds: 10, mode: '4-2-6', hint: '躺好，把身体的重量交给床…' },
+      { label: '沉降', rounds: 12, mode: '4-7-8', hint: '每一次呼气都更沉一点…' },
+      { label: '入眠', rounds: 12, mode: '4-7-8', hint: '不用努力，让意识慢慢飘远…' },
     ],
   },
 ];
@@ -623,14 +676,14 @@ function tick(ts) {
     }
   }
 
-  rafId = requestAnimationFrame(tick);
+  rafId = raf(tick);
 }
 
 function startLoop() {
   try {
     lastTime     = null;
     lastPhaseIdx = -1;
-    rafId        = requestAnimationFrame(tick);
+    rafId        = raf(tick);
   } catch (e) {
     uni.showToast({ title: '动画启动失败，请重试', icon: 'none' });
     isRunning.value = false;
@@ -638,7 +691,7 @@ function startLoop() {
 }
 
 function stopLoop() {
-  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  if (rafId) { caf(rafId); rafId = null; }
   if (guideTimer) { clearTimeout(guideTimer); guideTimer = null; }
   lastTime = null;
 }
@@ -1106,6 +1159,7 @@ $accent:   #4A7A9E;
   width: 280rpx;
   height: 96rpx;
   border-radius: 48rpx;
+  border: none;
   background: $accent;
   display: flex;
   align-items: center;

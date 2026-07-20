@@ -8,11 +8,7 @@
         <!-- 怪兽视觉 -->
         <view class="visual-wrap" :style="{ filter: growthFilter }">
           <view v-if="monster.drawingType === 'parts'" class="parts-view">
-            <image v-if="partsData.body" class="p-body" :src="`/static/monster/body/${partsData.body}.svg`" mode="aspectFit" />
-            <image v-if="partsData.tail" class="p-tail" :src="`/static/monster/tail/${partsData.tail}.svg`" mode="aspectFit" />
-            <image v-if="partsData.horn" class="p-horn" :src="`/static/monster/horn/${partsData.horn}.svg`" mode="aspectFit" />
-            <image v-if="partsData.eyes" class="p-eyes" :src="`/static/monster/eyes/${partsData.eyes}.svg`" mode="aspectFit" />
-            <image v-if="partsData.mouth" class="p-mouth" :src="`/static/monster/mouth/${partsData.mouth}.svg`" mode="aspectFit" />
+            <MonsterView :parts="partsData" />
           </view>
           <view v-else class="canvas-view">
             <canvas canvas-id="detailCanvas" class="detail-canvas" />
@@ -34,7 +30,7 @@
               <text class="emotion-pill-text">{{ monster.emotion }}</text>
             </view>
           </view>
-          <view class="del-btn" @click="confirmDelete">
+          <view class="del-btn" @click="e => confirmDelete(e)">
             <text class="del-text">删除</text>
           </view>
         </view>
@@ -79,7 +75,7 @@
         </view>
 
         <!-- 未喂食 -->
-        <view v-else class="unfed-state" @click="openFeedPopup">
+        <view v-else class="unfed-state" @click="e => openFeedPopup(e)">
           <view class="unfed-icon-wrap" :style="{ background: `${monster.color}18` }">
             <ZjIcon class="unfed-icon" name="candy" :size="32" color="#4A8A7A" />
           </view>
@@ -131,10 +127,10 @@
         />
         <text class="feed-count">{{ feedNote.length }}/200</text>
         <view class="popup-btns">
-          <view class="popup-cancel" @click="closeFeedPopup">
+          <view class="popup-cancel" @click="e => closeFeedPopup(e)">
             <text class="popup-cancel-text">取消</text>
           </view>
-          <view class="popup-confirm" :style="{ background: monster?.color || '#7B4E9E' }" @click="doFeed">
+          <view class="popup-confirm" :style="{ background: monster?.color || '#7B4E9E' }" @click="e => doFeed(e)">
             <text class="popup-confirm-text">喂食</text>
           </view>
         </view>
@@ -147,6 +143,8 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { monsterApi } from '@/api';
 import ZjIcon from '../../components/ZjIcon.vue';
+import MonsterView from '../../components/MonsterView.vue';
+import { parseParts } from '@/utils/monsterParts';
 
 const monster = ref(null);
 const feedLogs = ref([]);
@@ -164,7 +162,7 @@ function closeFeedPopup() { showFeedPopup.value = false; }
 
 const partsData = computed(() => {
   if (!monster.value || monster.value.drawingType !== 'parts') return {};
-  try { return JSON.parse(monster.value.drawingData); } catch { return {}; }
+  return parseParts(monster.value.drawingData);
 });
 
 const growthFilter = computed(() => {
@@ -335,12 +333,6 @@ $white: #FFFFFF;
   height: 100%;
   position: relative;
 }
-
-.p-body { position: absolute; width: 240rpx; height: 240rpx; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.p-tail { position: absolute; bottom: 18rpx; right: 8rpx; width: 90rpx; height: 90rpx; }
-.p-horn { position: absolute; top: 8rpx; left: 50%; transform: translateX(-50%); width: 90rpx; height: 72rpx; }
-.p-eyes { position: absolute; top: 84rpx; left: 50%; transform: translateX(-50%); width: 186rpx; height: 60rpx; }
-.p-mouth { position: absolute; top: 154rpx; left: 50%; transform: translateX(-50%); width: 150rpx; height: 60rpx; }
 
 .canvas-view {
   width: 100%;

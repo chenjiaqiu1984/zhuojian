@@ -36,12 +36,15 @@ html, body {
 // #endif
 
 // 全局键盘焦点环
+// #ifdef H5
 *:focus-visible {
   outline: 2px solid $zj-teal;
   outline-offset: 2px;
 }
+// #endif
 
 // 减少动画（无障碍）
+// #ifdef H5
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -49,4 +52,5 @@ html, body {
     transition-duration: 0.01ms !important;
   }
 }
+// #endif
 </style>

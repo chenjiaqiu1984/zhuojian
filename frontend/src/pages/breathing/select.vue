@@ -2,7 +2,7 @@
   <view class="page">
     <!-- 顶部栏 -->
     <view class="top-bar">
-      <view class="icon-btn" @click="onBack">
+      <view class="icon-btn" @click="onBack()">
         <text class="icon-text">←</text>
       </view>
       <text class="top-title">正念呼吸</text>
@@ -82,10 +82,10 @@
         class="start-btn"
         :class="{ disabled: !selectedKey }"
         :style="selectedKey ? { background: activeColor } : {}"
-        @click="onStart"
+        @click="onStart()"
       >
-        <text class="start-text">{{ selectedKey ? '开始练习' : '请先选择练习' }}</text>
-        <text v-if="selectedKey" class="start-arrow">→</text>
+        <text class="start-text" @click="onStart()">{{ selectedKey ? '开始练习' : '请先选择练习' }}</text>
+        <text v-if="selectedKey" class="start-arrow" @click="onStart()">→</text>
       </view>
     </view>
   </view>
@@ -112,6 +112,10 @@ const PROGRAMS = [
   { key: 'anxiety',    name: '焦虑急救',   icon: 'droplets',   desc: '快速平复紧张情绪，降低焦虑和压力反应',   totalMin: 7,  color: '#4AB8A0', stages: [{ label: '稳定' }, { label: '释放' }, { label: '平复' }] },
   { key: 'meditation', name: '冥想入定',   icon: 'umbrella',   desc: '逐步引导进入深度冥想，扩展觉察与专注',   totalMin: 16, color: '#B57BCA', stages: [{ label: '收心' }, { label: '沉淀' }, { label: '扩展' }, { label: '安住' }] },
   { key: 'morning',    name: '晨间唤醒',   icon: 'zap',        desc: '温和激活身体与大脑，迎接充满活力的一天', totalMin: 7,  color: '#F5A623', stages: [{ label: '苏醒' }, { label: '注入' }, { label: '振奋' }] },
+  { key: 'exam',       name: '考前冷静训练', icon: 'aperture', desc: '稳定心率、集中注意，降低应激反应，从容应考', totalMin: 8,  color: '#3A8AC9', stages: [{ label: '稳定' }, { label: '释压' }, { label: '聚焦' }] },
+  { key: 'stage',      name: '演讲/上台前', icon: 'activity',  desc: '快速沉稳，缓解怯场，让声音和身体都稳下来', totalMin: 6,  color: '#4A7A9E', stages: [{ label: '沉稳' }, { label: '松肩' }, { label: '登场' }] },
+  { key: 'anger',      name: '愤怒平复',   icon: 'droplets',   desc: '延长呼气降低生理唤醒，让怒火慢慢降温',   totalMin: 7,  color: '#E8705A', stages: [{ label: '降温' }, { label: '松开' }, { label: '回稳' }] },
+  { key: 'deepsleep',  name: '睡前深度放松', icon: 'moon',     desc: '更长的呼气节奏，深度放松身心，滑入沉睡', totalMin: 14, color: '#5A6FCD', stages: [{ label: '卸力' }, { label: '沉降' }, { label: '入眠' }] },
 ];
 
 const MODES = [
@@ -161,7 +165,7 @@ $card-r: 20rpx;
 .page {
   min-height: 100vh;
   background: $bg;
-  padding-bottom: 160rpx;
+  padding-bottom: 40rpx;
 }
 
 /* ── 顶部栏 ── */
@@ -299,10 +303,7 @@ $card-r: 20rpx;
 
 /* ── 底部按钮 ── */
 .footer {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  padding: 20rpx 28rpx 48rpx;
-  background: #fff;
-  border-top: 1rpx solid $border;
+  padding: 40rpx 28rpx 48rpx;
 }
 .start-btn {
   height: 96rpx; border-radius: 48rpx;

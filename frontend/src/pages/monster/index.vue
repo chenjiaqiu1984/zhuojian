@@ -41,8 +41,18 @@
       <view class="room-deco room-deco-rug" />
     </view>
 
+    <!-- 未登录 -->
+    <view v-if="!loggedIn" class="empty-wrap fade-in">
+      <view class="empty-circle">
+        <ZjIcon class="empty-emoji" name="paw-print" :size="96" color="#9BBCB4" />
+      </view>
+      <text class="empty-title">登录后开启怪兽小屋</text>
+      <text class="empty-desc">登录就能创建专属情绪怪兽，陪它慢慢长大</text>
+      <view class="empty-btn" @click="goLogin()">去登录</view>
+    </view>
+
     <!-- 加载中 -->
-    <view v-if="loading" class="state-wrap">
+    <view v-else-if="loading" class="state-wrap">
       <view class="skeleton-card" v-for="i in 4" :key="i">
         <view class="skeleton-visual" />
         <view class="skeleton-line w60" />
@@ -57,9 +67,7 @@
       </view>
       <text class="empty-title">小屋还空着</text>
       <text class="empty-desc">创建你的第一只怪兽，让它住进来吧</text>
-      <view class="empty-btn" @click="goCreate">
-        <text class="empty-btn-text">创建我的第一只怪兽</text>
-      </view>
+      <view class="empty-btn" @click="goCreate()">创建我的第一只怪兽</view>
     </view>
 
     <!-- 怪兽网格 -->
@@ -86,11 +94,7 @@
           <view class="float-wrap" :class="`float-${idx % 3}`" :style="{ filter: growthFilter(m.totalDays) }">
             <!-- 部件拼装 -->
             <view v-if="m.drawingType === 'parts'" class="parts-preview">
-              <image v-if="partsOf(m).body"  class="pp-body"  :src="`/static/monster/body/${partsOf(m).body}.svg`"   mode="aspectFit" />
-              <image v-if="partsOf(m).tail"  class="pp-tail"  :src="`/static/monster/tail/${partsOf(m).tail}.svg`"   mode="aspectFit" />
-              <image v-if="partsOf(m).horn"  class="pp-horn"  :src="`/static/monster/horn/${partsOf(m).horn}.svg`"   mode="aspectFit" />
-              <image v-if="partsOf(m).eyes"  class="pp-eyes"  :src="`/static/monster/eyes/${partsOf(m).eyes}.svg`"   mode="aspectFit" />
-              <image v-if="partsOf(m).mouth" class="pp-mouth" :src="`/static/monster/mouth/${partsOf(m).mouth}.svg`" mode="aspectFit" />
+              <MonsterView :parts="partsOf(m)" />
             </view>
             <!-- Canvas 手绘（缩略） -->
             <view v-else class="canvas-thumb">
@@ -121,23 +125,38 @@
     </view>
 
     <!-- FAB 新建按钮 -->
-    <view v-if="!loading && monsters.length > 0" class="fab" @click="goCreate">
-      <text class="fab-icon">+</text>
-    </view>
+    <view v-if="!loading && monsters.length > 0" class="fab" @click="goCreate()">+</view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, nextTick } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { monsterApi } from '@/api';
+import { useUserStore } from '@/store/user';
 import ZjIcon from '../../components/ZjIcon.vue';
+import MonsterView from '../../components/MonsterView.vue';
+import { parseParts } from '@/utils/monsterParts';
 
+const store = useUserStore();
 const monsters = ref([]);
 const loading = ref(true);
+const loggedIn = ref(true);
 
-onMounted(async () => {
-  await load();
+// 用 onShow 而非 onMounted：从登录页返回后会重新校验并加载。
+onShow(() => {
+  loggedIn.value = store.isLoggedIn();
+  if (!loggedIn.value) {
+    // 未登录不请求 /api/monster，避免 401 触发全局强制跳转（开发者工具里会 navigateTo:fail timeout 卡白屏）
+    loading.value = false;
+    return;
+  }
+  load();
 });
+
+function goLogin() {
+  uni.navigateTo({ url: '/pages/login/index' });
+}
 
 async function load() {
   loading.value = true;
@@ -181,7 +200,7 @@ function drawThumb(m) {
 }
 
 function partsOf(m) {
-  try { return JSON.parse(m.drawingData); } catch { return {}; }
+  return parseParts(m.drawingData);
 }
 
 function goCreate() { uni.navigateTo({ url: '/pages/monster/create' }); }
@@ -238,7 +257,6 @@ $white: #FFFFFF;
 .hero {
   position: relative;
   padding: 96rpx 48rpx 80rpx;
-  overflow: hidden;
   background: linear-gradient(155deg, #7B4E9E 0%, #4A2870 100%);
 }
 .hero-glow {
@@ -476,6 +494,7 @@ $white: #FFFFFF;
 .empty-btn {
   margin-top: 12rpx; padding: 26rpx 56rpx;
   background: linear-gradient(135deg, #7B4E9E 0%, #4A2870 100%);
+  border: none;
   border-radius: 50rpx; box-shadow: 0 8rpx 24rpx rgba(123,78,158,0.30);
   transition: opacity 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
   &:hover { opacity: 0.90; }
@@ -549,11 +568,6 @@ $white: #FFFFFF;
 .parts-preview {
   width: 160rpx; height: 160rpx; position: relative;
 }
-.pp-body  { position: absolute; width: 120rpx; height: 120rpx; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.pp-tail  { position: absolute; bottom: 8rpx; right: 4rpx; width: 52rpx; height: 52rpx; }
-.pp-horn  { position: absolute; top: 4rpx; left: 50%; transform: translateX(-50%); width: 52rpx; height: 40rpx; }
-.pp-eyes  { position: absolute; top: 48rpx; left: 50%; transform: translateX(-50%); width: 100rpx; height: 32rpx; }
-.pp-mouth { position: absolute; top: 88rpx; left: 50%; transform: translateX(-50%); width: 80rpx; height: 32rpx; }
 
 /* Canvas 缩略 */
 .canvas-thumb {
@@ -588,6 +602,7 @@ $white: #FFFFFF;
 .fab {
   position: fixed; right: 40rpx; bottom: 96rpx;
   width: 104rpx; height: 104rpx; border-radius: 50%;
+  border: none;
   background: linear-gradient(135deg, #7B4E9E 0%, #4A2870 100%);
   box-shadow: 0 8rpx 28rpx rgba(123,78,158,0.40);
   display: flex; align-items: center; justify-content: center; z-index: 100;

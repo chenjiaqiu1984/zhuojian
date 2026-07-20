@@ -12,8 +12,7 @@
       "minified": true,
       "es6": true
     },
-    "usingComponents": true,
-    "lazyCodeLoading": "requiredComponents"
+    "usingComponents": true
   },
   "h5": {
     "title": "卓见心理",

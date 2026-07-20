@@ -32,6 +32,7 @@ model User {
   userPackages UserPackage[]
   userCoupons  UserCoupon[]
   monsters     Monster[]
+  mandalaWorks MandalaWork[]
 }
 
 model VerifyCode {
@@ -766,6 +767,18 @@ model MonsterFeedLog {
   createdAt  DateTime @default(now()) @map("created_at")
   monster    Monster  @relation(fields: [monsterId], references: [id])
   @@map("monster_feed_logs")
+}
+
+model MandalaWork {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  imageUrl    String?  @map("image_url")     // 预留：成品图 URL（当前用 drawingData 端上重绘）
+  drawingData String   @map("drawing_data")  // paths + 元信息 JSON
+  mood        String?
+  symmetry    Int      @default(8)           // 对称折数，端上重绘用
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
+  @@map("mandala_works")
 }
 
 model BreathingSession {

@@ -19,7 +19,7 @@
     <scroll-view scroll-x class="tab-scroll">
       <view class="tab-row">
         <view
-          v-for="cat in CATS" :key="cat.key"
+          v-for="cat in visibleCats" :key="cat.key"
           class="tab-item"
           :class="{ active: activeTab === cat.key }"
           @click="activeTab = cat.key"
@@ -99,6 +99,11 @@ const CATS = [
   { key: 'login',      label: '🔥 登录' },
   { key: 'combo',      label: '🌈 综合' },
 ];
+
+const visibleCats = computed(() => {
+  const unlockedTypes = new Set(list.value.filter(a => a.unlocked).map(a => a.type));
+  return CATS.filter(c => c.key === 'all' || unlockedTypes.has(c.key));
+});
 
 const TYPE_COLORS = {
   ohcard:     '#7B5EA7',

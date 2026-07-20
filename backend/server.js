@@ -72,6 +72,7 @@ app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/registrations', require('./routes/registrations'));
 app.use('/api/homework', require('./routes/homework'));
 app.use('/api/monster', require('./routes/monster'));
+app.use('/api/mandala', require('./routes/mandala'));
 app.use('/api/crisis', require('./routes/crisis'));
 app.use('/api/terms', require('./routes/terms'));
 app.use('/api/payment', require('./routes/payment'));

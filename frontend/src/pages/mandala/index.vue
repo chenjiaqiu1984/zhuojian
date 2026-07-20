@@ -10,7 +10,7 @@
         <text class="hero-sub">用色彩与图案探索内心的平静与秩序</text>
       </view>
       <!-- 音乐控制 -->
-      <view class="music-btn" @click="toggleMusic">
+      <view class="music-btn" @click="e => toggleMusic(e)">
         <view class="music-icon" :class="{ playing: isPlaying }">
           <view class="bar b1" />
           <view class="bar b2" />
@@ -53,13 +53,8 @@
 
     <!-- 开始按钮 -->
     <view class="cta-section">
-      <view class="cta-btn" @click="onStart">
-        <text class="cta-text">开始创作</text>
-        <text class="cta-arrow">→</text>
-      </view>
-      <view class="gallery-btn" @click="onGallery">
-        <text class="gallery-text">我的画廊</text>
-      </view>
+      <view class="cta-btn" @click="uni.navigateTo({url:'/pages/mandala/draw?mood='+selectedMood})">开始创作 →</view>
+      <view class="gallery-btn" @click="uni.navigateTo({url:'/pages/mandala/gallery'})">我的画廊</view>
     </view>
 
     <!-- 底部留白 -->
@@ -144,16 +139,6 @@ function toggleMusic() {
   }
 }
 
-function onStart() {
-  uni.navigateTo({
-    url: `/pages/mandala/draw?mood=${selectedMood.value}`,
-  });
-}
-
-function onGallery() {
-  uni.navigateTo({ url: '/pages/mandala/gallery' });
-}
-
 onUnmounted(() => {
   if (audioCtx) {
     audioCtx.stop();
@@ -181,7 +166,6 @@ $card-bg: #FFFFFF;
 .hero {
   position: relative;
   padding: 96rpx 48rpx 88rpx;
-  overflow: hidden;
   background: linear-gradient(155deg, #3A7E8A 0%, #1E5870 100%);
 }
 
@@ -399,6 +383,7 @@ $card-bg: #FFFFFF;
 .cta-btn {
   height: 100rpx;
   border-radius: 50rpx;
+  border: none;
   background: linear-gradient(135deg, #3A7E8A 0%, #1E5870 100%);
   display: flex;
   align-items: center;
@@ -425,6 +410,7 @@ $card-bg: #FFFFFF;
   height: 88rpx;
   border-radius: 44rpx;
   border: 2rpx solid #C0D8DC;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -273,7 +273,6 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
 /* Score hero */
 .score-hero {
   position: relative;
-  overflow: hidden;
   background: linear-gradient(135deg, $teal 0%, $teal-dark 100%);
   padding: 80rpx 48rpx 64rpx;
   text-align: center;

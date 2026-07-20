@@ -143,7 +143,6 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
 .hero {
   position: relative;
   padding: 88rpx 48rpx 72rpx;
-  overflow: hidden;
   background: linear-gradient(135deg, $teal 0%, $teal-dark 100%);
 }
 .hero-glow {

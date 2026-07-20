@@ -3,6 +3,25 @@ const BASE_URL = `${SERVER}/api`;
 
 function getToken() { return uni.getStorageSync('token') || ''; }
 
+// 401 跳转登录：多个接口同时 401 时只跳一次；reLaunch 在微信开发者工具里偶发
+// timeout，失败后回退到 navigateTo 再试一次，避免跳转失败卡在空白页。
+let redirectingToLogin = false;
+function redirectToLogin() {
+  if (redirectingToLogin) return;
+  redirectingToLogin = true;
+  uni.removeStorageSync('token');
+  uni.removeStorageSync('user');
+  const done = () => { redirectingToLogin = false; };
+  uni.reLaunch({
+    url: '/pages/login/index',
+    success: done,
+    fail: () => {
+      // reLaunch 超时/失败兜底：换用 navigateTo 再试
+      uni.navigateTo({ url: '/pages/login/index', complete: done });
+    },
+  });
+}
+
 async function request(method, path, data) {
   return new Promise((resolve, reject) => {
     uni.request({
@@ -10,9 +29,7 @@ async function request(method, path, data) {
       header: { Authorization: `Bearer ${getToken()}` },
       success: res => {
         if (res.statusCode === 401) {
-          uni.removeStorageSync('token');
-          uni.removeStorageSync('user');
-          uni.reLaunch({ url: '/pages/login/index' });
+          redirectToLogin();
           return reject({ __authRedirect: true });
         }
         res.statusCode >= 400 ? reject(res.data) : resolve(res.data);
@@ -192,4 +209,11 @@ export const monsterApi = {
   update: (id, d) => put(`/monster/${id}`, d),
   del: id => del(`/monster/${id}`),
   feed: (id, d) => post(`/monster/${id}/feed`, d),
+};
+
+export const mandalaApi = {
+  list: () => get('/mandala'),
+  create: d => post('/mandala', d),
+  detail: id => get(`/mandala/${id}`),
+  del: id => del(`/mandala/${id}`),
 };
