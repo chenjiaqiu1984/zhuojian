@@ -1,0 +1,37 @@
+https://github.com/e5sub/Text-Legend     文字游戏、文字网游、开源网游、收菜游戏
+
+https://github.com/Tingyun01/maoshan-quce   茅山趣测 - 微信小程序源码 | 基于茅山道文化的趣味人格/心理测试小程序
+
+https://github.com/lxKylin/yucheng-mini   微信小程序：愈历
+
+https://github.com/DIAG5/PlantNurture_Web  本项目源于微信小程序「驼翁再世」——一款以"养植物，也是在滋养自己"为核心理念的AI植物养护助手。由于比赛时间紧迫，小程序所需的ICP备案流程无法在截止日期前完成，为确保评委能够顺利体验完整功能，我们采用AI辅助开发了这个网页版演示。
+
+ 
+
+https://github.com/bestH324/star-language-app   星语·孤独症早期支持平台 - 基于SACS量表的ASD早期筛查微信小程序（完整项目）
+
+https://github.com/XingjianTian/PsyTwin-Pocket   心图·口袋 - PsyTwin Pocket | 微信小程序 | 校园心理数字孪生平台移动端 | 心墙瀑布流社交 | OpenClaw AI心理咨询师 | 多模态行为数据采集 | 心理画像四维度评分 | 线上预约服务
+
+https://github.com/binarywang/WxJava  微信开发 Java SDK ，支持包括微信支付，开放平台，小程序，企业微信，视频号，公众号等的后端开发
+
+https://github.com/kesixin/QuestionWechatApp  答题小程序，刷题小程序，微信小程序，考试小程序。毕业设计小程序，有前后端完整源码和数据库，易于二次开发。还可用于考试活动，企业内部考核，内部培训等职业考试刷题。
+
+https://github.com/BycoLin/GoDr  GoDr 闯关叭叭是一款面向小学生的免费学习微信小程序，通过闯关答题的形式，覆盖数学、语文、英语等学科知识，让学习变得像玩游戏一样有趣。
+
+https://github.com/XTFxiaofei/weixinxiaochengxuPsychtest   微信小程序心理测试
+
+https://github.com/bonyren/wzy-xl/tree/master   《为之易心理健康系统》，涵盖心理量表，心理测评，心理测量，心理测试，心理普查，心理咨询等功能。轻松搭建专有的线上心理咨询室。为学校，企事业单位，个人心理健康创业提供高效工具。代码开源并支持独立私有化部署，开源体验：http://sa.wzyer.com
+
+ 
+
+https://github.com/scutcyr/SoulChat2.0   Psychological Counselor's Digital Twin Framework（心理咨询师数字孪生框架）
+
+https://github.com/mryeehee/Psychological-Plus 壹心理测试+小程序源码
+
+ 
+
+https://github.com/chatopera/efaqa-corpus-zh    ❤️Emotional First Aid Dataset , 心理咨询问答、聊天机器人语料库
+
+https://github.com/smilingzhang/psychological-counseling   明心心理咨询
+
+https://github.com/scutcyr/SoulChat   中文领域心理健康对话大模型SoulChat

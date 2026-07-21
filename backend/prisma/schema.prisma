@@ -1,0 +1,810 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "sqlite"
+  url      = "file:./zhuojian.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String?   @unique
+  password     String?
+  phone        String?   @unique
+  email        String?   @unique
+  wechatOpenid String?   @unique @map("wechat_openid")
+  qqOpenid     String?   @unique @map("qq_openid")
+  role         String    @default("user")
+  status       String    @default("active")  // "active" | "pending"（通过短信/微信注册但未完善信息的用户）
+  name         String?
+  avatar       String?
+  termsAcceptedAt DateTime? @map("terms_accepted_at")
+  termsVersion    String    @default("1.0") @map("terms_version")
+  privacyVersion  String    @default("1.0") @map("privacy_version")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  bookings     Booking[]
+  ohRecords    OhCardRecord[]
+  consultant   Consultant?
+  assessmentResults AssessmentResult[]
+  orders       Order[]
+  userPackages UserPackage[]
+  userCoupons  UserCoupon[]
+  monsters     Monster[]
+  mandalaWorks MandalaWork[]
+}
+
+model VerifyCode {
+  id        Int    @id @default(autoincrement())
+  target    String
+  code      String
+  type      String
+  expiresAt BigInt @map("expires_at")
+  used      Int    @default(0)
+}
+
+model TermsVersion {
+  id          Int       @id @default(autoincrement())
+  type        String    @default("terms")  // "terms"=用户服务协议 | "privacy"=隐私政策
+  version     String    // e.g. "1.0", "1.1"
+  title       String    @default("用户服务协议")
+  content     String    // 协议正文（Markdown 或纯文本）
+  isDraft     Int       @default(1) @map("is_draft")   // 1=草稿 0=已发布
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+}
+
+model About {
+  id          Int      @id @default(autoincrement())
+  title       String?
+  content     String?
+  bannerImage String?  @map("banner_image")
+  images      String?
+  tickerType  String?  @default("news")
+  tickerItems String?
+  menuGroups  String?  @map("menu_groups")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+}
+
+model Consultant {
+  id         Int         @id @default(autoincrement())
+  userId     Int?        @unique @map("user_id")
+  name       String
+  avatar     String?
+  title      String?
+  bio        String?
+  specialties String?
+  education  String?
+  yearsExp          Int         @default(0) @map("years_exp")
+  consultHours      Int         @default(0) @map("consult_hours")
+  supervisionHours  Int         @default(0) @map("supervision_hours")
+  certifications    String?
+  certificationImages String? @map("certification_images")
+  workExperience String?     @map("work_experience")
+  price          Int         @default(0)
+  discountRate   Float       @default(1.0) @map("discount_rate")  // 折扣率：1.0=无折扣, 0.8=八折
+  autoConfirm    Int         @default(0) @map("auto_confirm")
+  weeklyTemplate String?     @map("weekly_template")
+  isActive   Int         @default(1) @map("is_active")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  user       User?       @relation(fields: [userId], references: [id])
+  slots      TimeSlot[]
+  bookings   Booking[]
+}
+
+model TimeSlot {
+  id           Int        @id @default(autoincrement())
+  consultantId Int        @map("consultant_id")
+  startTime    String     @map("start_time")
+  endTime      String     @map("end_time")
+  isBooked     Int        @default(0) @map("is_booked")
+  consultant   Consultant @relation(fields: [consultantId], references: [id])
+  booking      Booking?   @relation("FirstSlot")
+  secondBookings Booking[] @relation("SecondSlot")
+}
+
+model Booking {
+  id             Int        @id @default(autoincrement())
+  userId         Int        @map("user_id")
+  consultantId   Int        @map("consultant_id")
+  slotId         Int        @unique @map("slot_id")
+  secondSlotId   Int?       @map("second_slot_id")
+  status         String     @default("pending")
+  notes          String?
+  message        String?
+  createdAt      DateTime   @default(now()) @map("created_at")
+  user           User       @relation(fields: [userId], references: [id])
+  consultant     Consultant @relation(fields: [consultantId], references: [id])
+  slot           TimeSlot   @relation("FirstSlot", fields: [slotId], references: [id])
+  secondSlot     TimeSlot?  @relation("SecondSlot", fields: [secondSlotId], references: [id])
+  orders         Order[]
+}
+
+model News {
+  id          Int      @id @default(autoincrement())
+  title       String
+  summary     String?
+  content     String?
+  coverImage  String?  @map("cover_image")
+  videoUrl    String?  @map("video_url")
+  type        String   @default("news")
+  author      String?
+  isPaid      Int       @default(0) @map("is_paid")   // 0=免费 1=付费
+  price       Int       @default(0)                    // 单位：分
+  isPublished Int       @default(1) @map("is_published")
+  isTesting   Int       @default(0) @map("is_testing") // 1=灰度测试，仅管理员可见
+  endDate     DateTime? @map("end_date")              // 报名截止日期，null=长期
+  createdAt   DateTime  @default(now()) @map("created_at")
+  orders      Order[]
+}
+
+model OhCardCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        String
+  description String?
+  cover       String?
+  isActive    Int      @default(1) @map("is_active")
+  wordCatId   Int?     @map("word_cat_id")
+  imgSrcCatId Int?     @map("img_src_cat_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  cards       OhCard[]
+}
+
+model OhCard {
+  id          Int            @id @default(autoincrement())
+  categoryId  Int            @map("category_id")
+  imageUrl    String?        @map("image_url")
+  word        String?
+  description String?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  category    OhCardCategory @relation(fields: [categoryId], references: [id])
+}
+
+model OhCardRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String
+  data      String
+  note      String?
+  audioUrl  String?  @map("audio_url")
+  roomId    String?  @map("room_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model OhCardPreset {
+  id        Int      @id @default(autoincrement())
+  type      String
+  title     String
+  icon      String   @default("🃏")
+  color     String   @default("#4A7BBA")
+  isActive  Int      @default(1) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  config    String
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model AssessmentScale {
+  id               Int      @id @default(autoincrement())
+  code             String   @unique
+  name             String
+  category         String
+  description      String
+  introduction     String?
+  instruction      String?
+  isPaid           Boolean  @default(false)
+  price            Int      @default(0)
+  totalQuestions   Int
+  estimatedMinutes Int      @default(10)
+  isActive         Boolean  @default(true)
+  isTesting        Boolean  @default(false) // 灰度测试，仅管理员可见
+  usageCount       Int      @default(0)
+  scoringRule      String
+  scenarios        String   @default("[]")
+  createdAt        DateTime @default(now())
+  questions        AssessmentQuestion[]
+  results          AssessmentResult[]
+  interpretations  AssessmentInterpretation[]
+  vouchers         AssessmentVoucher[]
+  favorites        AssessmentFavorite[]
+}
+
+model AssessmentQuestion {
+  id        Int     @id @default(autoincrement())
+  scaleId   Int
+  orderNum  Int
+  content   String
+  options   String
+  dimension String?
+  ageMin    Int?    @map("age_min")
+  ageMax    Int?    @map("age_max")
+  gender    String?
+  scale     AssessmentScale @relation(fields: [scaleId], references: [id])
+}
+
+model AssessmentResult {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  scaleId     Int
+  answers     String
+  totalScore  Float
+  dimensions  String?
+  level       String
+  completedAt DateTime  @default(now())
+  voucherId   Int?
+  user        User            @relation(fields: [userId], references: [id])
+  scale       AssessmentScale @relation(fields: [scaleId], references: [id])
+  voucher     AssessmentVoucher? @relation(fields: [voucherId], references: [id])
+  answerItems AssessmentAnswer[]
+}
+
+model AssessmentVoucher {
+  id           Int       @id @default(autoincrement())
+  code         String    @unique
+  scaleId      Int?
+  createdBy    Int
+  targetUserId Int?      @map("target_user_id")
+  usedBy       Int?
+  usedAt       DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  results      AssessmentResult[]
+  scale        AssessmentScale? @relation(fields: [scaleId], references: [id])
+}
+
+model EventLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  event     String
+  page      String
+  data      String?
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model NewsLike {
+  id        Int      @id @default(autoincrement())
+  newsId    Int      @map("news_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([newsId, userId])
+}
+
+model NewsFavorite {
+  id        Int      @id @default(autoincrement())
+  newsId    Int      @map("news_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([newsId, userId])
+}
+
+model NewsComment {
+  id        Int      @id @default(autoincrement())
+  newsId    Int      @map("news_id")
+  userId    Int      @map("user_id")
+  content   String
+  parentId  Int?     @map("parent_id")
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model ActivityRegistration {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  newsId    Int?     @map("news_id")
+  source    String?
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model AssessmentProgress {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  scaleId   Int
+  answers   String
+  updatedAt DateTime @updatedAt
+  @@unique([userId, scaleId])
+}
+
+model AssessmentAnswer {
+  id         Int              @id @default(autoincrement())
+  resultId   Int
+  questionId Int
+  score      Int
+  result     AssessmentResult @relation(fields: [resultId], references: [id])
+}
+
+model AssessmentInterpretation {
+  id                Int     @id @default(autoincrement())
+  scaleId           Int
+  dimension         String?
+  calculationMethod String?
+  standardScore     Float?
+  variance          Float?
+  minScore          Float
+  maxScore          Float
+  ageMin            Int?
+  ageMax            Int?
+  gender            String?
+  isNormal          String?
+  level             String?
+  detail            String
+  scale             AssessmentScale @relation(fields: [scaleId], references: [id])
+}
+
+model AssessmentFavorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  scaleId   Int
+  createdAt DateTime @default(now())
+  scale     AssessmentScale @relation(fields: [scaleId], references: [id])
+  @@unique([userId, scaleId])
+}
+
+// ── SYSINFODB 镜像表 ──────────────────────────────────────────────
+
+model MdbAccount {
+  id      Int     @id @default(autoincrement())
+  no      Int?
+  agemin  Int?
+  agemax  Int?
+  xb      String?
+  hmid    Int?
+  name    String?
+  min     Float?
+  max     Float?
+  explain String?
+  @@map("mdb_account")
+}
+
+model MdbAverageSD {
+  id      Int     @id @default(autoincrement())
+  age     Int?
+  gender  String?
+  average Float?
+  sd      Float?
+  @@map("mdb_average_sd")
+}
+
+model MdbConvertMmpi {
+  id             Int     @id
+  userSex        String? @map("user_sex")
+  lstyle         String?
+  factorNumber   String? @map("factor_number")
+  originalScore  Int?    @map("original_score")
+  convertedScore Int?    @map("converted_score")
+  @@map("mdb_convert_mmpi")
+}
+
+model MdbHmez {
+  id     Int     @id
+  agemin Int?
+  agemax Int?
+  xb     String?
+  hmid   Int?
+  ez     String?
+  topid  String?
+  @@map("mdb_hmez")
+}
+
+model MdbToplr {
+  id      Int     @id @default(autoincrement())
+  no      Int?
+  hmid    Int?
+  topid   Int?
+  hmna    String?
+  toplr   String?
+  chc     Int?
+  a       String?
+  b       String?
+  c       String?
+  d       String?
+  e       String?
+  f       String?
+  g       String?
+  h       String?
+  i       String?
+  j       String?
+  ac      Float?
+  bc      Float?
+  cc      Float?
+  dc      Float?
+  ec      Float?
+  fc      Float?
+  gc      Float?
+  hc      Float?
+  ic      Float?
+  jc      Float?
+  picture String?
+  @@map("mdb_toplr")
+}
+
+model MdbTreename {
+  id       Int     @id
+  name     String?
+  parentid Int?
+  chc      Int?
+  maxavg   Float?
+  hmjg     String?
+  max      Float?
+  min      Float?
+  csr      String?
+  xb       String?
+  @@map("mdb_treename")
+}
+
+model MdbTT {
+  id      Int     @id @default(autoincrement())
+  no      Int?
+  hmid    Int?
+  topid   Int?
+  hmna    String?
+  toplr   String?
+  chc     Int?
+  a       String?
+  b       String?
+  c       String?
+  d       String?
+  e       String?
+  f       String?
+  g       String?
+  h       String?
+  i       String?
+  j       String?
+  ac      Float?
+  bc      Float?
+  cc      Float?
+  dc      Float?
+  ec      Float?
+  fc      Float?
+  gc      Float?
+  hc      Float?
+  ic      Float?
+  jc      Float?
+  picture String?
+  @@map("mdb_tt")
+}
+
+// ── GUESTINFODB 镜像表 ────────────────────────────────────────────
+
+model MdbUsername {
+  id       String  @id
+  name     String?
+  xb       String?
+  csdate   String?
+  tel      String?
+  address  String?
+  testgrou String?
+  @@map("mdb_username")
+}
+
+model MdbUsebb {
+  id     Int     @id
+  mzh    String?
+  name   String?
+  xb     String?
+  csdate String?
+  hwno   String?
+  @@map("mdb_usebb")
+}
+
+model MdbUsekb {
+  id     Int     @id
+  mzh    String?
+  hwno   String?
+  hwdate String?
+  hcm    String?
+  wkg    String?
+  tel    String?
+  addr   String?
+  cx     String?
+  @@map("mdb_usekb")
+}
+
+model MdbUsexg {
+  id   Int     @id
+  mzh  String?
+  hwno String?
+  name String?
+  ral  String?
+  tel  String?
+  @@map("mdb_usexg")
+}
+
+model MdbUsexx {
+  id   Int     @id
+  mzh  String?
+  hwno String?
+  hmlr String?
+  hmjg String?
+  @@map("mdb_usexx")
+}
+
+model MdbJg {
+  id          Int     @id
+  userid      String?
+  username    String?
+  timeing     String?
+  hmna        String?
+  tmc         String?
+  sumcount    Float?
+  avgcount    Float?
+  maxavgcount Float?
+  exc         String?
+  type        String?
+  exlev       String?
+  exavg       Float?
+  bgr         String?
+  @@map("mdb_jg")
+}
+
+model MdbJgmx {
+  id       Int     @id
+  jgid     Int?
+  hmna     String?
+  sumcount Float?
+  avgcount Float?
+  type     String?
+  explain  String?
+  @@map("mdb_jgmx")
+}
+
+model MdbJgmxx {
+  id    Int  @id
+  jgid  Int?
+  topid Int?
+  sorc  Int?
+  @@map("mdb_jgmxx")
+}
+
+model MdbTestsave {
+  id     Int     @id @default(autoincrement())
+  hmid   Int?
+  userid String?
+  topid  Int?
+  ch     String?
+  @@map("mdb_testsave")
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  orderNo     String   @unique @map("order_no")       // 商户订单号
+  userId      Int      @map("user_id")
+  bookingId   Int?     @map("booking_id")
+  amount      Int                                      // 单位：分
+  status      String   @default("pending")             // pending / paid / cancelled / refunded
+  payType     String   @default("wxpay") @map("pay_type")
+  prepayId    String?  @map("prepay_id")               // 微信预支付ID
+  transactionId String? @map("transaction_id")         // 微信支付交易号
+  expireAt    DateTime @map("expire_at")               // 15分钟未支付自动过期
+  paidAt      DateTime? @map("paid_at")
+  originalAmount Int?     @map("original_amount")              // 折扣前原价（分），无折扣时为 null
+  discountRate   Float    @default(1.0) @map("discount_rate")  // 下单时折扣快照
+  userPackageId  Int?     @map("user_package_id")              // 套餐购买订单关联
+  userCouponId   Int?     @map("user_coupon_id")               // 使用的优惠券
+  couponDiscount Int      @default(0) @map("coupon_discount")  // 优惠券减免金额（分）
+  newsId      Int?     @map("news_id")                         // 活动报名订单关联
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
+  booking     Booking? @relation(fields: [bookingId], references: [id])
+  news        News?    @relation(fields: [newsId], references: [id])
+  userPackage UserPackage? @relation(fields: [userPackageId], references: [id])
+  userCoupon  UserCoupon?  @relation(fields: [userCouponId], references: [id])
+  @@map("orders")
+}
+
+// ── 套餐定义（admin 配置）────────────────────────────────────────
+model ConsultPackage {
+  id             Int           @id @default(autoincrement())
+  name           String                                        // 套餐名称，如"十次套餐"
+  sessions       Int                                           // 购买次数（如 10）
+  bonusSessions  Int           @default(0) @map("bonus_sessions") // 赠送次数（如 1）
+  description    String?                                       // 套餐说明
+  isActive       Int           @default(1) @map("is_active")
+  sortOrder      Int           @default(0) @map("sort_order")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  userPackages   UserPackage[]
+  @@map("consult_packages")
+}
+
+// ── 用户持有的套餐 ──────────────────────────────────────────────
+model UserPackage {
+  id             Int            @id @default(autoincrement())
+  userId         Int            @map("user_id")
+  packageId      Int            @map("package_id")
+  totalSessions  Int            @map("total_sessions")         // 购买+赠送总次数
+  usedSessions   Int            @default(0) @map("used_sessions")
+  paidAmount     Int            @map("paid_amount")            // 实付金额（分）
+  status         String         @default("active")             // active / exhausted / expired
+  expireAt       DateTime?      @map("expire_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  user           User           @relation(fields: [userId], references: [id])
+  package        ConsultPackage @relation(fields: [packageId], references: [id])
+  orders         Order[]
+  @@map("user_packages")
+}
+
+// ── 优惠券模板（admin 配置）────────────────────────────────────
+model Coupon {
+  id           Int         @id @default(autoincrement())
+  code         String      @unique                          // 券码/活动码，WELCOME_DISCOUNT 等
+  name         String                                       // 展示名称，如"注册8折券"
+  description  String?                                      // 使用说明
+  type         String                                       // 'discount'|'threshold'|'direct'|'activity'
+  value        Float                                        // 打折:0.8；满减/直减:减免金额(分)；活动:0
+  threshold    Int         @default(0)                      // 满减门槛(分)，0=无门槛
+  scope        String      @default("consultation")         // 'consultation'|'salon'|'all'
+  isPublic     Int         @default(0) @map("is_public")   // 1=活动券用户可见/自领
+  perUserLimit Int         @default(1) @map("per_user_limit") // 每人可持有次数
+  totalLimit   Int?        @map("total_limit")              // 发行总量(null=不限)
+  usedCount    Int         @default(0) @map("used_count")
+  expireAt     DateTime?   @map("expire_at")                // null=永久有效
+  isActive     Int         @default(1) @map("is_active")
+  createdBy    Int         @map("created_by")               // admin userId
+  createdAt    DateTime    @default(now()) @map("created_at")
+  userCoupons  UserCoupon[]
+  @@map("coupons")
+}
+
+// ── 用户持有的优惠券（每张用完即消）──────────────────────────
+model UserCoupon {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  couponId    Int       @map("coupon_id")
+  status      String    @default("available")   // 'available'|'used'|'expired'
+  usedAt      DateTime? @map("used_at")
+  usedOrderId Int?      @map("used_order_id")   // 用于哪个订单
+  createdAt   DateTime  @default(now()) @map("created_at")
+  user        User      @relation(fields: [userId], references: [id])
+  coupon      Coupon    @relation(fields: [couponId], references: [id])
+  orders      Order[]
+  @@map("user_coupons")
+}
+
+model MoodEntry {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  mood      Int
+  note      String?
+  tags      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  @@map("mood_entries")
+}
+
+model CbtRecord {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  situation       String
+  autoThought     String   @map("auto_thought")
+  emotion         String
+  evidenceFor     String?  @map("evidence_for")
+  evidenceAgainst String?  @map("evidence_against")
+  balancedThought String?  @map("balanced_thought")
+  outcome         String?
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  @@map("cbt_records")
+}
+
+model DreamRecord {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  dreamContent    String   @map("dream_content")
+  freeAssociation String?  @map("free_association")
+  interpretation  String?
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  @@map("dream_records")
+}
+
+model IcebergRecord {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  behavior          String
+  coping            String?
+  feeling           String?
+  feelingOfFeeling  String?  @map("feeling_of_feeling")
+  belief            String?
+  expectation       String?
+  yearning          String?
+  self              String?
+  notes             String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  @@map("iceberg_records")
+}
+
+model HomeworkHelp {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  consultantId Int?     @map("consultant_id")
+  recordType   String   @map("record_type")
+  recordId     Int      @map("record_id")
+  status       String   @default("pending")
+  reply        String?
+  price        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  @@map("homework_help")
+}
+
+model RuleRecord {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @map("user_id")
+  originalRule     String   @map("original_rule")
+  context          String?
+  source           String?
+  originalFunction String?  @map("original_function")
+  cost             String?
+  exceptions       String?
+  newRule          String?  @map("new_rule")
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  @@map("rule_records")
+}
+
+model Monster {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  name        String
+  emotion     String
+  color       String
+  drawingData String   @map("drawing_data")
+  drawingType String   @default("parts") @map("drawing_type")
+  imageUrl    String?  @map("image_url")
+  totalDays   Int      @default(0) @map("total_days")
+  streak      Int      @default(0)
+  lastFedAt   DateTime? @map("last_fed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
+  feedLogs    MonsterFeedLog[]
+  @@map("monsters")
+}
+
+model MonsterFeedLog {
+  id         Int      @id @default(autoincrement())
+  monsterId  Int      @map("monster_id")
+  note       String?
+  emotion    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  monster    Monster  @relation(fields: [monsterId], references: [id])
+  @@map("monster_feed_logs")
+}
+
+model MandalaWork {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  imageUrl    String?  @map("image_url")     // 预留：成品图 URL（当前用 drawingData 端上重绘）
+  drawingData String   @map("drawing_data")  // paths + 元信息 JSON
+  mood        String?
+  symmetry    Int      @default(8)           // 对称折数，端上重绘用
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
+  @@map("mandala_works")
+}
+
+model BreathingSession {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  mode        String                    // 模式key，如 '4-7-8' 或课程key 'sleep'
+  isProgramMode Int    @default(0) @map("is_program_mode")
+  rounds      Int      @default(0)
+  durationSec Int      @default(0) @map("duration_sec")
+  createdAt   DateTime @default(now()) @map("created_at")
+  @@map("breathing_sessions")
+}
+
+model UserLoginLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  loginAt   DateTime @default(now()) @map("login_at")
+  dateStr   String   @map("date_str")  // 'YYYY-MM-DD'，用于去重按天统计
+  @@map("user_login_logs")
+}
+
+model UserAchievement {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  achievementKey String  @map("achievement_key")
+  unlockedAt    DateTime @default(now()) @map("unlocked_at")
+  @@unique([userId, achievementKey])
+  @@map("user_achievements")
+}

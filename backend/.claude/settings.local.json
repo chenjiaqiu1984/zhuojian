@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//k/Code_folder/ohcard/frontend/**)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill *)",
+      "Bash(python analyze_har.py)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(curl -s \"http://localhost:5173/src/main.js\")",
+      "Bash(curl -s \"http://localhost:5173/src/App.vue\")"
+    ]
+  }
+}

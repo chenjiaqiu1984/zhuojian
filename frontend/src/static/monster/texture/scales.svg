@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 180">
+  <defs>
+    <pattern id="scales" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M0 20 Q10 8 20 20" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+      <path d="M-10 10 Q0 -2 10 10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+      <path d="M10 10 Q20 -2 30 10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+    </pattern>
+  </defs>
+  <ellipse cx="80" cy="100" rx="70" ry="75" fill="url(#scales)"/>
+</svg>

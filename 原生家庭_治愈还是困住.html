@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>「原生家庭」治愈了你，还是困住了你？</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: #f5f2ee;
+            color: #2d2a26;
+            line-height: 1.85;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+        }
+        .hero-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            display: block;
+        }
+        .content {
+            padding: 28px 22px 40px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1816;
+            line-height: 1.45;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .subtitle {
+            font-size: 13px;
+            color: #8a8078;
+            margin-bottom: 26px;
+            border-bottom: 1px solid #e8e2d8;
+            padding-bottom: 16px;
+        }
+        .section {
+            margin-bottom: 34px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4a4238;
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 12px;
+        }
+        .section-title::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 5px;
+            bottom: 5px;
+            width: 4px;
+            background: linear-gradient(180deg, #c4a882, #8a7a68);
+            border-radius: 2px;
+        }
+        p {
+            font-size: 15.5px;
+            color: #3d3830;
+            margin-bottom: 15px;
+            text-align: justify;
+            text-indent: 2em;
+        }
+        .opening-scene {
+            background: linear-gradient(135deg, #fdf8f0, #f5ede0);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 20px 0;
+            border: 1px solid #e8ddd0;
+        }
+        .opening-scene p {
+            text-indent: 0;
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: #4a4238;
+        }
+        .opening-scene .highlight-line {
+            color: #8a6a4a;
+            font-weight: 600;
+            font-size: 15.5px;
+        }
+        .quote-box {
+            background: #faf6f0;
+            border-left: 4px solid #c4a882;
+            border-radius: 0 10px 10px 0;
+            padding: 18px 18px 18px 22px;
+            margin: 22px 0;
+            position: relative;
+        }
+        .quote-box::before {
+            content: """;
+            font-size: 42px;
+            color: #c4b8a0;
+            position: absolute;
+            top: 2px;
+            left: 10px;
+            line-height: 1;
+            font-family: Georgia, serif;
+            opacity: 0.5;
+        }
+        .quote-box p {
+            text-indent: 0;
+            font-size: 14.5px;
+            color: #5a5048;
+            padding-left: 18px;
+            margin-bottom: 0;
+        }
+        .image-block {
+            margin: 22px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.07);
+        }
+        .image-block img {
+            width: 100%;
+            display: block;
+        }
+        .image-caption {
+            font-size: 12px;
+            color: #8a8078;
+            text-align: center;
+            padding: 8px 12px;
+            background: #faf6f0;
+        }
+        .highlight-text {
+            color: #8a6a4a;
+            font-weight: 600;
+        }
+        .divider {
+            text-align: center;
+            margin: 28px 0;
+            color: #b0a898;
+            font-size: 16px;
+            letter-spacing: 10px;
+        }
+        .compare-box {
+            background: #fdf9f3;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px dashed #d4c8b8;
+        }
+        .compare-box .compare-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #5a5048;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+        .compare-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 16px;
+            border: 1px solid #e8e0d8;
+        }
+        .compare-item:last-child {
+            margin-bottom: 0;
+        }
+        .compare-check {
+            width: 24px;
+            height: 24px;
+            background: #7a9a7a;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-right: 12px;
+            margin-top: 2px;
+        }
+        .compare-cross {
+            width: 24px;
+            height: 24px;
+            background: #9a7a7a;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-right: 12px;
+            margin-top: 2px;
+        }
+        .compare-text {
+            font-size: 14px;
+            color: #4a4238;
+            line-height: 1.7;
+        }
+        .compare-text .compare-label {
+            font-size: 12px;
+            color: #8a7a6a;
+            margin-bottom: 2px;
+        }
+        .map-metaphor {
+            background: linear-gradient(135deg, #f8f4ee, #f0e8dc);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 22px 0;
+            text-align: center;
+            border: 1px solid #e0d8cc;
+        }
+        .map-metaphor .map-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #5a5048;
+            margin-bottom: 12px;
+        }
+        .map-metaphor .map-text {
+            font-size: 14px;
+            color: #5a5048;
+            line-height: 1.8;
+            text-indent: 0;
+            margin-bottom: 0;
+        }
+        .map-metaphor .map-highlight {
+            color: #8a6a4a;
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .decision-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px dashed #d4c8b8;
+        }
+        .decision-box .decision-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #6a5a4a;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .decision-item {
+            background: #faf6f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #5a5048;
+            line-height: 1.7;
+        }
+        .decision-item:last-child {
+            margin-bottom: 0;
+        }
+        .decision-item .decision-prefix {
+            color: #8a6a4a;
+            font-weight: 700;
+        }
+        .ending-box {
+            background: linear-gradient(135deg, #7a6a5a, #5a4a3a);
+            color: #fff;
+            border-radius: 16px;
+            padding: 28px 22px;
+            margin-top: 32px;
+            text-align: center;
+        }
+        .ending-box .ending-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            letter-spacing: 2px;
+            color: #f0e6d8;
+        }
+        .ending-box p {
+            color: #e0d4c4;
+            font-size: 14px;
+            text-indent: 0;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .ending-box .highlight {
+            color: #f5d0a0;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .cta-btn {
+            display: inline-block;
+            background: #f5d0a0;
+            color: #4a3a2a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 13px 32px;
+            border-radius: 30px;
+            margin-top: 16px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .footer-note {
+            font-size: 12px;
+            color: #a09890;
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e8e2d8;
+        }
+        .interactive-box {
+            background: linear-gradient(135deg, #fdf6ed, #f0e8dc);
+            border-radius: 14px;
+            padding: 22px;
+            margin-top: 28px;
+            text-align: center;
+            border: 2px dashed #d4c4a8;
+        }
+        .interactive-box .interactive-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #6b5a4a;
+            margin-bottom: 10px;
+        }
+        .interactive-box p {
+            text-indent: 0;
+            text-align: center;
+            font-size: 14px;
+            color: #7a6a5a;
+            margin-bottom: 0;
+        }
+        .interactive-box .tag {
+            display: inline-block;
+            background: #c4a882;
+            color: #fff;
+            font-size: 13px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            margin-top: 12px;
+            font-weight: 600;
+        }
+        .warning-box {
+            background: linear-gradient(135deg, #fdf0e8, #f5e4d8);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 20px 0;
+            border: 1px dashed #d4a882;
+        }
+        .warning-box .warning-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #8a5a3a;
+            margin-bottom: 10px;
+        }
+        .warning-box p {
+            text-indent: 0;
+            font-size: 14px;
+            color: #5a4a3a;
+            margin-bottom: 8px;
+        }
+        .warning-box p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 封面大图 -->
+        <div class="image-block" style="margin:0; border-radius:0;">
+            <img src="https://kimi-web-img.moonshot.cn/img/x0.ifengimg.com/f2e07559bf2c94ac1b52f9523a00c891376a812e.jpg" alt="原生家庭剪影">
+        </div>
+
+        <div class="content">
+            <h1 class="title">「原生家庭」治愈了你，还是困住了你？</h1>
+            <div class="subtitle">理解是起点，不是终点。地图从来不是路，路要自己走</div>
+
+            <div class="section">
+                <div class="opening-scene">
+                    <p>💬 <strong>你有没有发现，现在聊心理问题，聊到最后，几乎都会绕回四个字——原生家庭。</strong></p>
+                    <p>关系处不好："我小时候没被好好爱过。"</p>
+                    <p>不敢表达需求："我爸妈从来不听我说话。"</p>
+                    <p>总是讨好别人："我从小就要懂事，才有安全感。"</p>
+                    <p>每一次归因，都像终于找到了线头。原来，纠缠我那么多年的痛苦，不是我的错，它有来处。</p>
+                    <p class="highlight-line">那一刻的释然，是真的。像是给自己松了绑。</p>
+                    <p style="color:#8a6a4a; font-weight:700; font-size:16px; margin-top:12px;">但，然后呢？</p>
+                </div>
+            </div>
+
+            <div class="divider">* * *</div>
+
+            <div class="section">
+                <h2 class="section-title">很多人，就停在了"释然"这一步</h2>
+
+                <p>像一个旅人，终于弄清楚自己为什么一直困在原地。他拿到了一张地图，看了又看，抚摸了千百遍，却始终没有迈出第一步。</p>
+
+                <p>不是不想走。而是<span class="highlight-text">"原生家庭"这四个字，实在太"好用"了。</span></p>
+
+                <p>它可以解释一切——</p>
+
+                <p>拖延，是因为从小被控制太严，潜意识在反抗。</p>
+                <p>回避亲密，是因为父母的婚姻，让我不再相信关系。</p>
+                <p>情绪不稳定，是因为我从来没被允许好好哭过。</p>
+
+                <div class="quote-box">
+                    <p>每一个解释都对。但每一个解释，也可能变成一扇你不再需要推开的门。<br><br>因为门上写着：<strong>不是我的错。</strong></p>
+                </div>
+
+                <p>这句话是真的。但如果我们只停在这句话上，它就悄悄变成了——<span class="highlight-text">所以，我也没办法。</span></p>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/pic3.zhimg.com/e3dc3bb70a8ceb72d4166a572eb847ea60e9523c.jpg" alt="原生家庭与自我价值感">
+                <div class="image-caption">原生家庭 → 自我价值感 → 自己建立的家庭：代代相传的关系影响力</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">怎么判断自己是在"理解"，还是在"躲"？</h2>
+
+                <p>其实有一个很简单的判断标准——</p>
+
+                <div class="map-metaphor">
+                    <div class="map-title">🧭 看你的归因后面，有没有跟上一个"所以"</div>
+                </div>
+
+                <div class="compare-box">
+                    <div class="compare-title">✓ 理解，然后行动</div>
+                    <div class="compare-item">
+                        <div class="compare-check">✓</div>
+                        <div class="compare-text">
+                            <div class="compare-label">理解 + 行动</div>
+                            "原来我害怕冲突，是因为小时候表达不同意见就会被否定。<span class="highlight-text">所以我决定，试着在安全的关系里，练习说出我的想法。</span>"
+                        </div>
+                    </div>
+                    <div class="compare-item">
+                        <div class="compare-check">✓</div>
+                        <div class="compare-text">
+                            <div class="compare-label">理解 + 行动</div>
+                            "我讨好别人，是因为从小只有懂事才能被看见。<span class="highlight-text">所以我正在学习，允许自己偶尔让别人失望。</span>"
+                        </div>
+                    </div>
+                    <div class="compare-item">
+                        <div class="compare-check">✓</div>
+                        <div class="compare-text">
+                            <div class="compare-label">理解 + 行动</div>
+                            "我很难信任别人，因为被最亲的人辜负过。<span class="highlight-text">所以我需要慢慢来，但我不打算永远关着门。</span>"
+                        </div>
+                    </div>
+                </div>
+
+                <div class="compare-box">
+                    <div class="compare-title">✗ 理解，然后停住</div>
+                    <div class="compare-item">
+                        <div class="compare-cross">✗</div>
+                        <div class="compare-text">
+                            <div class="compare-label">理解 = 终点</div>
+                            "我就是原生家庭不好，<span class="highlight-text">所以我不会沟通。</span>"
+                        </div>
+                    </div>
+                    <div class="compare-item">
+                        <div class="compare-cross">✗</div>
+                        <div class="compare-text">
+                            <div class="compare-label">理解 = 终点</div>
+                            "我就是这样长大的，<span class="highlight-text">改不了了。</span>"
+                        </div>
+                    </div>
+                    <div class="compare-item">
+                        <div class="compare-cross">✗</div>
+                        <div class="compare-text">
+                            <div class="compare-label">理解 = 终点</div>
+                            "我不相信任何人，<span class="highlight-text">都是原生家庭害的。</span>"
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quote-box">
+                    <p>区别不在于你说了什么，而在于说完之后——<br><br><strong>你是松了一口气，继续往前走；<br>还是松了一口气，直接坐在了原地。</strong></p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/yabook.blog/e79e8bdb8fceb31e43284396ae2afbea476e2463.webp" alt="原生家庭创伤和疗愈">
+                <div class="image-caption">与自我和解，拥抱那个受伤的小孩——但和解不是终点，是起点</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">理解，是起点，不是终点</h2>
+
+                <div class="warning-box">
+                    <div class="warning-title">⚠️ 我不是在说："别怪原生家庭了，赶紧往前走。"</div>
+                    <p>这种话太轻巧了。轻巧到像对着一个溺水的人喊："你倒是游啊。"</p>
+                    <p>理解自己的来路，本身就是疗愈最重要的一部分。那个"原来如此"的瞬间，是真正的松绑。很多人正是在那一刻，才第一次允许自己心疼自己。</p>
+                </div>
+
+                <p>我想说的只是——</p>
+
+                <p><span class="highlight-text">理解，是起点，不是终点。</span></p>
+
+                <div class="map-metaphor">
+                    <div class="map-title">🗺️ 原生家庭给了我们一张珍贵的地图</div>
+                    <p class="map-text">上面标注了哪里有沼泽，哪里是断崖，哪座桥曾经塌过。</p>
+                    <p class="map-text"><span class="map-highlight">但是，地图从来不是路。</span></p>
+                    <p class="map-text"><span class="map-highlight">路，要自己走。</span></p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/pica.zhimg.com/4280588540a891e5d52a0b71168bcbf5180823c3.jpg" alt="代代相传的关系影响力">
+                <div class="image-caption">从原生家庭到自我价值感，再到自己建立的家庭——你可以选择打破循环</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">试着在"因为我原生家庭……"后面，加一句"所以我决定……"</h2>
+
+                <p>所以如果你愿意，下一次在你脱口而出"因为我原生家庭……"的时候，</p>
+
+                <p>试着在结尾，轻轻地加上一句：</p>
+
+                <div class="decision-box">
+                    <div class="decision-title">💡 "所以我决定……"</div>
+                    <div class="decision-item">
+                        <span class="decision-prefix">"所以我决定，</span>今天试着说一次'我不想'。"
+                    </div>
+                    <div class="decision-item">
+                        <span class="decision-prefix">"所以我决定，</span>不再拿他们的错误惩罚自己。"
+                    </div>
+                    <div class="decision-item">
+                        <span class="decision-prefix">"所以我决定，</span>不再把他们的剧本，当成我唯一的故事。"
+                    </div>
+                </div>
+
+                <div class="quote-box">
+                    <p><strong>原生家庭给了你一个开头。<br><br>但后面的章节，笔在你自己手里。</strong></p>
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <div class="interactive-title">💬 互动话题</div>
+                <p>你有没有哪一刻，突然意识到自己把"原生家庭"当成了不去改变的挡箭牌？</p>
+                <p>在评论区聊聊吧。也许你说出的那个"所以我决定……"</p>
+                <p>就是迈出的，第一个脚印。</p>
+                <div class="tag">#所以我决定</div>
+            </div>
+
+            <div class="ending-box">
+                <div class="ending-title">笔在你自己手里</div>
+                <p>原生家庭给了你一个开头</p>
+                <p>但后面的章节</p>
+                <p><span class="highlight">笔在你自己手里</span></p>
+                <a href="#" class="cta-btn">写下你的"所以我决定"</a>
+            </div>
+
+            <div class="footer-note">
+                图片来源：凤凰网、知乎、雅书、摄图网<br>
+                心理学概念：原生家庭、归因理论、自我决定理论<br>
+                理解是起点，行动才是路
+            </div>
+        </div>
+    </div>
+</body>
+</html>

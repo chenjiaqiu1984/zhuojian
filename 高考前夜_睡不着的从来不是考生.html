@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高考前夜，睡不着的从来不是考生</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: #f5f2ee;
+            color: #2d2a26;
+            line-height: 1.85;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+        }
+        .hero-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            display: block;
+        }
+        .content {
+            padding: 28px 22px 40px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1816;
+            line-height: 1.45;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .subtitle {
+            font-size: 13px;
+            color: #8a8078;
+            margin-bottom: 26px;
+            border-bottom: 1px solid #e8e2d8;
+            padding-bottom: 16px;
+        }
+        .section {
+            margin-bottom: 34px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4a4238;
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 12px;
+        }
+        .section-title::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 5px;
+            bottom: 5px;
+            width: 4px;
+            background: linear-gradient(180deg, #c4a882, #8a7a68);
+            border-radius: 2px;
+        }
+        p {
+            font-size: 15.5px;
+            color: #3d3830;
+            margin-bottom: 15px;
+            text-align: justify;
+            text-indent: 2em;
+        }
+        .opening-scene {
+            background: linear-gradient(135deg, #fdf8f0, #f5ede0);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 20px 0;
+            border: 1px solid #e8ddd0;
+        }
+        .opening-scene p {
+            text-indent: 0;
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: #4a4238;
+        }
+        .opening-scene .highlight-line {
+            color: #8a6a4a;
+            font-weight: 600;
+            font-size: 15.5px;
+        }
+        .quote-box {
+            background: #faf6f0;
+            border-left: 4px solid #c4a882;
+            border-radius: 0 10px 10px 0;
+            padding: 18px 18px 18px 22px;
+            margin: 22px 0;
+            position: relative;
+        }
+        .quote-box::before {
+            content: """;
+            font-size: 42px;
+            color: #c4b8a0;
+            position: absolute;
+            top: 2px;
+            left: 10px;
+            line-height: 1;
+            font-family: Georgia, serif;
+            opacity: 0.5;
+        }
+        .quote-box p {
+            text-indent: 0;
+            font-size: 14.5px;
+            color: #5a5048;
+            padding-left: 18px;
+            margin-bottom: 0;
+        }
+        .image-block {
+            margin: 22px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.07);
+        }
+        .image-block img {
+            width: 100%;
+            display: block;
+        }
+        .image-caption {
+            font-size: 12px;
+            color: #8a8078;
+            text-align: center;
+            padding: 8px 12px;
+            background: #faf6f0;
+        }
+        .highlight-text {
+            color: #8a6a4a;
+            font-weight: 600;
+        }
+        .divider {
+            text-align: center;
+            margin: 28px 0;
+            color: #b0a898;
+            font-size: 16px;
+            letter-spacing: 10px;
+        }
+        .three-tips {
+            background: #fdf9f3;
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 22px 0;
+            border: 1px solid #e8ddd0;
+        }
+        .three-tips .tips-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #5a5048;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .tip-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .tip-item:last-child {
+            margin-bottom: 0;
+        }
+        .tip-num {
+            width: 32px;
+            height: 32px;
+            background: #c4a882;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-right: 12px;
+            margin-top: 2px;
+        }
+        .tip-text {
+            font-size: 14.5px;
+            color: #4a4238;
+            line-height: 1.7;
+        }
+        .tip-text strong {
+            color: #6a5a4a;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+        .note-card {
+            background: linear-gradient(135deg, #f8f4ee, #f0e8dc);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin: 22px 0;
+            text-align: center;
+            border: 1px solid #e0d8cc;
+        }
+        .note-card .note-text {
+            font-size: 15px;
+            color: #5a5048;
+            line-height: 1.8;
+            text-indent: 0;
+            margin-bottom: 0;
+        }
+        .note-card .note-highlight {
+            color: #8a6a4a;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .letter-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px 20px;
+            margin: 22px 0;
+            border: 2px dashed #d4c8b8;
+            text-align: center;
+        }
+        .letter-box .letter-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #6a5a4a;
+            margin-bottom: 14px;
+        }
+        .letter-box .letter-content {
+            font-size: 16px;
+            color: #4a4238;
+            font-weight: 600;
+            line-height: 1.8;
+            font-style: italic;
+            background: #faf6f0;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .letter-box .letter-desc {
+            font-size: 13px;
+            color: #8a7a6a;
+            text-indent: 0;
+            margin-bottom: 0;
+        }
+        .ending-box {
+            background: linear-gradient(135deg, #7a6a5a, #5a4a3a);
+            color: #fff;
+            border-radius: 16px;
+            padding: 28px 22px;
+            margin-top: 32px;
+            text-align: center;
+        }
+        .ending-box .ending-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            letter-spacing: 2px;
+            color: #f0e6d8;
+        }
+        .ending-box p {
+            color: #e0d4c4;
+            font-size: 14px;
+            text-indent: 0;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .ending-box .highlight {
+            color: #f5d0a0;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .cta-btn {
+            display: inline-block;
+            background: #f5d0a0;
+            color: #4a3a2a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 13px 32px;
+            border-radius: 30px;
+            margin-top: 16px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .footer-note {
+            font-size: 12px;
+            color: #a09890;
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e8e2d8;
+        }
+        .action-suggestion {
+            background: #f0ece4;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #e0d8cc;
+        }
+        .action-suggestion .action-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #5a5048;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .action-suggestion p {
+            text-indent: 0;
+            font-size: 14px;
+            color: #5a5048;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .action-suggestion p:last-child {
+            margin-bottom: 0;
+        }
+        .action-suggestion .action-highlight {
+            color: #8a6a4a;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 封面大图 -->
+        <div class="image-block" style="margin:0; border-radius:0;">
+            <img src="https://kimi-web-img.moonshot.cn/img/p3.itc.cn/31ddd033fd47e6124c9a8e07f05e4c29ece68368.png" alt="陪考家长">
+        </div>
+
+        <div class="content">
+            <h1 class="title">高考前夜，睡不着的从来不是考生</h1>
+            <div class="subtitle">那个装作最淡定的人，正在替你扛住所有的焦虑</div>
+
+            <div class="section">
+                <div class="opening-scene">
+                    <p>🌙 <strong>凌晨两点，我收到闺蜜的一条消息。</strong></p>
+                    <p>她说："卓，没两天孩子就要高考了，我最近都不怎么睡得着。就刚刚又去看了三次他有没有踢被子，空调温度调了四遍。孩子倒是睡得挺香，可我感觉自己要崩溃了。"</p>
+                    <p class="highlight-line">你看，高考前夜，那个翻来覆去睡不着的，往往不是考生，而是那个装作最淡定的人。</p>
+                </div>
+            </div>
+
+            <div class="divider">* * *</div>
+
+            <div class="section">
+                <h2 class="section-title">你以为藏得很好，但你的身体在替你广播</h2>
+
+                <p>很多家长跟我说过同样一句话：<span class="highlight-text">"我在孩子面前表现得很轻松啊。"</span></p>
+
+                <p>可你知道吗？焦虑不需要说出来，身体会替你广播。</p>
+
+                <p>心理学里有个概念叫<span class="highlight-text">"情绪传染"（emotional contagion）</span>——人类大脑中有一种叫"镜像神经元"的系统，它会让我们无意识地模仿和捕捉他人的情绪状态。最有趣的是：这种传染，主要靠非语言信号进行。</p>
+
+                <div class="quote-box">
+                    <p>你以为你说了"别紧张，考不好也没关系"，孩子就不紧张了？<br><br>他看到的可能是：你一整晚进出他房间五次，空调遥控器捏得咔咔响，第二天早上问他"要不要喝红牛"——这种话你平时从来不会说。</p>
+                </div>
+
+                <p><strong>"你以为藏住了紧张，但你把空调调低了三度的手，出卖了你。"</strong></p>
+
+                <p>半夜悄悄爬起来，蹑手蹑脚走到孩子房间门口，侧耳听里面有没有均匀的呼吸声。确定孩子睡着了，才敢回去躺着。可躺下不到半小时，又想起来：空调是不是太冷了？被子有没有盖好？于是再次起身。</p>
+
+                <p>一个晚上，来来回回四五趟。</p>
+
+                <p>第二天一早，顶着一对黑眼圈，挤出一个笑容："昨晚睡得好吗？妈妈给你煮了粥，你要不要再睡一会儿？"孩子说"不用了"，你又说"那吃根香蕉吧，补钾"。孩子说"不饿"，你又说"那带块巧克力"。</p>
+
+                <p><span class="highlight-text">你的关心密度，和你的焦虑程度成正比。</span></p>
+
+                <p>而孩子什么都知道。他只是不说。</p>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/www.ahsrjyy.cn/9f604c2de246ec6a9d0cf8dd9d4042c3226ec5b7.jpg" alt="正视考前焦虑">
+                <div class="image-caption">考前自我否定、思绪纷乱、失眠心慌、肠胃不适、效率下降——都是压力下正常身心应激反应</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">到了第二天，更累的来了</h2>
+
+                <p>你要装出一副"昨晚睡得很踏实"的样子，语气平稳，动作从容。你甚至比平时更少说话——因为怕多说一句，就暴露了失眠。</p>
+
+                <p>这就是心理学说的<span class="highlight-text">"情绪劳动"</span>——只不过这次不是在老板面前装热情，而是在孩子面前装平静。双倍的累。</p>
+
+                <div class="quote-box">
+                    <p>可你有没有想过：<strong>你的伪装，孩子早就看穿了。</strong><br><br>不是他多敏锐，是你对他而言太熟悉了。你说话的语气快了一点，你的眼神多停了一秒，他都感觉得到。<br><br>他只是不忍心拆穿你。</p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/wenhui.whb.cn/717f2763dfc7eb35c1c84c099bd5c635e60b9d3a.jpg" alt="考场外家长">
+                <div class="image-caption">考场外，家长的一个拥抱、一个抚摸，藏着说不出口的紧张与爱</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">今晚，如果你也睡不着</h2>
+
+                <p>我想对你说三句话——</p>
+
+                <div class="three-tips">
+                    <div class="tips-title">💬 给陪考人的三句话</div>
+                    <div class="tip-item">
+                        <div class="tip-num">1</div>
+                        <div class="tip-text">
+                            <strong>你的焦虑很正常。</strong>
+                            这件事很重要。重要的事情面前，人都会紧张。你紧张，恰恰说明你在乎。这不丢人。
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-num">2</div>
+                        <div class="tip-text">
+                            <strong>你的身体需要休息。</strong>
+                            哪怕睡不着，躺平闭眼也是一种休息。不要因为"睡不着"而更焦虑——心理学上叫"对焦虑的焦虑"，它比焦虑本身更消耗人。你越逼自己睡，越睡不着；越睡不着，越觉得自己在拖后腿。其实闭眼躺着，也是一种休息。
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-num">3</div>
+                        <div class="tip-text">
+                            <strong>你的孩子比你想象中更稳。</strong>
+                            你可能会担心："万一他紧张怎么办？"我想告诉你：适度的紧张，反而是最好的状态。心理学研究发现，中等程度的焦虑最有利于发挥。太放松会大意，太紧张会卡住，而有点小紧张，恰恰是"准备好了"的信号。
+                        </div>
+                    </div>
+                </div>
+
+                <p>所以，如果你发现孩子睡前有点坐立不安，或者话比平时少了一点——</p>
+
+                <div class="note-card">
+                    <p class="note-text">请放心，那叫<span class="note-highlight">"正常"</span>。</p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/mediabluk.cnr.cn/9cf814f402e231bf57b8bde4cd55c61eca551c4e.jpg" alt="稳住就能赢">
+                <div class="image-caption">接纳——正视情绪是第一步。先接纳，不对抗</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">给所有陪考人的一个建议</h2>
+
+                <p>如果今晚你真的睡不着，起来做一件具体的事：</p>
+
+                <div class="letter-box">
+                    <div class="letter-title">📝 写一张小纸条，放在孩子明天考试的笔袋里</div>
+                    <div class="letter-content">
+                        不用写"加油"，也不用写"妈妈相信你"。<br><br>
+                        写一句最简单的：<br><br>
+                        "昨晚妈妈没睡好，跟你没关系。<br>
+                        今天照常送你。"
+                    </div>
+                    <p class="letter-desc">你猜怎么着？孩子看到这张纸条，反而会松一口气。<br>因为他终于不用再猜你的情绪了。</p>
+                </div>
+            </div>
+
+            <div class="image-block">
+                <img src="https://kimi-web-img.moonshot.cn/img/ctdsb.clouddiffuse.xyz/ec432e1f351bce98e5e3464df2cca9e7bd93bbdf" alt="考场外温暖拥抱">
+                <div class="image-caption">高考结束，考场外的拥抱和鲜花汇成海洋——孩子记住的，是你站在老地方的样子</div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">写在最后</h2>
+
+                <p>高考很重要。</p>
+
+                <p>但高考结束后的那个晚上，孩子记住的不是你在他考试时说了什么。而是他走出考场，看到你站在老地方，手里拎着他爱吃的——</p>
+
+                <div class="quote-box">
+                    <p><strong>"走吧，回家。妈炖了汤。"</strong></p>
+                </div>
+            </div>
+
+            <div class="action-suggestion">
+                <div class="action-title">💬 如果你也想说说话</div>
+                <p>如果这篇文章让你想到自己</p>
+                <p>回复<span class="action-highlight">「陪考」</span>，我加你微信聊聊</p>
+                <p>我每周有3个免费15分钟倾诉名额</p>
+                <p>不是咨询，就是听你说说</p>
+                <p class="action-highlight">那些你在孩子面前没说完的话，在我这里，可以说完</p>
+            </div>
+
+            <div class="ending-box">
+                <div class="ending-title">走吧，回家</div>
+                <p>孩子记住的</p>
+                <p>是你站在<span class="highlight">老地方</span>的样子</p>
+                <p style="margin-top:8px; font-size:13px;">手里拎着他爱吃的，说"妈炖了汤"</p>
+                <a href="#" class="cta-btn">回复「陪考」聊聊</a>
+            </div>
+
+            <div class="footer-note">
+                图片来源：搜狐网、央广网、文汇报、极目新闻<br>
+                心理学概念：情绪传染、镜像神经元、情绪劳动<br>
+                致所有陪考的家长：你已经做得很好了
+            </div>
+        </div>
+    </div>
+</body>
+</html>

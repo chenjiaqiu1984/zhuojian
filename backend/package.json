@@ -1,0 +1,41 @@
+{
+  "name": "zhuojian-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon --ignore backups/ --ignore static/ server.js",
+    "db:push": "prisma db push",
+    "db:seed": "node db/seed.js",
+    "db:seed-mdb": "node db/mdb_seed.js",
+    "db:init": "npm run db:push && node db/seed.js && node db/mdb_seed.js",
+    "db:reset-scales": "node db/mdb_reset.js && node db/mdb_seed.js",
+    "db:deploy": "node db/mdb_seed.js && node db/recalc_zero_scores.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.11.0",
+    "alipay-sdk": "^4.14.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.12.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^6.9.10",
+    "sharp": "^0.35.3",
+    "socket.io": "^4.7.4",
+    "svg-captcha": "^1.4.0",
+    "tencentcloud-sdk-nodejs-sms": "^4.1.240",
+    "uuid": "^9.0.1",
+    "wechatpay-node-v3": "^2.2.1"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^12.11.1",
+    "nodemon": "^3.0.3",
+    "prisma": "^5.11.0"
+  }
+}

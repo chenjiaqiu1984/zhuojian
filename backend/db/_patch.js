@@ -1,0 +1,1 @@
+const {PrismaClient}=require("@prisma/client");const p=new PrismaClient();(async()=>{const ex=await p.assessmentScale.findFirst({where:{code:"BIG5"}});console.log("BIG5 exists:",!!ex);await p.$disconnect();})();

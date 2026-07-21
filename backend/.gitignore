@@ -1,0 +1,6 @@
+node_modules/
+.env
+certs/
+prisma/zhuojian.db
+prisma/zhuojian.db-shm
+prisma/zhuojian.db-wal

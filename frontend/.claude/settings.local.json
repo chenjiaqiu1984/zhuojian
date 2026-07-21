@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"require\\('sharp'\\)\")",
+      "Bash(node -e \"require\\('canvas'\\)\")",
+      "Bash(npm list *)",
+      "Bash(python -c \"import cairosvg; print\\('cairosvg ok'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python *)",
+      "Bash(npm install *)",
+      "Bash(node *)",
+      "Bash(grep -o '__vueParentComponent\\\\|__handlers\\\\|__instance\\\\|_$vei\\\\|withEventModifiers' K:/Code_folder/ohcard/frontend/dist/build/mp-weixin/common/vendor.js)",
+      "Bash(npm run *)",
+      "WebSearch",
+      "Bash(xargs -I{} grep -L \"import.*\\\\bref\\\\b\" {})",
+      "WebFetch(domain:developers.weixin.qq.com)",
+      "Bash(npx prisma *)",
+      "Bash(sqlite3 /k/Code_folder/ohcard/backend/prisma/zhuojian.db \"SELECT id, version, title, isDraft, publishedAt FROM TermsVersion;\")",
+      "Bash(sqlite3 /k/Code_folder/ohcard/zhuojian.db \"SELECT id, version, title, is_draft FROM terms_version LIMIT 5;\")",
+      "Bash(sqlite3 *)",
+      "Bash(identify /k/Code_folder/ohcard/backend/static/logo.jpg)",
+      "Bash(python3 -c \"from PIL import Image; img=Image.open\\(r'K:/Code_folder/ohcard/backend/static/logo.jpg'\\); print\\(img.size, img.mode\\)\")",
+      "Bash(dir \"K:\\\\\\\\Code_folder\\\\\\\\ohcard\\\\\\\\frontend\")",
+      "Bash(grep -r \"VITE_SERVER\\\\|BASE_URL\\\\|\\\\/api\" \"K:/Code_folder/ohcard/frontend/dist/build/h5/assets/\")",
+      "Bash(grep -i \"joyineyes\\\\|localhost\\\\|\\\\/api\")"
+    ]
+  }
+}

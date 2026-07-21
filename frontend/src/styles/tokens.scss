@@ -1,0 +1,50 @@
+// ─────────────────────────────────────────────────────────────
+// 卓见心理 · 全局设计 token
+// 由 vite additionalData 注入每个组件的 <style>，无需手动 @import。
+// 变量统一 $zj- 前缀，避免与 uview-plus 变量冲突。
+// 基准来源：首页 pages/index/index.vue 确立的设计语言。
+// ─────────────────────────────────────────────────────────────
+
+// ── 主色 ──
+$zj-teal:        #4A8A7A;   // 品牌主色（青绿）
+$zj-teal-dark:   #3A6E80;   // 深色 / 渐变收尾
+$zj-teal-light:  #EDF4F0;   // 浅底 tint（标签背景等）
+
+// ── 背景 ──
+$zj-bg:          #F5F7F6;   // 全站页面背景（唯一基准，替代 #F0F4F3/#F2F5F4/#F5F7FA 等漂移值）
+$zj-surface:     #FFFFFF;   // 卡片 / 面板
+$zj-card-bg:     #FAFBFA;   // 卡片背景（轻暖色，避免纯白塑料感）
+
+// ── 文字 ──
+$zj-text-1:      #1C2A27;   // 主文字 / 标题
+$zj-text-2:      #617870;   // 次要文字 / 副标
+$zj-muted:       #9BBCB4;   // 弱化文字 / 占位
+
+// ── 边框 ──
+$zj-border:      #E8EFED;   // 卡片 hairline 边框
+
+// ── 圆角 ──
+$zj-radius-card: 24rpx;     // 卡片基准圆角
+$zj-radius-sm:   14rpx;     // 小控件圆角
+
+// ── 阴影 ──
+$zj-shadow-card:       0 4rpx 18rpx rgba(28, 42, 39, 0.04);   // 中性轻阴影（不染色）
+$zj-shadow-card-hover: 0 8rpx 32rpx rgba(28, 42, 39, 0.10);   // hover 时增强阴影
+
+// ── 渐变 ──
+$zj-gradient-hero:   linear-gradient(135deg, #{$zj-teal} 0%, #{$zj-teal-dark} 100%);
+$zj-gradient-header: linear-gradient(155deg, #4A8A7A 0%, #2E5870 100%);   // 深色页头（练习/工具页）统一渐变
+
+// ── 字体 ──
+$zj-font-display: 'Playfair Display', 'Noto Serif SC', serif;   // display 大标题
+$zj-font-serif:   "Noto Serif SC", serif;                        // 中文衬线体
+$zj-font-body:    -apple-system, 'PingFang SC', sans-serif;      // 正文无衬线
+
+// ── 缓动 ──
+$zj-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);   // expo-out，替代浏览器默认 ease
+
+// ── 层级（替代随手写的 z-index: 9999）──
+$zj-z-sticky:    100;
+$zj-z-overlay:   1000;
+$zj-z-modal:     1100;
+$zj-z-toast:     1200;

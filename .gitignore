@@ -1,0 +1,104 @@
+# ===== 卡牌图片文件夹（大量JPG）=====
+/图卡字卡-电子版
+/亲子互动工具卡
+/伟特牌图
+/克服卡
+/博雷加德卡
+/大溪地画家卡
+/天使卡
+/彩虹卡
+/抽象卡
+/提问卡
+/波希卡
+/浣熊卡
+/涟漪卡绿
+/炼卡
+/疗心卡
+/自然环境卡
+/英雄之旅故事卡
+/莉迪亚雅各布故事卡
+/西方神话卡
+/诗歌请回答
+/食物卡
+/花语卡
+/粹卡
+/彩虹卡文字版
+/中国神话卡
+/一千零一夜故事卡
+/OH字卡
+/OH图卡
+/inuk卡
+/女力觉醒卡
+/情绪疗愈卡
+/deep字卡
+/伴侣卡
+/土著卡
+/复原卡
+/孩童卡
+/成年人像卡
+/deep图卡
+/cardtotal
+
+# ===== 上传的图片/文件（运行时生成）=====
+/uploads/
+**/uploads/
+zhuojian/uploads/
+
+# ===== 大型二进制文件 =====
+*.mdb
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== Office文档/数据文件 =====
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+*.docx
+*.doc
+*.zip
+*.rar
+
+# ===== 构建产物 =====
+/frontend/dist
+/admin/dist
+/zhuojian/admin/node_modules
+/zhuojian/backend/node_modules
+/zhuojian/frontend/node_modules
+/frontend/node_modules
+/admin/node_modules
+/backend/node_modules
+/node_modules
+
+# ===== 其他大文件/临时文件 =====
+/output
+/需要的手续
+/001最新版感统测评
+/内容.专业心理测试量表180套+（含信效度）
+*.log
+~$*.xlsx
+~$*.xls
+~$*.docx
+
+# ===== 环境/密钥文件 =====
+.env
+.env.local
+.env.production
+backend/.env
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== IDE =====
+.idea/
+*.suo
+*.user
+/backendbackup
+/backend/backups/
+/backend/cert414
+*.har
+/.agents/skills
+/.claude/skills
