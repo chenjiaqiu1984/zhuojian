@@ -1,6 +1,6 @@
 {
   "name": "zhuojian-frontend",
-  "version": "1.0.0",
+  "version": "1.0.7",
   "scripts": {
     "dev:h5": "uni",
     "dev:mp-weixin": "uni -p mp-weixin --mode mp-weixin",

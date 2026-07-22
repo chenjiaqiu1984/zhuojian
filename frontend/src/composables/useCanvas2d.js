@@ -3,8 +3,11 @@
  *
  * 统一通过 uni.createSelectorQuery().fields({ node: true, size: true })
  * 获取 canvas 节点，按 DPR 设置 buffer 并 scale 绘图坐标系。
+ *
+ * Vue3 + script setup 下微信小程序必须 .in(组件实例)，否则 fields({ node }) 常为空。
  */
 
+import { getCurrentInstance } from 'vue';
 import { findCanvasBySelector, resolveCanvasWrap } from '@/utils/h5PageDom';
 
 function readDpr() {
@@ -49,6 +52,15 @@ export function useCanvas2d(options) {
     onFail,
     maxRetry = 6,
   } = options;
+
+  // 在 composable 调用时捕获页面/组件实例，供 SelectorQuery.in 使用
+  const ownerInstance = getCurrentInstance();
+
+  function createQuery() {
+    const query = uni.createSelectorQuery();
+    const scope = ownerInstance?.proxy || ownerInstance;
+    return scope ? query.in(scope) : query;
+  }
 
   /** @type {HTMLCanvasElement | null} */
   let canvasNode = null;
@@ -205,8 +217,16 @@ export function useCanvas2d(options) {
     return false;
   }
 
+  function scheduleRetry(retry) {
+    if (retry < maxRetry) {
+      setTimeout(() => init(retry + 1), retry === 0 ? 50 : 120);
+      return true;
+    }
+    return false;
+  }
+
   function init(retry = 0) {
-    uni.createSelectorQuery()
+    createQuery()
       .select(selector)
       .fields({ node: true, size: true })
       .exec((res) => {
@@ -215,14 +235,11 @@ export function useCanvas2d(options) {
           // #ifdef H5
           if (initFromDom()) return;
           // #endif
-          if (retry < maxRetry) {
-            setTimeout(() => init(retry + 1), retry === 0 ? 50 : 120);
-          } else {
-            // #ifdef H5
-            if (initFromDom()) return;
-            // #endif
-            onFail?.();
-          }
+          if (scheduleRetry(retry)) return;
+          // #ifdef H5
+          if (initFromDom()) return;
+          // #endif
+          onFail?.();
           return;
         }
 
@@ -239,6 +256,8 @@ export function useCanvas2d(options) {
           // #ifdef H5
           if (initFromDom()) return;
           // #endif
+          // 布局尚未完成（宽高为 0）时重试，避免微信端首帧失败
+          if (scheduleRetry(retry)) return;
           onFail?.();
           return;
         }

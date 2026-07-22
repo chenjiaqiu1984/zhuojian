@@ -102,10 +102,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, getCurrentInstance } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useCanvas2d } from '@/composables/useCanvas2d';
 import { getViewportHeight, bindViewportHeight } from '@/utils/viewport';
+import { raf } from '@/utils/raf';
 
 // #ifndef H5
 defineOptions({
@@ -118,6 +119,13 @@ defineOptions({
 });
 // #endif
 
+const pageInstance = getCurrentInstance();
+
+function createPageQuery() {
+  const query = uni.createSelectorQuery();
+  const scope = pageInstance?.proxy || pageInstance;
+  return scope ? query.in(scope) : query;
+}
 // ── 常量 ──────────────────────────────────────────────────────────────────
 // 数量档位：可配置。球的大小由数量自动推算，使总面积约占画布的 80%
 const COUNTS = [
@@ -126,9 +134,14 @@ const COUNTS = [
   { key: 100, label: '100 个', desc: '小而密，连戳超爽' },
 ];
 
-// 目标覆盖率：所有球面积之和 ≈ 画布面积的 58%
-// 有重力后球会往下掉、堆到底部，留出上方空间才能看出"下落 + 堆叠"的手感
-const FILL_RATIO = 0.58;
+// 目标覆盖率：所有球面积之和 ≈ 画布面积的比例
+// 有重力后球会往下掉、堆到底部，局部密度远高于此值；过高必重叠
+// #ifdef MP-WEIXIN
+const FILL_RATIO = 0.40; // 小程序求解力弱，略疏一点避免底部折叠
+// #endif
+// #ifndef MP-WEIXIN
+const FILL_RATIO = 0.48;
+// #endif
 
 // 随机配色调色板（每个球随机取一种）
 const PALETTE = [
@@ -186,17 +199,38 @@ const canvas2d = useCanvas2d({
       ? { w: canvasW.value, h: canvasH.value }
       : null
   ),
-  onReady: ({ canvas, ctx, dpr: d }) => {
+  onReady: ({ canvas, ctx, dpr: d, canvasSize }) => {
     canvasNode = canvas;
     squeezeCtx = ctx;
     dpr = d;
+    // 节点查询已给出逻辑尺寸时先写入，避免 sync 失败导致不生成球
+    if (canvasSize?.w > 0 && canvasSize?.h > 0) {
+      canvasW.value = canvasSize.w;
+      canvasH.value = canvasSize.h;
+      lastLayoutW = canvasSize.w;
+      lastLayoutH = canvasSize.h;
+    }
     syncCanvasRect(() => {
-      canvas2d.remeasureAndResize(() => (
-        canvasW.value > 0 && canvasH.value > 0
-          ? { w: canvasW.value, h: canvasH.value }
-          : null
-      ));
-      initBubbles();
+      if (canvasW.value < 1 || canvasH.value < 1) {
+        const size = canvas2d.getSize();
+        if (size.w > 0 && size.h > 0) {
+          canvasW.value = size.w;
+          canvasH.value = size.h;
+        }
+      }
+      // init 时已按逻辑尺寸设好 buffer，尺寸未变则不再 remeasure（避免清屏闪烁）
+      if (sizeChangedEnough(canvasW.value, canvasH.value)) {
+        canvas2d.remeasureAndResize(() => (
+          canvasW.value > 0 && canvasH.value > 0
+            ? { w: canvasW.value, h: canvasH.value }
+            : null
+        ));
+        lastLayoutW = canvasW.value;
+        lastLayoutH = canvasH.value;
+      }
+      if (!bubblesReady) {
+        initBubbles();
+      }
       startPhysics();
       // #ifdef H5
       requestAnimationFrame(() => bindH5Pointer());
@@ -209,7 +243,7 @@ const canvas2d = useCanvas2d({
 });
 
 function syncCanvasRect(done) {
-  uni.createSelectorQuery()
+  createPageQuery()
     .select('#squeezeCanvas')
     .boundingClientRect((rect) => {
       if (rect && rect.width > 0) {
@@ -323,33 +357,73 @@ function makeColor(hue) {
 
 // ── 初始化 ────────────────────────────────────────────────────────────────
 let unbindViewport = null;
+/** 防止 onMounted / onShow / 布局重试并发多次重建球 */
+let layoutToken = 0;
+let bubblesReady = false;
+let lastLayoutW = 0;
+let lastLayoutH = 0;
 
-function layoutCanvas(done) {
-  uni.createSelectorQuery().select('.canvas-wrap').boundingClientRect(rect => {
+function sizeChangedEnough(w, h) {
+  return Math.abs(w - lastLayoutW) > 2 || Math.abs(h - lastLayoutH) > 2;
+}
+
+function layoutCanvas(done, retry = 0) {
+  const token = layoutToken;
+  createPageQuery().select('.canvas-wrap').boundingClientRect(rect => {
+    if (token !== layoutToken) return; // 已被更新的布局请求取消
     if (rect && rect.width > 0 && rect.height > 0) {
       canvasW.value = rect.width;
       canvasH.value = rect.height;
       canvasTop.value = rect.top;
       canvasLeft.value = rect.left;
+      done?.();
+      return;
+    }
+    // flex 布局首帧高度常为 0，延迟重试
+    if (retry < 8) {
+      setTimeout(() => layoutCanvas(done, retry + 1), retry === 0 ? 50 : 100);
+      return;
     }
     done?.();
   }).exec();
 }
 
-function relayoutPage() {
+/**
+ * @param {{ forceBubbles?: boolean }} [opts]
+ * forceBubbles：用户重置/切数量时强制重建；普通布局变化不重建已有球
+ */
+function relayoutPage(opts = {}) {
+  const { forceBubbles = false } = opts;
+  layoutToken += 1;
+  const token = layoutToken;
   pageH.value = getViewportHeight() + 'px';
   nextTick(() => {
-    requestAnimationFrame(() => {
+    raf(() => {
+      if (token !== layoutToken) return;
       layoutCanvas(() => {
+        if (token !== layoutToken) return;
         if (!canvas2d.getCanvas()) {
           canvas2d.init();
           return;
         }
-        if (canvasW.value > 0 && canvasH.value > 0) {
-          canvas2d.remeasureAndResize(() => ({ w: canvasW.value, h: canvasH.value }));
-          initBubbles();
-          bindH5Pointer();
+        const w = canvasW.value;
+        const h = canvasH.value;
+        if (w < 1 || h < 1) return;
+
+        const needResize = sizeChangedEnough(w, h);
+        if (needResize) {
+          canvas2d.remeasureAndResize(() => ({ w, h }));
+          lastLayoutW = w;
+          lastLayoutH = h;
         }
+
+        // 仅首次就绪、尺寸明显变化、或显式强制时重建球，避免反复 init 造成抖动
+        if (forceBubbles || !bubblesReady || needResize) {
+          initBubbles();
+        }
+        // #ifdef H5
+        bindH5Pointer();
+        // #endif
       });
     });
   });
@@ -357,13 +431,17 @@ function relayoutPage() {
 
 onMounted(() => {
   initSounds();
-  canvasW.value = 0;
-  canvasH.value = 0;
   relayoutPage();
+  // H5 视口变化才需要重布局；微信 bindViewportHeight 为空操作
   unbindViewport = bindViewportHeight(() => relayoutPage());
 });
 
 onShow(() => {
+  // 已初始化则只唤醒物理，不重建球（onMounted+onShow 双触发是抖动主因）
+  if (bubblesReady && canvas2d.getCanvas()) {
+    startPhysics();
+    return;
+  }
   relayoutPage();
 });
 
@@ -372,16 +450,17 @@ onShow(() => {
 // 戳破时的爆炸推力让邻近球被推开、互相碰撞挤压、撞边回弹，
 // 每个球带弹簧形变（果冻般抖动、回弹过冲），落定后被重力压在底部堆叠静止。
 const GRAVITY      = 0.28;   // 每帧重力加速度（向下，调小让下落柔和、堆叠更稳）
-const RESTITUTION  = 0.3;    // 回弹系数（落地弹一下就停，别太弹否则堆不住）
-const FRICTION     = 0.99;   // 空气阻力（每帧速度衰减，接近 1 让下落更顺）
-const REST_EPS     = 0.6;    // 速度低于此值视为静止候选（放宽，让球更快睡眠不抖）
-const WALL_FRICTION = 0.86;  // 撞墙后切向摩擦
-const SQUASH_K     = 0.22;   // 形变回弹弹簧刚度
-const SQUASH_DAMP  = 0.82;   // 形变弹簧阻尼（越小回弹越快、抖动越少）
-const SOLVER_ITERS = 4;      // 每帧碰撞求解迭代次数（堆叠需要更多迭代才稳定）
+const RESTITUTION  = 0.22;   // 回弹系数（略低，堆叠更快安定）
+const FRICTION     = 0.985;  // 空气阻力
+const REST_EPS     = 0.55;
+const WALL_FRICTION = 0.82;
+const SQUASH_K     = 0.22;
+const SQUASH_DAMP  = 0.82;
+const SOLVER_ITERS = 6;      // 堆叠需要足够迭代才能分离
+const POS_PERCENT  = 0.85;   // 位置修正比例（留一点给后续迭代收敛）
+const POS_SLOP     = 0.35;   // 允许的微小重叠（像素），避免数值抖动
 // #ifdef MP-WEIXIN
-const MP_SOLVER_ITERS = 2;   // 小程序降低迭代次数减轻 CPU
-const MP_SIMPLE_DRAW = true; // 小程序简化绘制（静止球不画高光/光晕）
+const MP_SOLVER_ITERS = 7;
 // #endif
 
 let physicsId = null;
@@ -391,45 +470,43 @@ function initBubbles() {
   const N = bubbleCount.value;
   const W = canvasW.value;
   const H = canvasH.value;
+  if (W < 1 || H < 1 || N < 1) return;
   const list = [];
 
-  // 由数量反推半径：N 个球总面积 ≈ FILL_RATIO * 画布面积
-  //   N * π * avgR² = FILL_RATIO * W * H  →  avgR = sqrt(FILL*W*H / (N*π))
   const avgR = Math.sqrt((FILL_RATIO * W * H) / (N * Math.PI));
-  // 大小随机：在均值上下浮动（0.72×~1.28×），整体覆盖率仍约 80%
-  const rMin = avgR * 0.72;
-  const rMax = avgR * 1.28;
+  const rMin = avgR * 0.78;
+  const rMax = avgR * 1.18;
 
+  // 从上方散开生成，减少开局就挤在底部的重叠
   for (let i = 0; i < N; i++) {
     const r = rMin + Math.random() * (rMax - rMin);
+    const spanY = Math.max(H * 0.55, r * 4);
     list.push({
-      // 撒在整个画布高度范围，带一点初始下落速度，让它们错落地落下堆叠
       x: r + Math.random() * (W - 2 * r),
-      y: r + Math.random() * (H - 2 * r),
+      y: r + Math.random() * spanY,
       r,
-      vx: (Math.random() - 0.5) * 1.5,
-      vy: Math.random() * 1.5,
-      mass: r * r,          // 质量 ∝ 面积：大球更"重"，碰撞时推动小球
-      invMass: 1 / (r * r), // 预存倒数，碰撞响应用
+      vx: (Math.random() - 0.5) * 1.2,
+      vy: Math.random() * 1.2,
+      mass: r * r,
+      invMass: 1 / (r * r),
       popped: false,
       scale: 1,
-      squash: 0,            // 当前形变量（弹簧位移）
-      squashV: 0,           // 形变速度（弹簧速度，产生果冻抖动）
-      nx: 0, ny: 1,         // 形变方向（受挤压的法线方向）
-      resting: false,       // 是否已落定静止（被下方支撑）
+      squash: 0,
+      squashV: 0,
+      nx: 0, ny: 1,
+      resting: false,
+      supported: false,
       color: makeColor(Math.floor(Math.random() * PALETTE.length)),
     });
   }
   bubbleList = list;
+  bubblesReady = true;
+  lastLayoutW = W;
+  lastLayoutH = H;
   syncBubbleStats();
-  let sepIters = 12;
-  // #ifdef MP-WEIXIN
-  sepIters = 6;
-  // #endif
-  for (let k = 0; k < sepIters; k++) resolveCollisions();
-  for (const b of list) {
-    b.x = Math.max(b.r, Math.min(W - b.r, b.x));
-    b.y = Math.max(b.r, Math.min(H - b.r, b.y));
+  for (let k = 0; k < 20; k++) {
+    resolveCollisions();
+    clampBubblesToBounds();
   }
   startPhysics();
 }
@@ -439,67 +516,139 @@ function resetBubbles() {
   particles = [];
   stains = [];
   stopAllAnim();
+  bubblesReady = false;
   initBubbles();
 }
 
 // ── 物理引擎 ──────────────────────────────────────────────────────────────
 
-// 圆-圆碰撞：按质量加权的位置修正 + 冲量法速度响应（更真实）
-function resolveCollisions() {
+/** 把球钳回画布内，避免碰撞修正把球推出地板导致底部重叠 */
+function clampBubblesToBounds() {
+  const W = canvasW.value;
+  const H = canvasH.value;
   const list = bubbleList;
   for (let i = 0; i < list.length; i++) {
+    const b = list[i];
+    if (b.popped) continue;
+    if (b.x < b.r) b.x = b.r;
+    else if (b.x > W - b.r) b.x = W - b.r;
+    if (b.y < b.r) b.y = b.r;
+    else if (b.y > H - b.r) b.y = H - b.r;
+  }
+}
+
+/**
+ * 圆-圆分离：贴地时优先水平推开（竖直修正会被地板钳回，是底部折叠主因）；
+ * 贴墙时把修正权重分给可动的一侧。
+ */
+function resolveCollisions() {
+  const list = bubbleList;
+  const W = canvasW.value;
+  const H = canvasH.value;
+  const floorY = H - 0.5;
+  const n = list.length;
+
+  // 自下而上处理，先稳住底层再解上层
+  const order = [];
+  for (let i = 0; i < n; i++) if (!list[i].popped) order.push(i);
+  order.sort((ia, ib) => list[ib].y - list[ia].y);
+
+  for (let oi = 0; oi < order.length; oi++) {
+    const i = order[oi];
     const a = list[i];
-    if (a.popped) continue;
-    for (let j = i + 1; j < list.length; j++) {
+    for (let oj = oi + 1; oj < order.length; oj++) {
+      const j = order[oj];
       const b = list[j];
-      if (b.popped) continue;
-      // 小程序：两球均已静止则跳过（堆叠稳定后减少 O(n²) 开销）
-      // #ifdef MP-WEIXIN
-      if (a.resting && b.resting && Math.abs(a.squash) < 0.01 && Math.abs(b.squash) < 0.01) continue;
-      // #endif
       let dx = b.x - a.x;
       let dy = b.y - a.y;
       const minDist = a.r + b.r;
       let dist2 = dx * dx + dy * dy;
+
+      // 已分离的双静止球：只传播支撑
+      if (a.resting && b.resting && dist2 >= minDist * minDist) {
+        const contact = minDist + 2;
+        if (dist2 <= contact * contact) {
+          const dist = Math.sqrt(dist2) || 0.01;
+          const ny = dy / dist;
+          if (ny > 0.45) { if (b.supported || b.y + b.r >= floorY) a.supported = true; }
+          else if (ny < -0.45) { if (a.supported || a.y + a.r >= floorY) b.supported = true; }
+        }
+        continue;
+      }
+
       if (dist2 >= minDist * minDist) continue;
+
       let dist = Math.sqrt(dist2);
-      if (dist === 0) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; dist = 0.01; }
-      const nx = dx / dist;
-      const ny = dy / dist;
+      if (dist < 1e-5) {
+        dx = (i + j) % 2 === 0 ? 1 : -1;
+        dy = 0.02;
+        dist = Math.sqrt(dx * dx + dy * dy);
+      }
+      let nx = dx / dist;
+      let ny = dy / dist;
       const overlap = minDist - dist;
+      const corrAmt = (overlap - POS_SLOP) * POS_PERCENT;
+      if (corrAmt <= 0) continue;
 
-      // 竖直支撑传递：b 在 a 下方（ny>0.5）→ a 被 b 支撑；反之亦然。
-      // 支撑状态从底部/地板向上传播，让整摞球都能判定为落定而停机。
-      if (ny > 0.5) { if (b.supported || b.y + b.r >= canvasH.value - 0.6) a.supported = true; }
-      else if (ny < -0.5) { if (a.supported || a.y + a.r >= canvasH.value - 0.6) b.supported = true; }
+      const aFloor = a.y + a.r >= floorY;
+      const bFloor = b.y + b.r >= floorY;
+      const aWall = a.x <= a.r + 0.5 || a.x >= W - a.r - 0.5;
+      const bWall = b.x <= b.r + 0.5 || b.x >= W - b.r - 0.5;
 
-      // 位置修正：轻的球被推得多（按 invMass 分配）
+      // 两球都贴地：竖直分离会被钳回，强制改成水平推开
+      if (aFloor && bFloor) {
+        nx = dx >= 0 ? 1 : -1;
+        if (Math.abs(dx) < 0.5) nx = (i < j) ? 1 : -1;
+        ny = 0;
+      } else if (aFloor && ny > 0.15) {
+        // a 贴地，不能往下推 a，把法线偏水平并主要移动 b
+        const hx = dx >= 0 ? 1 : -1;
+        nx = nx * 0.35 + hx * 0.65;
+        ny = Math.min(ny, 0.25);
+        const len = Math.sqrt(nx * nx + ny * ny) || 1;
+        nx /= len; ny /= len;
+      } else if (bFloor && ny < -0.15) {
+        const hx = dx >= 0 ? 1 : -1;
+        nx = nx * 0.35 + hx * 0.65;
+        ny = Math.max(ny, -0.25);
+        const len = Math.sqrt(nx * nx + ny * ny) || 1;
+        nx /= len; ny /= len;
+      }
+
+      if (ny > 0.45) { if (b.supported || bFloor) a.supported = true; }
+      else if (ny < -0.45) { if (a.supported || aFloor) b.supported = true; }
+
+      // 墙/地板约束：被挡住的一侧少动或不动
+      let wA = a.invMass;
+      let wB = b.invMass;
+      if (aFloor && ny < -0.2) wA *= 0.05;
+      if (bFloor && ny > 0.2) wB *= 0.05;
+      if (aWall && ((a.x <= a.r + 0.5 && nx < 0) || (a.x >= W - a.r - 0.5 && nx > 0))) wA *= 0.05;
+      if (bWall && ((b.x <= b.r + 0.5 && nx > 0) || (b.x >= W - b.r - 0.5 && nx < 0))) wB *= 0.05;
+      const wSum = wA + wB || 1;
+
+      a.x -= nx * corrAmt * (wA / wSum);
+      a.y -= ny * corrAmt * (wA / wSum);
+      b.x += nx * corrAmt * (wB / wSum);
+      b.y += ny * corrAmt * (wB / wSum);
+
+      if (a.resting) a.resting = false;
+      if (b.resting) b.resting = false;
+
       const invSum = a.invMass + b.invMass;
-      const corr = overlap / invSum;
-      a.x -= nx * corr * a.invMass;
-      a.y -= ny * corr * a.invMass;
-      b.x += nx * corr * b.invMass;
-      b.y += ny * corr * b.invMass;
-
-      // 沿法线的相对速度
       const dvx = b.vx - a.vx;
       const dvy = b.vy - a.vy;
-      const vn  = dvx * nx + dvy * ny;
+      const vn = dvx * nx + dvy * ny;
       if (vn < 0) {
-        // 冲量：j = -(1+e)·vn / (1/mA + 1/mB)
         const jimp = -(1 + RESTITUTION) * vn / invSum;
-        const ix = jimp * nx;
-        const iy = jimp * ny;
-        a.vx -= ix * a.invMass;
-        a.vy -= iy * a.invMass;
-        b.vx += ix * b.invMass;
-        b.vy += iy * b.invMass;
-        // 碰撞挤压：仅"快速撞击"才触发形变。堆叠时的重力静压属于慢速接触
-        // （-vn 很小），不触发形变，否则球会被压扁不圆、且持续抖动。
-        if (-vn > 2.2) {
-          const impact = Math.min(0.4, (-vn - 2.2) * 0.04);
+        a.vx -= jimp * nx * a.invMass;
+        a.vy -= jimp * ny * a.invMass;
+        b.vx += jimp * nx * b.invMass;
+        b.vy += jimp * ny * b.invMass;
+        if (-vn > 2.5) {
+          const impact = Math.min(0.35, (-vn - 2.5) * 0.035);
           if (impact > a.squash) { a.squash = impact; a.nx = -nx; a.ny = -ny; a.squashV = 0; }
-          if (impact > b.squash) { b.squash = impact; b.nx =  nx; b.ny =  ny; b.squashV = 0; }
+          if (impact > b.squash) { b.squash = impact; b.nx = nx; b.ny = ny; b.squashV = 0; }
         }
       }
     }
@@ -512,54 +661,54 @@ function stepPhysics() {
   const list = bubbleList;
   let moving = false;
 
-  // 1) 施加重力 + 积分速度 + 边界回弹
   for (const b of list) {
-    b.supported = false; // 每帧重置，碰撞求解时若下方有支撑再置 true
+    b.supported = false;
     if (b.popped) {
-      // 已破：形变快速回弹归零
       b.squash += b.squashV;
       b.squashV = (b.squashV - b.squash * SQUASH_K) * 0.7;
       if (Math.abs(b.squash) < 0.005) { b.squash = 0; b.squashV = 0; }
       continue;
     }
 
-    // 重力恒定向下加速
+    if (b.resting) {
+      b.vx = 0;
+      b.vy = 0;
+      continue;
+    }
+
     b.vy += GRAVITY;
     b.vx *= FRICTION;
     b.vy *= FRICTION;
     b.x += b.vx;
     b.y += b.vy;
 
-    // 边框回弹 + 撞击形变（法线方向 + 切向摩擦）
     if (b.x - b.r < 0)  { b.x = b.r;     hitWall(b, Math.abs(b.vx), 1, 0); b.vx = Math.abs(b.vx) * RESTITUTION; b.vy *= WALL_FRICTION; }
     if (b.x + b.r > W)  { b.x = W - b.r; hitWall(b, Math.abs(b.vx), 1, 0); b.vx = -Math.abs(b.vx) * RESTITUTION; b.vy *= WALL_FRICTION; }
     if (b.y - b.r < 0)  { b.y = b.r;     hitWall(b, Math.abs(b.vy), 0, 1); b.vy = Math.abs(b.vy) * RESTITUTION; b.vx *= WALL_FRICTION; }
     if (b.y + b.r > H)  {
       b.y = H - b.r;
       hitWall(b, Math.abs(b.vy), 0, 1);
-      // 落地：向下速度不大时直接吸附住（避免无限微弹造成抖动/不停机）
-      if (b.vy > 1.2) b.vy = -b.vy * RESTITUTION; else b.vy = 0;
+      if (b.vy > 1.0) b.vy = -b.vy * RESTITUTION; else b.vy = 0;
       b.vx *= WALL_FRICTION;
     }
   }
 
-  // 2) 多次迭代求解碰撞（堆叠越多越需要多迭代分离）
   let solverIters = SOLVER_ITERS;
   // #ifdef MP-WEIXIN
   solverIters = MP_SOLVER_ITERS;
   // #endif
-  for (let k = 0; k < solverIters; k++) resolveCollisions();
+  for (let k = 0; k < solverIters; k++) {
+    resolveCollisions();
+    clampBubblesToBounds();
+  }
 
-  // 3) 形变弹簧积分 + 静止判定
   for (const b of list) {
     if (b.popped) continue;
-    b.squashV += -b.squash * SQUASH_K;   // 弹簧回复力
-    b.squashV *= SQUASH_DAMP;            // 阻尼
+    b.squashV += -b.squash * SQUASH_K;
+    b.squashV *= SQUASH_DAMP;
     b.squash  += b.squashV;
     if (Math.abs(b.squash) < 0.004 && Math.abs(b.squashV) < 0.004) { b.squash = 0; b.squashV = 0; }
 
-    // 静止判定：速度较小 且 （贴着底部 或 下方被其它球支撑）→ 落定
-    // 被支撑的慢速球主动清零速度，避免重力持续注入速度导致堆叠抖动、循环不停机
     const onFloor = b.y + b.r >= H - 0.6;
     const supported = onFloor || b.supported;
     const slow = Math.abs(b.vx) < REST_EPS && Math.abs(b.vy) < REST_EPS + GRAVITY;
@@ -569,8 +718,27 @@ function stepPhysics() {
     } else {
       b.resting = false;
     }
-    // 只要还有球没落定、或还在形变抖动，就继续循环
     if (!b.resting || Math.abs(b.squash) > 0.01 || Math.abs(b.squashV) > 0.01) moving = true;
+  }
+
+  if (!moving) {
+    for (let i = 0; i < list.length && !moving; i++) {
+      const a = list[i];
+      if (a.popped) continue;
+      for (let j = i + 1; j < list.length; j++) {
+        const b = list[j];
+        if (b.popped) continue;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const minDist = a.r + b.r;
+        if (dx * dx + dy * dy < (minDist - POS_SLOP) * (minDist - POS_SLOP)) {
+          a.resting = false;
+          b.resting = false;
+          moving = true;
+          break;
+        }
+      }
+    }
   }
 
   return moving;
@@ -614,37 +782,28 @@ function stopAllAnim() {
 function drawBubbleBody(ctx, b, col) {
   const r = b.r * (b.scale ?? 1);
   const sq = b.squash || 0;
-  let simple = false;
-  // #ifdef MP-WEIXIN
-  if (MP_SIMPLE_DRAW && b.resting && Math.abs(sq) < 0.01) simple = true;
-  // #endif
 
-  if (simple) {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, r, 0, 6.283185307);
-    ctx.fillStyle = col.fill;
-    ctx.fill();
-    ctx.strokeStyle = col.stroke;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    return;
-  }
-
+  // 反光亮点始终画：不要按 resting 切换画法，否则静止抖动时亮点会闪
   const along = 1 - sq;
   const perp = 1 + sq;
   const ang = Math.atan2(b.ny, b.nx);
+  const deform = Math.abs(sq) > 0.002;
 
   ctx.save();
   ctx.translate(b.x, b.y);
-  if (Math.abs(sq) > 0.002) {
+  if (deform) {
     ctx.rotate(ang);
     ctx.scale(along, perp);
     ctx.rotate(-ang);
   }
+
+  // #ifndef MP-WEIXIN
   ctx.beginPath();
   ctx.arc(0, 0, r + 4, 0, 6.283185307);
   ctx.fillStyle = col.fillSoft;
   ctx.fill();
+  // #endif
+
   ctx.beginPath();
   ctx.arc(0, 0, r, 0, 6.283185307);
   ctx.fillStyle = col.fill;
@@ -652,6 +811,8 @@ function drawBubbleBody(ctx, b, col) {
   ctx.strokeStyle = col.stroke;
   ctx.lineWidth = 2;
   ctx.stroke();
+
+  // 高光（固定相对球心，不随 resting 变化）
   ctx.beginPath();
   ctx.arc(-r * 0.28, -r * 0.3, r * 0.22, 0, 6.283185307);
   ctx.fillStyle = 'rgba(255,255,255,0.82)';
@@ -894,6 +1055,7 @@ function applyExplosion(center) {
     const dv = impulse * falloff * b.invMass;
     b.vx += nx * dv;
     b.vy += ny * dv;
+    b.resting = false; // 唤醒，否则下一帧仍跳过积分
     // 冲击波挤压：法线朝外，越近越强
     const impact = Math.min(0.5, falloff * 0.5);
     if (impact > b.squash) { b.squash = impact; b.nx = nx; b.ny = ny; b.squashV = 0; }
@@ -1007,6 +1169,7 @@ function switchCount(key) {
   particles = [];
   stains = [];
   stopAllAnim();
+  bubblesReady = false;
   nextTick(() => initBubbles());
 }
 
@@ -1023,6 +1186,9 @@ onUnmounted(() => {
   canvas2d.destroy();
   squeezeCtx = null;
   canvasNode = null;
+  bubblesReady = false;
+  lastLayoutW = 0;
+  lastLayoutH = 0;
 });
 </script>
 

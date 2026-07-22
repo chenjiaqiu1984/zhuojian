@@ -7,6 +7,7 @@
  * 或用 fromNativeClient 将 uni 坐标还原。
  */
 
+import { getCurrentInstance } from 'vue';
 import { findCanvasBySelector } from '@/utils/h5PageDom';
 
 /** @typedef {{ scale: number, offsetX: number, offsetY: number }} ViewportTransform */
@@ -28,6 +29,14 @@ export function useCanvasPointer(options) {
     transformedSelector,
   } = options;
 
+  const ownerInstance = getCurrentInstance();
+
+  function createQuery() {
+    const query = uni.createSelectorQuery();
+    const scope = ownerInstance?.proxy || ownerInstance;
+    return scope ? query.in(scope) : query;
+  }
+
   /** @type {CanvasRect | null} */
   let canvasRect = null;
   /** @type {CanvasRect | null} */
@@ -47,7 +56,7 @@ export function useCanvasPointer(options) {
 
   /** 刷新参考矩形（pointerdown / touchstart 时调用） */
   function refreshRect(done) {
-    const query = uni.createSelectorQuery();
+    const query = createQuery();
     query.select(rectSelector).boundingClientRect();
     if (transformedSelector) {
       query.select(transformedSelector).boundingClientRect();

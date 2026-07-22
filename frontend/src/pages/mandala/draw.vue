@@ -158,14 +158,22 @@
 import { createMpShare } from '@/utils/mpShare';
 defineOptions(createMpShare('mandala/draw'));
 // #endif
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, getCurrentInstance } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { mandalaApi } from '@/api';
 import BgmPlayer from '@/components/BgmPlayer.vue';
 import { useCanvasPointer } from '@/composables/useCanvasPointer';
 import { useCanvas2d } from '@/composables/useCanvas2d';
 import { getViewportHeight, bindViewportHeight } from '@/utils/viewport';
+import { raf } from '@/utils/raf';
 
+const pageInstance = getCurrentInstance();
+
+function createPageQuery() {
+  const query = uni.createSelectorQuery();
+  const scope = pageInstance?.proxy || pageInstance;
+  return scope ? query.in(scope) : query;
+}
 const SYM_OPTIONS = [4, 6, 8, 10, 12];
 const COLORS = [
   '#E8524A', '#F0843A', '#F5C842', '#7DC95E', '#4AB8A0',
@@ -260,6 +268,7 @@ const canvas2d = useCanvas2d({
 });
 
 function bindH5Pointer() {
+  // #ifdef H5
   canvas2d.bindPointer({
     onMouseDown: onMouseDown,
     onMouseMove: onMouseMove,
@@ -270,6 +279,7 @@ function bindH5Pointer() {
     onWheel: onWheel,
   });
   canvas2d.getEventTarget()?.addEventListener('dblclick', () => resetTransform());
+  // #endif
 }
 
 // 平台 rAF：mp 用 canvas.requestAnimationFrame，H5 用全局 rAF。
@@ -298,7 +308,7 @@ function relayoutPage() {
   pageH.value = getViewportHeight() + 'px';
   computeBoxSize(() => {
     nextTick(() => {
-      requestAnimationFrame(() => {
+      raf(() => {
         if (!canvas2d.getCanvas()) {
           initCanvas();
           return;
@@ -308,7 +318,9 @@ function relayoutPage() {
           drawBackground();
           if (paths.length) redrawCanvas(false);
           pointer.refreshRect();
+          // #ifdef H5
           bindH5Pointer();
+          // #endif
         }
       });
     });
@@ -330,7 +342,7 @@ onShow(() => {
 
 // 计算画布正方形边长：取容器宽度与可用高度的较小值，并限制最大值
 function computeBoxSize(cb) {
-  uni.createSelectorQuery()
+  createPageQuery()
     .select('#canvasWrap')
     .boundingClientRect((rect) => {
       if (rect && rect.width > 0) {
@@ -575,6 +587,7 @@ function pushUndo() {
 
 // ── 绘制 ──
 function drawBackground() {
+  if (!ctx) return;
   ctx.fillStyle = BG_COLOR;
   ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
   const cx     = canvasSize.w / 2;
