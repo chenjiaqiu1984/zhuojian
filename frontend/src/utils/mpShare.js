@@ -162,6 +162,10 @@ const SHARE_CONFIGS = {
     app: { title: '卓见心理学习进阶 — 持续探索内心世界', path: '/pages/learning/index' },
     timeline: { title: '卓见心理学习进阶 — 知识与实践并行' },
   },
+  'treehole/index': {
+    app: { title: '卓见心理树洞 — 悄悄说心里话', path: '/pages/treehole/index' },
+    timeline: { title: '卓见心理树洞 — 倾听与被倾听的角落' },
+  },
 };
 
 /**

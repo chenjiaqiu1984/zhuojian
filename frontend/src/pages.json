@@ -93,6 +93,12 @@
       "pages": [
         { "path": "index", "style": { "navigationBarTitleText": "学习进阶" } }
       ]
+    },
+    {
+      "root": "pages/treehole",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "树洞" } }
+      ]
     }
   ],
   "globalStyle": {

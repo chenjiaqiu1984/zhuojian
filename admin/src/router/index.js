@@ -19,6 +19,7 @@ const routes = [
       { path: 'assessment', component: () => import('../views/Assessment.vue') },
       { path: 'analytics', component: () => import('../views/Analytics.vue') },
       { path: 'crisis', component: () => import('../views/CrisisEvents.vue') },
+      { path: 'treehole', component: () => import('../views/Treehole.vue') },
       { path: 'terms', component: () => import('../views/TermsManager.vue') },
       { path: 'users', component: () => import('../views/Users.vue') },
     ]

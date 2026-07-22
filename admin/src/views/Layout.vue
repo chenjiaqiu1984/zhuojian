@@ -12,6 +12,7 @@
           <el-menu-item index="/assessment"><el-icon><DataAnalysis /></el-icon>测评管理</el-menu-item>
           <el-menu-item index="/analytics"><el-icon><TrendCharts /></el-icon>埋点统计</el-menu-item>
           <el-menu-item index="/crisis"><el-icon><Warning /></el-icon>危机事件</el-menu-item>
+          <el-menu-item index="/treehole"><el-icon><ChatDotRound /></el-icon>树洞管理</el-menu-item>
           <el-menu-item index="/terms"><el-icon><Document /></el-icon>协议管理</el-menu-item>
           <el-menu-item index="/users"><el-icon><User /></el-icon>用户管理</el-menu-item>
         </template>

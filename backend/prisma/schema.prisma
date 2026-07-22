@@ -33,6 +33,7 @@ model User {
   userCoupons  UserCoupon[]
   monsters     Monster[]
   mandalaWorks MandalaWork[]
+  treeholePosts TreeholePost[]
 }
 
 model VerifyCode {
@@ -807,4 +808,20 @@ model UserAchievement {
   unlockedAt    DateTime @default(now()) @map("unlocked_at")
   @@unique([userId, achievementKey])
   @@map("user_achievements")
+}
+
+/// 树洞：意见建议 / 情绪倾诉 / 给自己说的话
+model TreeholePost {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  content    String
+  category   String   @default("emotion") // feedback | emotion | self
+  visibility String   @default("private") // private | anonymous
+  status     String   @default("visible") // visible | hidden（管理端可隐藏上墙内容）
+  adminReply String?  @map("admin_reply")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id])
+  @@index([visibility, status, createdAt])
+  @@index([userId, createdAt])
+  @@map("treehole_posts")
 }
