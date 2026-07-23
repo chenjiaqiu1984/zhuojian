@@ -4,7 +4,7 @@
   },
   "pages": [
     { "path": "pages/index/index",         "style": { "navigationBarTitleText": "卓见心理" } },
-    { "path": "pages/consultants/index",   "style": { "navigationBarTitleText": "咨询师" } },
+    { "path": "pages/consultants/index",   "style": { "navigationBarTitleText": "预约咨询师" } },
     { "path": "pages/consultants/detail",  "style": { "navigationBarTitleText": "咨询师详情" } },
     { "path": "pages/consultants/schedule","style": { "navigationBarTitleText": "排班管理" } },
     { "path": "pages/ohcard/index",        "style": { "navigationBarTitleText": "心理图卡" } },
@@ -39,15 +39,30 @@
     { "path": "pages/orders/index",        "style": { "navigationBarTitleText": "我的订单" } },
     { "path": "pages/monster/index",       "style": { "navigationBarTitleText": "怪兽小屋" } },
     { "path": "pages/monster/create",      "style": { "navigationBarTitleText": "创建怪兽" } },
-    { "path": "pages/monster/detail",      "style": { "navigationBarTitleText": "我的怪兽" } },
-    { "path": "pages/mandala/index",       "style": { "navigationBarTitleText": "曼达拉" } },
-    { "path": "pages/mandala/draw",        "style": { "navigationBarTitleText": "曼达拉创作" } },
-    { "path": "pages/mandala/gallery",     "style": { "navigationBarTitleText": "我的画廊" } },
-    { "path": "pages/breathing/select",    "style": { "navigationBarTitleText": "正念呼吸" } },
-    { "path": "pages/breathing/index",     "style": { "navigationBarTitleText": "正念呼吸球" } },
-    { "path": "pages/squeeze/index",       "style": { "navigationBarTitleText": "解压捏捏乐" } }
+    { "path": "pages/monster/detail",      "style": { "navigationBarTitleText": "我的怪兽" } }
   ],
   "subPackages": [
+    {
+      "root": "pages/mandala",
+      "pages": [
+        { "path": "index",   "style": { "navigationBarTitleText": "曼达拉" } },
+        { "path": "draw",    "style": { "navigationBarTitleText": "曼达拉创作" } },
+        { "path": "gallery", "style": { "navigationBarTitleText": "我的画廊" } }
+      ]
+    },
+    {
+      "root": "pages/breathing",
+      "pages": [
+        { "path": "select", "style": { "navigationBarTitleText": "正念呼吸" } },
+        { "path": "index",  "style": { "navigationBarTitleText": "正念呼吸球" } }
+      ]
+    },
+    {
+      "root": "pages/squeeze",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "解压捏捏乐" } }
+      ]
+    },
     {
       "root": "pages/news",
       "pages": [
@@ -58,7 +73,7 @@
     {
       "root": "pages/activity",
       "pages": [
-        { "path": "index", "style": { "navigationBarTitleText": "活动报名" } }
+        { "path": "index", "style": { "navigationBarTitleText": "线下活动" } }
       ]
     },
     {
@@ -114,7 +129,7 @@
     "backgroundColor": "#fff",
     "list": [
       { "pagePath": "pages/index/index",      "text": "首页",    "iconPath": "static/icons/home.png",            "selectedIconPath": "static/icons/home-active.png" },
-      { "pagePath": "pages/consultants/index","text": "咨询师",  "iconPath": "static/icons/consultant.png",      "selectedIconPath": "static/icons/consultant-active.png" },
+      { "pagePath": "pages/consultants/index","text": "预约咨询师",  "iconPath": "static/icons/consultant.png",      "selectedIconPath": "static/icons/consultant-active.png" },
       { "pagePath": "pages/ohcard/index",     "text": "心理图卡","iconPath": "static/icons/card.png",            "selectedIconPath": "static/icons/card-active.png" },
       { "pagePath": "pages/assessment/index", "text": "测评",    "iconPath": "static/icons/news.png",            "selectedIconPath": "static/icons/news-active.png" },
       { "pagePath": "pages/profile/index",    "text": "我的",    "iconPath": "static/icons/profile.png",         "selectedIconPath": "static/icons/profile-active.png" }

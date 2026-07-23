@@ -135,8 +135,8 @@ const menuGroups = ref([
   {
     label: '咨询 · 资讯',
     items: [
-      { path: '/pages/consultants/index', label: '咨询师',  icon: '/static/icons/grid/consultant.svg', color: '#4A8A7A' },
-      { path: '/pages/activity/index',    label: '活动报名', icon: '/static/icons/grid/activity.svg',   color: '#4A8A7A' },
+      { path: '/pages/consultants/index', label: '预约咨询师', icon: '/static/icons/grid/consultant.svg', color: '#4A8A7A' },
+      { path: '/pages/activity/index',    label: '线下活动',   icon: '/static/icons/grid/activity.svg',   color: '#4A8A7A' },
       { path: '/pages/news/index',        label: '动态资讯', icon: '/static/icons/grid/news.svg',       color: '#4A8A7A' },
       { path: '/pages/about/index',       label: '关于我们', icon: '/static/icons/grid/about.svg',      color: '#4A8A7A' },
     ],

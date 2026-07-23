@@ -219,7 +219,6 @@ export const mandalaApi = {
 };
 
 export const treeholeApi = {
-  wall: (params) => get('/treehole/wall', params),
   mine: () => get('/treehole/mine'),
   create: d => post('/treehole', d),
   del: id => del(`/treehole/${id}`),

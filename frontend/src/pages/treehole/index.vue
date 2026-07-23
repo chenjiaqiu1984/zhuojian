@@ -4,7 +4,7 @@
       <view class="hdr-glow" />
       <ZjIcon class="hdr-icon" name="sprout" :size="60" color="#FFFFFF" />
       <text class="hdr-title">树洞</text>
-      <text class="hdr-desc">想对网站说的话、一个情绪，或写给自己的几句——都可以悄悄放在这里</text>
+      <text class="hdr-desc">写给自己，只有你能看见；写给平台，只有管理员会收到</text>
     </view>
 
     <view class="content">
@@ -20,6 +20,7 @@
             @click="form.category = c.value"
           >
             <text class="cat-label">{{ c.label }}</text>
+            <text class="cat-hint">{{ c.hint }}</text>
           </view>
         </view>
 
@@ -31,63 +32,29 @@
         />
         <text class="char-count">{{ form.content.length }}/1000</text>
 
-        <view class="vis-row">
-          <view
-            class="vis-btn"
-            :class="{ active: form.visibility === 'private' }"
-            @click="form.visibility = 'private'"
-          >
-            <text class="vis-title">仅自己可见</text>
-            <text class="vis-desc">安静地留给自己</text>
-          </view>
-          <view
-            class="vis-btn"
-            :class="{ active: form.visibility === 'anonymous' }"
-            @click="form.visibility = 'anonymous'"
-          >
-            <text class="vis-title">匿名上墙</text>
-            <text class="vis-desc">不展示身份信息</text>
-          </view>
-        </view>
-
+        <text class="privacy-tip">{{ privacyTip }}</text>
         <text class="save-btn" :class="{ disabled: saving }" @click="save()">投递</text>
       </view>
 
-      <view class="tabs">
-        <text class="tab" :class="{ active: tab === 'wall' }" @click="switchTab('wall')">树洞墙</text>
-        <text class="tab" :class="{ active: tab === 'mine' }" @click="switchTab('mine')">我的记录</text>
+      <view class="history-header">
+        <view class="history-bar" />
+        <text class="history-title">我的记录</text>
       </view>
 
-      <view v-if="tab === 'wall'">
-        <view class="entry" v-for="e in wall" :key="e.id">
-          <view class="entry-header">
-            <text class="entry-anon">{{ e.anonName }}</text>
-            <text class="entry-cat">{{ catLabel(e.category) }}</text>
-            <text class="entry-date">{{ fmt(e.createdAt) }}</text>
-          </view>
-          <text class="entry-note">{{ e.content }}</text>
+      <view class="entry" v-for="e in mine" :key="e.id">
+        <view class="entry-header">
+          <text class="entry-cat">{{ catLabel(e.category) }}</text>
+          <text class="entry-vis">{{ visLabel(e.category) }}</text>
+          <text class="entry-date">{{ fmt(e.createdAt) }}</text>
+          <text class="del-btn" @click="del(e.id)">×</text>
         </view>
-        <u-empty v-if="!wall.length && !wallLoading" text="树洞还很安静，来写下第一句吧" mode="data" />
-        <text v-if="wallHasMore" class="more-btn" @click="loadWall(true)">加载更多</text>
-      </view>
-
-      <view v-else>
-        <view class="entry" v-for="e in mine" :key="e.id">
-          <view class="entry-header">
-            <text class="entry-cat">{{ catLabel(e.category) }}</text>
-            <text class="entry-vis">{{ e.visibility === 'anonymous' ? '已匿名上墙' : '仅自己可见' }}</text>
-            <text class="entry-date">{{ fmt(e.createdAt) }}</text>
-            <text class="del-btn" @click="del(e.id)">×</text>
-          </view>
-          <text class="entry-note">{{ e.content }}</text>
-          <view v-if="e.adminReply" class="reply-box">
-            <text class="reply-label">网站回复</text>
-            <text class="reply-text">{{ e.adminReply }}</text>
-          </view>
-          <text v-if="e.visibility === 'anonymous' && e.status === 'hidden'" class="hidden-tip">已从树洞墙隐藏</text>
+        <text class="entry-note">{{ e.content }}</text>
+        <view v-if="e.adminReply" class="reply-box">
+          <text class="reply-label">平台回复</text>
+          <text class="reply-text">{{ e.adminReply }}</text>
         </view>
-        <u-empty v-if="!mine.length" text="还没有树洞记录" mode="data" />
       </view>
+      <u-empty v-if="!mine.length && loaded" text="还没有树洞记录" mode="data" />
     </view>
 
     <CrisisAlert ref="crisisRef" />
@@ -108,33 +75,39 @@ import { requireActive } from '../../utils/requireActive';
 import ZjIcon from '../../components/ZjIcon.vue';
 
 const CATEGORIES = [
-  { value: 'feedback', label: '意见建议' },
-  { value: 'emotion', label: '一个情绪' },
-  { value: 'self', label: '写给自己' },
+  { value: 'self', label: '写给自己', hint: '仅自己可见' },
+  { value: 'platform', label: '写给平台', hint: '仅管理员可见' },
 ];
 
 const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.value, c.label]));
 
-const form = ref({ content: '', category: 'emotion', visibility: 'private' });
-const tab = ref('wall');
-const wall = ref([]);
-const wallPage = ref(1);
-const wallTotal = ref(0);
-const wallLoading = ref(false);
+const form = ref({ content: '', category: 'self' });
 const mine = ref([]);
+const loaded = ref(false);
 const saving = ref(false);
 const crisisRef = ref(null);
 
-const wallHasMore = computed(() => wall.value.length < wallTotal.value);
+const placeholder = computed(() =>
+  form.value.category === 'platform'
+    ? '想对平台说的意见或建议…'
+    : '写给此刻的自己…'
+);
 
-const placeholder = computed(() => {
-  if (form.value.category === 'feedback') return '想对网站说的意见或建议…';
-  if (form.value.category === 'self') return '写给此刻的自己…';
-  return '此刻想倾诉的情绪或感受…';
-});
+const privacyTip = computed(() =>
+  form.value.category === 'platform'
+    ? '内容仅平台管理员可见，不会公开展示'
+    : '内容仅你自己可见，管理员也无法查看'
+);
 
 function catLabel(c) {
+  if (c === 'feedback') return '写给平台';
+  if (c === 'emotion') return '写给自己';
   return CAT_MAP[c] || c;
+}
+
+function visLabel(c) {
+  const cat = c === 'feedback' ? 'platform' : (c === 'emotion' ? 'self' : c);
+  return cat === 'platform' ? '仅管理员可见' : '仅自己可见';
 }
 
 function fmt(d) {
@@ -143,35 +116,13 @@ function fmt(d) {
   return `${dt.getMonth() + 1}/${dt.getDate()} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
 }
 
-async function loadWall(more = false) {
-  if (wallLoading.value) return;
-  wallLoading.value = true;
-  try {
-    const page = more ? wallPage.value + 1 : 1;
-    const res = await treeholeApi.wall({ page, limit: 20 });
-    wallTotal.value = res.total || 0;
-    wallPage.value = page;
-    wall.value = more ? [...wall.value, ...(res.list || [])] : (res.list || []);
-  } catch {
-    if (!more) wall.value = [];
-  } finally {
-    wallLoading.value = false;
-  }
-}
-
 async function loadMine() {
   try {
     mine.value = await treeholeApi.mine();
   } catch {
     mine.value = [];
-  }
-}
-
-function switchTab(t) {
-  tab.value = t;
-  if (t === 'mine') {
-    if (!requireActive()) return;
-    loadMine();
+  } finally {
+    loaded.value = true;
   }
 }
 
@@ -188,14 +139,12 @@ async function save() {
     const res = await treeholeApi.create({
       content,
       category: form.value.category,
-      visibility: form.value.visibility,
     });
     track('treehole_save', form.value.category);
-    form.value = { content: '', category: form.value.category, visibility: form.value.visibility };
+    form.value = { content: '', category: form.value.category };
     uni.showToast({ title: '已投递', icon: 'success' });
     if (res?.crisis) crisisRef.value?.show();
-    await loadWall();
-    if (tab.value === 'mine') await loadMine();
+    await loadMine();
   } catch (e) {
     if (e?.__authRedirect) return;
     uni.showToast({ title: e?.error || e?.message || '投递失败', icon: 'none' });
@@ -208,12 +157,12 @@ async function del(id) {
   try {
     await treeholeApi.del(id);
     await loadMine();
-    await loadWall();
   } catch {}
 }
 
 onMounted(() => {
-  loadWall();
+  if (!requireActive()) return;
+  loadMine();
 });
 </script>
 
@@ -307,7 +256,7 @@ $text-muted: #9BBCB4;
 .cat-btn {
   flex: 1;
   text-align: center;
-  padding: 16rpx 8rpx;
+  padding: 18rpx 12rpx;
   border-radius: 16rpx;
   background: $surface;
   border: 2rpx solid transparent;
@@ -321,13 +270,22 @@ $text-muted: #9BBCB4;
 }
 
 .cat-label {
-  font-size: 24rpx;
+  display: block;
+  font-size: 26rpx;
   color: $text-muted;
+  font-weight: 600;
 }
 
-.cat-btn.active .cat-label {
+.cat-hint {
+  display: block;
+  font-size: 20rpx;
+  color: $text-muted;
+  margin-top: 6rpx;
+}
+
+.cat-btn.active .cat-label,
+.cat-btn.active .cat-hint {
   color: $primary;
-  font-weight: 600;
 }
 
 .note-input {
@@ -350,41 +308,12 @@ $text-muted: #9BBCB4;
   margin-top: 8rpx;
 }
 
-.vis-row {
-  display: flex;
-  gap: 12rpx;
-  margin-top: 18rpx;
-}
-
-.vis-btn {
-  flex: 1;
-  padding: 18rpx 16rpx;
-  border-radius: 16rpx;
-  background: $surface;
-  border: 2rpx solid transparent;
-
-  &.active {
-    background: #EAF5F1;
-    border-color: $primary;
-  }
-
-  &:active { opacity: 0.88; }
-}
-
-.vis-title {
+.privacy-tip {
   display: block;
-  font-size: 26rpx;
-  font-weight: 600;
-  color: $text-main;
-  margin-bottom: 6rpx;
-}
-
-.vis-btn.active .vis-title { color: $primary; }
-
-.vis-desc {
-  display: block;
-  font-size: 20rpx;
-  color: $text-muted;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: $text-sub;
+  line-height: 1.5;
 }
 
 .save-btn {
@@ -403,24 +332,26 @@ $text-muted: #9BBCB4;
   &.disabled { opacity: 0.6; }
 }
 
-.tabs {
+.history-header {
   display: flex;
-  gap: 32rpx;
+  align-items: center;
+  gap: 14rpx;
   margin: 36rpx 0 20rpx;
-  padding: 0 4rpx;
 }
 
-.tab {
-  font-size: 28rpx;
-  color: $text-muted;
-  padding-bottom: 10rpx;
-  border-bottom: 4rpx solid transparent;
+.history-bar {
+  width: 5rpx;
+  height: 28rpx;
+  border-radius: 3rpx;
+  background: $primary;
+  flex-shrink: 0;
+}
 
-  &.active {
-    color: $primary;
-    font-weight: 600;
-    border-bottom-color: $primary;
-  }
+.history-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-main;
+  letter-spacing: 0.03em;
 }
 
 .entry {
@@ -437,12 +368,6 @@ $text-muted: #9BBCB4;
   align-items: center;
   gap: 12rpx;
   flex-wrap: wrap;
-}
-
-.entry-anon {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: $primary;
 }
 
 .entry-cat {
@@ -504,20 +429,5 @@ $text-muted: #9BBCB4;
   font-size: 24rpx;
   color: $text-sub;
   line-height: 1.6;
-}
-
-.hidden-tip {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 20rpx;
-  color: #C4A35A;
-}
-
-.more-btn {
-  display: block;
-  text-align: center;
-  color: $primary;
-  font-size: 26rpx;
-  padding: 20rpx;
 }
 </style>

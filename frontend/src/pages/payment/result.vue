@@ -8,7 +8,7 @@
     <view v-else-if="status === 'paid'" class="state-box success">
       <ZjIcon class="state-icon" name="circle-check" :size="96" color="#4A8A7A" />
       <text class="state-msg">支付成功</text>
-      <text class="state-sub">预约已确认，感谢您的选择</text>
+      <text class="state-sub">线下服务费用已支付，请按预约时间到场参与</text>
       <button class="action-btn" @click="goHome()">返回首页</button>
     </view>
 

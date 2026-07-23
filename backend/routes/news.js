@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../db/database');
 const { requireRole, optionalAuth } = require('../middleware/auth');
+const { assertTextSafe, handleContentError } = require('../services/contentSafe');
 
 const router = express.Router();
 
@@ -117,15 +118,38 @@ router.get('/:id/comments', optionalAuth, async (req, res) => {
 });
 
 router.post('/:id/comment', ...requireRole('user', 'admin', 'consultant'), async (req, res) => {
-  const c = await prisma.newsComment.create({ data: { newsId: Number(req.params.id), userId: req.user.id, content: req.body.content } });
-  res.json(c);
+  try {
+    const content = String(req.body.content || '').trim();
+    if (!content) return res.status(400).json({ error: '请输入留言内容' });
+    if (content.length > 500) return res.status(400).json({ error: '留言不超过500字' });
+    await assertTextSafe(content, req.user.id, 2);
+    const c = await prisma.newsComment.create({
+      data: { newsId: Number(req.params.id), userId: req.user.id, content },
+    });
+    res.json(c);
+  } catch (err) {
+    if (handleContentError(res, err)) return;
+    console.error('[news] comment failed', err);
+    res.status(500).json({ error: '留言失败，请稍后再试' });
+  }
 });
 
 router.post('/comments/:id/reply', ...requireRole('admin'), async (req, res) => {
-  const parent = await prisma.newsComment.findUnique({ where: { id: Number(req.params.id) } });
-  if (!parent) return res.status(404).json({ error: '未找到' });
-  const c = await prisma.newsComment.create({ data: { newsId: parent.newsId, userId: req.user.id, content: req.body.content, parentId: parent.id } });
-  res.json(c);
+  try {
+    const parent = await prisma.newsComment.findUnique({ where: { id: Number(req.params.id) } });
+    if (!parent) return res.status(404).json({ error: '未找到' });
+    const content = String(req.body.content || '').trim();
+    if (!content) return res.status(400).json({ error: '请输入回复内容' });
+    await assertTextSafe(content, req.user.id, 2);
+    const c = await prisma.newsComment.create({
+      data: { newsId: parent.newsId, userId: req.user.id, content, parentId: parent.id },
+    });
+    res.json(c);
+  } catch (err) {
+    if (handleContentError(res, err)) return;
+    console.error('[news] reply failed', err);
+    res.status(500).json({ error: '回复失败，请稍后再试' });
+  }
 });
 
 router.delete('/comments/:id', ...requireRole('user', 'admin', 'consultant'), async (req, res) => {

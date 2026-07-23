@@ -4,7 +4,18 @@
     <!-- 订单摘要卡 -->
     <view class="summary-card">
       <view class="summary-badge">
-        <text class="summary-badge-text">{{ isActivity ? '活动报名' : '咨询预约' }}</text>
+        <text class="summary-badge-text">{{ isActivity ? '线下活动' : '线下咨询' }}</text>
+      </view>
+
+      <!-- 线下服务说明（应对微信虚拟支付审核） -->
+      <view class="offline-notice">
+        <text class="offline-notice-title">线下服务 · 非虚拟商品</text>
+        <text class="offline-notice-body" v-if="isActivity">
+          本订单为线下活动报名费。支付成功后，您将到指定线下场地参与活动；不包含任何虚拟商品、数字内容或在线权益充值。
+        </text>
+        <text class="offline-notice-body" v-else>
+          本订单为线下心理咨询服务费。支付成功后，您将按预约时间到场或与咨询师约定的线下方式完成咨询；不包含任何虚拟商品、数字内容或在线权益充值。
+        </text>
       </view>
 
       <text class="summary-name" v-if="isActivity">{{ activityName }}</text>
@@ -38,6 +49,7 @@
 
       <template v-else>
         <text class="summary-name">{{ consultantName }}</text>
+        <text class="summary-meta">线下面对面咨询服务</text>
         <text class="summary-time">{{ slotTime }}</text>
       </template>
 
@@ -99,6 +111,7 @@
     <!-- 支付方式 -->
     <view class="section-block">
       <text class="section-label">支付方式</text>
+      <text class="section-hint">以下为线下服务费用支付，不涉及虚拟支付商品</text>
       <view class="method-group">
         <view
           class="method-item"
@@ -213,9 +226,10 @@
         @click="doPay()"
       >
         <text v-if="loading">处理中</text>
-        <text v-else-if="usePackage">使用套餐预约</text>
-        <text v-else>立即支付 ¥{{ (finalAmount / 100).toFixed(2) }}</text>
+        <text v-else-if="usePackage">使用套餐预约线下咨询</text>
+        <text v-else>支付线下服务费 ¥{{ (finalAmount / 100).toFixed(2) }}</text>
       </button>
+      <text class="footer-disclaimer">本支付用于线下{{ isActivity ? '活动' : '咨询' }}服务，非虚拟商品交易</text>
       <text class="cancel-link" v-if="!isActivity" @click="cancel()">取消预约</text>
     </view>
 
@@ -686,7 +700,7 @@ $r-inner:     14rpx;
 .page {
   min-height: 100vh;
   background: $bg;
-  padding: 48rpx 0 180rpx;
+  padding: 48rpx 0 240rpx;
 }
 
 /* ── Summary card ─────────────────────────────────────────────── */
@@ -732,11 +746,42 @@ $r-inner:     14rpx;
   margin-bottom: 8rpx;
 }
 
+.summary-meta {
+  display: block;
+  font-size: 24rpx;
+  color: $teal;
+  margin-bottom: 6rpx;
+}
+
 .summary-time {
   display: block;
   font-size: 26rpx;
   color: $text-2;
   margin-bottom: 4rpx;
+}
+
+.offline-notice {
+  margin: 0 0 24rpx;
+  padding: 20rpx 22rpx;
+  background: #FFF8F0;
+  border: 1rpx solid #F0E0C8;
+  border-radius: $r-inner;
+}
+
+.offline-notice-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #8A5A20;
+  margin-bottom: 8rpx;
+  letter-spacing: 0.02em;
+}
+
+.offline-notice-body {
+  display: block;
+  font-size: 22rpx;
+  color: #6B5338;
+  line-height: 1.65;
 }
 
 /* Refund policy */
@@ -928,6 +973,14 @@ $r-inner:     14rpx;
   color: $text-3;
   letter-spacing: 0.09em;
   margin-bottom: 20rpx;
+}
+
+.section-hint {
+  display: block;
+  font-size: 22rpx;
+  color: $text-2;
+  line-height: 1.5;
+  margin: -10rpx 0 18rpx;
 }
 
 .section-header {
@@ -1147,6 +1200,13 @@ $r-inner:     14rpx;
 .cancel-link {
   font-size: 26rpx;
   color: $text-3;
+}
+
+.footer-disclaimer {
+  font-size: 20rpx;
+  color: $text-3;
+  text-align: center;
+  line-height: 1.4;
 }
 
 /* ── QR overlay ───────────────────────────────────────────────── */

@@ -86,7 +86,7 @@ router.post('/booking/:bookingId', authMiddleware, async (req, res) => {
       const { payParams } = await createJsapiOrder({
         orderNo: existing.orderNo,
         amount: existing.amount,
-        desc: `卓见心理咨询 - ${booking.consultant.name}`,
+        desc: `线下心理咨询服务 - ${booking.consultant.name}`,
         openid,
         notifyUrl: notifyUrl(),
       });
@@ -120,7 +120,7 @@ router.post('/booking/:bookingId', authMiddleware, async (req, res) => {
     const { prepayId, payParams } = await createJsapiOrder({
       orderNo,
       amount,
-      desc: `卓见心理咨询 - ${booking.consultant.name}`,
+      desc: `线下心理咨询服务 - ${booking.consultant.name}`,
       openid,
       notifyUrl: notifyUrl(),
     });
@@ -442,7 +442,7 @@ router.post('/h5/:bookingId', authMiddleware, async (req, res) => {
     const { mwebUrl } = await createH5Order({
       orderNo,
       amount,
-      desc:      `卓见心理咨询 - ${booking.consultant.name}`,
+      desc:      `线下心理咨询服务 - ${booking.consultant.name}`,
       clientIp,
       notifyUrl: notifyUrl(),
     });
@@ -499,7 +499,7 @@ router.post('/alipay/:bookingId', authMiddleware, async (req, res) => {
     const { payUrl } = await createAlipayOrder({
       orderNo,
       amount,
-      desc:       `卓见心理咨询 - ${booking.consultant.name}`,
+      desc:       `线下心理咨询服务 - ${booking.consultant.name}`,
       notifyUrl:  `${base}/api/payment/alipay/notify`,
       returnUrl:  `${base}/#/pages/payment/result?orderNo=${orderNo}`,
     });
@@ -564,7 +564,7 @@ router.post('/activity/:newsId', authMiddleware, async (req, res) => {
     await prisma.order.create({ data: { orderNo, userId, newsId, amount, expireAt, payType: isAlipay ? 'alipay' : 'wxpay' } });
 
     const base = process.env.PAY_NOTIFY_BASE || `http://localhost:${process.env.PORT || 3000}`;
-    const desc  = `活动报名 - ${news.title}`;
+    const desc  = `线下活动报名 - ${news.title}`;
 
     if (payMethod === 'alipay') {
       const { payUrl } = await createAlipayOrder({ orderNo, amount, desc, notifyUrl: `${base}/api/payment/alipay/notify`, returnUrl: `${base}/#/pages/payment/result?orderNo=${orderNo}` });
@@ -671,7 +671,7 @@ router.post('/native/:bookingId', authMiddleware, async (req, res) => {
     }
     const { codeUrl } = await createNativeOrder({
       orderNo, amount,
-      desc: `卓见心理咨询 - ${booking.consultant.name}`,
+      desc: `线下心理咨询服务 - ${booking.consultant.name}`,
       notifyUrl: notifyUrl(),
     });
     res.json({ orderNo, codeUrl });
@@ -710,7 +710,7 @@ router.post('/alipay-pc/:bookingId', authMiddleware, async (req, res) => {
     const base = process.env.PAY_NOTIFY_BASE || `http://localhost:${process.env.PORT || 3000}`;
     const { payUrl } = await createAlipayPcOrder({
       orderNo, amount,
-      desc: `卓见心理咨询 - ${booking.consultant.name}`,
+      desc: `线下心理咨询服务 - ${booking.consultant.name}`,
       notifyUrl:  `${base}/api/payment/alipay/notify`,
       returnUrl:  `${base}/#/pages/payment/result?orderNo=${orderNo}`,
     });

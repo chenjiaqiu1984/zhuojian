@@ -810,18 +810,19 @@ model UserAchievement {
   @@map("user_achievements")
 }
 
-/// 树洞：意见建议 / 情绪倾诉 / 给自己说的话
+/// 树洞：写给自己（仅本人）/ 写给平台（仅管理员）
 model TreeholePost {
   id         Int      @id @default(autoincrement())
   userId     Int      @map("user_id")
   content    String
-  category   String   @default("emotion") // feedback | emotion | self
-  visibility String   @default("private") // private | anonymous
-  status     String   @default("visible") // visible | hidden（管理端可隐藏上墙内容）
+  category   String   @default("self")     // platform | self（legacy: feedback/emotion）
+  visibility String   @default("private")  // private | admin（legacy: anonymous 已停用）
+  status     String   @default("visible")  // 保留字段，上墙已关闭
   adminReply String?  @map("admin_reply")
   createdAt  DateTime @default(now()) @map("created_at")
   user       User     @relation(fields: [userId], references: [id])
   @@index([visibility, status, createdAt])
   @@index([userId, createdAt])
+  @@index([category, createdAt])
   @@map("treehole_posts")
 }

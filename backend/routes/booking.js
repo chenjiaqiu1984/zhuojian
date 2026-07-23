@@ -72,6 +72,17 @@ router.post('/', authMiddleware, async (req, res) => {
   });
   if (activeCount >= 3) return res.status(400).json({ error: '最多同时预约3个时间段' });
 
+  try {
+    if (notes && String(notes).trim()) {
+      const { assertTextSafe } = require('../services/contentSafe');
+      await assertTextSafe(String(notes).trim(), req.user.id, 2);
+    }
+  } catch (err) {
+    const { handleContentError } = require('../services/contentSafe');
+    if (handleContentError(res, err)) return;
+    throw err;
+  }
+
   const [slot, slot2, consultant] = await Promise.all([
     prisma.timeSlot.findFirst({ where: { id: Number(slot_id), isBooked: 0 } }),
     second_slot_id ? prisma.timeSlot.findFirst({ where: { id: Number(second_slot_id), isBooked: 0 } }) : null,

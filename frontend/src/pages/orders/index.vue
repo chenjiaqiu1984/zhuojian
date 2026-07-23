@@ -10,9 +10,9 @@
         <view class="order-head">
           <view class="order-title-row">
             <view class="order-type-tag" :class="isActivity(o) ? 'tag--activity' : 'tag--consult'">
-              <text class="tag-text">{{ isActivity(o) ? '活动报名' : '咨询预约' }}</text>
+              <text class="tag-text">{{ isActivity(o) ? '线下活动' : '线下咨询' }}</text>
             </view>
-            <text class="order-name">{{ o.news?.title || o.booking?.consultant?.name || (isActivity(o) ? '活动报名' : '未知') }}</text>
+            <text class="order-name">{{ o.news?.title || o.booking?.consultant?.name || (isActivity(o) ? '线下活动' : '未知') }}</text>
           </view>
           <view class="status-badge" :class="statusClass(o)">
             <text class="status-text">{{ statusLabel(o) }}</text>
