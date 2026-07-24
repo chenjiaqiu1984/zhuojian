@@ -31,17 +31,42 @@
     { "path": "pages/login/index",         "style": { "navigationBarTitleText": "登录" } },
     { "path": "pages/login/register",      "style": { "navigationBarTitleText": "注册账号" } },
     { "path": "pages/login/reset",         "style": { "navigationBarTitleText": "找回密码" } },
-    { "path": "pages/login/complete",      "style": { "navigationBarTitleText": "完善账户信息" } },
-    { "path": "pages/about/index",         "style": { "navigationBarTitleText": "关于我们" } },
-    { "path": "pages/booking/index",       "style": { "navigationBarTitleText": "我的预约" } },
-    { "path": "pages/payment/index",       "style": { "navigationBarTitleText": "确认支付" } },
-    { "path": "pages/payment/result",      "style": { "navigationBarTitleText": "支付结果" } },
-    { "path": "pages/orders/index",        "style": { "navigationBarTitleText": "我的订单" } },
-    { "path": "pages/monster/index",       "style": { "navigationBarTitleText": "怪兽小屋" } },
-    { "path": "pages/monster/create",      "style": { "navigationBarTitleText": "创建怪兽" } },
-    { "path": "pages/monster/detail",      "style": { "navigationBarTitleText": "我的怪兽" } }
+    { "path": "pages/login/complete",      "style": { "navigationBarTitleText": "完善账户信息" } }
   ],
   "subPackages": [
+    {
+      "root": "pages/monster",
+      "pages": [
+        { "path": "index",  "style": { "navigationBarTitleText": "怪兽小屋" } },
+        { "path": "create", "style": { "navigationBarTitleText": "创建怪兽" } },
+        { "path": "detail", "style": { "navigationBarTitleText": "我的怪兽" } }
+      ]
+    },
+    {
+      "root": "pages/about",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "关于我们" } }
+      ]
+    },
+    {
+      "root": "pages/booking",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "我的预约" } }
+      ]
+    },
+    {
+      "root": "pages/payment",
+      "pages": [
+        { "path": "index",  "style": { "navigationBarTitleText": "确认支付" } },
+        { "path": "result", "style": { "navigationBarTitleText": "支付结果" } }
+      ]
+    },
+    {
+      "root": "pages/orders",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "我的订单" } }
+      ]
+    },
     {
       "root": "pages/mandala",
       "pages": [

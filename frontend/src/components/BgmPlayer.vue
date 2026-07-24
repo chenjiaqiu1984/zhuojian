@@ -54,7 +54,8 @@ import { useBgm } from '@/composables/useBgm';
 
 const props = defineProps({
   // 默认曲目
-  defaultTrack: { type: String, default: 'meditation' },
+  // 空字符串 = 使用曲目列表第一首（有什么用什么，不绑死文件名）
+  defaultTrack: { type: String, default: '' },
   // 主题强调色（跟随所在页面）
   accent: { type: String, default: '#7B4E9E' },
   // 深色面板（呼吸页深色主题用）

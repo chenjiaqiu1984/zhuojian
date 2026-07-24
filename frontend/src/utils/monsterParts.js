@@ -1,9 +1,9 @@
 // 怪兽部件（位图版 monster-v2）共享配置
 // 完全替换旧的 SVG 换色方案：固定配色位图，身体自带四肢，新增鼻子，配饰拆为 角/翅膀/尾巴/眼镜 四槽。
 
-const BASE = '/static/monster-v2';
+const BASE = '/pages/monster/static/monster-v2';
 
-// 各槽位可选数量（对应 static/monster-v2/<slot>/<slot>_NN.png）
+// 各槽位可选数量（对应 pages/monster/static/monster-v2/<slot>/<slot>_NN.png）
 const COUNTS = {
   body: 7,
   eyes: 8,

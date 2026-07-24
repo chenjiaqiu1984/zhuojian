@@ -6,7 +6,10 @@ export function getViewportHeight() {
     if (window.innerHeight) return window.innerHeight;
   }
   // #endif
-  return uni.getSystemInfoSync().windowHeight;
+  try {
+    if (typeof uni.getWindowInfo === 'function') return uni.getWindowInfo().windowHeight;
+  } catch (e) { /* ignore */ }
+  return 0;
 }
 
 /** 监听可视区高度变化，返回取消函数 */

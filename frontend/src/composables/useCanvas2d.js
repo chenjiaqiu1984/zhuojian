@@ -14,7 +14,13 @@ function readDpr() {
   // #ifdef H5
   if (typeof window !== 'undefined') return window.devicePixelRatio || 1;
   // #endif
-  return uni.getSystemInfoSync().pixelRatio || 1;
+  try {
+    if (typeof uni.getWindowInfo === 'function') return uni.getWindowInfo().pixelRatio || 1;
+  } catch (e) { /* ignore */ }
+  try {
+    if (typeof uni.getDeviceInfo === 'function') return uni.getDeviceInfo().pixelRatio || 1;
+  } catch (e) { /* ignore */ }
+  return 1;
 }
 
 function readViewportLimit() {
@@ -26,8 +32,13 @@ function readViewportLimit() {
     };
   }
   // #endif
-  const info = uni.getSystemInfoSync();
-  return { w: info.windowWidth || 9999, h: info.windowHeight || 9999 };
+  try {
+    if (typeof uni.getWindowInfo === 'function') {
+      const info = uni.getWindowInfo();
+      return { w: info.windowWidth || 9999, h: info.windowHeight || 9999 };
+    }
+  } catch (e) { /* ignore */ }
+  return { w: 9999, h: 9999 };
 }
 
 /**

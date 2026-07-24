@@ -149,31 +149,45 @@ const TRACK_BUILDERS = {
   wind: (sr) => mix(filteredNoise(LOOP_SEC, 0.02, sr, 99177), padChord(LOOP_SEC, [98.00, 146.83], sr), 0.8, 0.2),
 };
 
-// 曲目元信息（供 UI 展示）
-// file: 本地音频路径（把 mp3 放到 frontend/src/static/bgm/ 下，文件名与此一致）。
-//       播放时优先用本地文件；若文件缺失/加载失败，自动降级为运行时合成氛围音，保证不静默失效。
-export const BGM_TRACKS = [
-  { key: 'meditation', name: '冥想颂钵', icon: '🧘', file: '/static/bgm/meditation.mp3' },
-  { key: 'mindful',    name: '空灵正念', icon: '🌙', file: '/static/bgm/mindful.mp3' },
-  { key: 'rain',       name: '雨声',     icon: '🌧', file: '/static/bgm/rain.mp3' },
-  { key: 'wind',       name: '风吟',     icon: '🍃', file: '/static/bgm/wind.mp3' },
-];
+// 曲目列表：由 scripts/prepare-bgm.mjs 扫描 mp3/ 任意文件名后生成。
+// BGM 文件托管在后端 /static/bgm（不打进小程序主包）；失败则降级合成音。
+export { BGM_TRACKS } from './bgmTracks.generated.js';
+import { BGM_TRACKS } from './bgmTracks.generated.js';
+import { SERVER } from '@/config';
 
-// 取某曲目的本地文件路径（无则返回空）
+// 取可播放地址。
+// BGM 托管在后端 /static/bgm（不打进小程序主包，避免超过 2MB 限制）。
+// 小程序会先 downloadFile 再播；失败则降级合成音（仅 H5）或静音。
 export function trackFile(key) {
   const t = BGM_TRACKS.find(x => x.key === key);
-  return (t && t.file) || '';
+  const file = (t && t.file) || '';
+  if (!file) return '';
+  if (/^https?:\/\//i.test(file) || file.startsWith('data:')) return file;
+  if (file.startsWith('/static/bgm/')) return `${SERVER}${file}`;
+  return file;
 }
 
-// data-URI 缓存：同一曲目只合成一次
-const _cache = {};
+// data-URI / PCM 缓存：同一曲目只合成一次
+const _pcmCache = {};
+const _uriCache = {};
 
-// 获取某曲目的可循环 WAV data-URI
-export function getTrackDataUri(key) {
-  if (_cache[key]) return _cache[key];
+function buildSamples(key) {
+  if (_pcmCache[key]) return _pcmCache[key];
   const build = TRACK_BUILDERS[key] || TRACK_BUILDERS.meditation;
   const samples = build(SAMPLE_RATE);
-  const uri = toDataUri(samples, SAMPLE_RATE);
-  _cache[key] = uri;
+  _pcmCache[key] = samples;
+  return samples;
+}
+
+/** 合成 WAV 的原始字节（小程序请写入本地文件再播，勿直接用 data-URI） */
+export function getTrackWavBytes(key) {
+  return encodeWav(buildSamples(key), SAMPLE_RATE);
+}
+
+/** H5 可用的 data-URI；微信小程序对 data:audio/wav 常解码失败，MP 端不要用 */
+export function getTrackDataUri(key) {
+  if (_uriCache[key]) return _uriCache[key];
+  const uri = toDataUri(buildSamples(key), SAMPLE_RATE);
+  _uriCache[key] = uri;
   return uri;
 }

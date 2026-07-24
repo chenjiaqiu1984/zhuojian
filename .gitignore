@@ -71,6 +71,10 @@ zhuojian/uploads/
 /backend/node_modules
 /node_modules
 
+# ===== BGM 原始大文件 / 本地下载的 ffmpeg =====
+/mp3/
+/.tools/
+
 # ===== 其他大文件/临时文件 =====
 /output
 /需要的手续

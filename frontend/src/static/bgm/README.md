@@ -1,25 +1,7 @@
-# 背景音乐文件放这里
+# 背景音乐
 
-把下载好的免版税/可商用 mp3 放到本目录，**文件名必须与下方一致**，播放器会自动读取：
+由根目录 `node scripts/prepare-bgm.mjs` 从 `mp3/` 生成到 **`backend/static/bgm/`**（远程播放）。
 
-| 文件名 | 用途 | 建议风格 |
-|--------|------|----------|
-| `meditation.mp3` | 冥想颂钵 | 温暖、颂钵/长音、无明显节奏 |
-| `mindful.mp3` | 空灵正念 | 空灵、留白多、pad 垫音 |
-| `rain.mp3` | 雨声 | 自然雨声白噪音 |
-| `wind.mp3` | 风吟 | 风声/森林氛围 |
+**不要**再把 mp3 放进 `frontend/src/static/bgm/`——会撑爆微信小程序主包 2MB 限制。
 
-## 要求
-- 格式 **mp3**（微信小程序只认 mp3/m4a/aac，不要用 ogg）。
-- 时长几分钟即可，播放器会 `loop` 循环播放。为避免循环接缝突兀，尽量选首尾自然衔接、无突兀开头/结尾的曲子。
-- 建议单文件控制在 1~3MB（小程序主包上限 2MB；若总量偏大，考虑走 CDN/OSS，见下）。
-
-## 音源推荐（免费可商用，需自行下载）
-- Pixabay Music: https://pixabay.com/music/search/meditation/ （CC0 类，可商用，需在站内点下载）
-- 下载后重命名成上表文件名，丢进本目录即可。
-
-## 找不到文件会怎样？
-播放器有**降级兜底**：本地文件缺失或加载失败时，会自动改用代码运行时合成的氛围音（见 `utils/bgmSynth.js`），不会静默失效。所以你可以先跑起来听合成音，之后再逐个替换成真实 mp3。
-
-## 曲目增减 / 改名
-在 `frontend/src/utils/bgmSynth.js` 的 `BGM_TRACKS` 里改 `key`/`name`/`icon`/`file` 即可，UI 和播放器会自动跟随。
+曲目列表：`frontend/src/utils/bgmTracks.generated.js`（路径形如 `/static/bgm/xxx.mp3`，运行时拼接 `SERVER`）。

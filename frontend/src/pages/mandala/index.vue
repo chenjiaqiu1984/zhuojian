@@ -67,23 +67,7 @@
 import { createMpShare } from '@/utils/mpShare';
 defineOptions(createMpShare('mandala/index'));
 // #endif
-import { ref, onMounted, onUnmounted } from 'vue';
-
-// 免版权背景音乐（Pixabay）
-const MUSIC_LIST = [
-  {
-    title: '冥想颂钵',
-    url: 'https://cdn.pixabay.com/audio/2022/03/15/audio_1e5a7cb82c.mp3',
-  },
-  {
-    title: '自然钢琴',
-    url: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3',
-  },
-  {
-    title: '禅意流水',
-    url: 'https://cdn.pixabay.com/audio/2021/08/04/audio_c518c3e5e6.mp3',
-  },
-];
+import { ref } from 'vue';
 
 const guideItems = [
   {
@@ -113,44 +97,10 @@ const moods = [
 
 const selectedMood = ref('');
 const isPlaying = ref(false);
-let audioCtx = null;
-let currentTrack = 0;
-
-function createAudio() {
-  if (audioCtx) return;
-  audioCtx = uni.createInnerAudioContext();
-  audioCtx.loop = true;
-  audioCtx.src = MUSIC_LIST[currentTrack].url;
-  audioCtx.onEnded(() => {
-    currentTrack = (currentTrack + 1) % MUSIC_LIST.length;
-    audioCtx.src = MUSIC_LIST[currentTrack].url;
-    audioCtx.play();
-  });
-  audioCtx.onError((e) => {
-    console.warn('音频加载失败', e);
-    isPlaying.value = false;
-  });
-}
 
 function toggleMusic() {
-  createAudio();
-  if (isPlaying.value) {
-    audioCtx.pause();
-    isPlaying.value = false;
-  } else {
-    audioCtx.play();
-    isPlaying.value = true;
-  }
+  uni.showToast({ title: '请进入创作页播放音乐', icon: 'none' });
 }
-
-onUnmounted(() => {
-  if (audioCtx) {
-    audioCtx.stop();
-    audioCtx.destroy();
-    audioCtx = null;
-  }
-  isPlaying.value = false;
-});
 </script>
 
 <style scoped lang="scss">

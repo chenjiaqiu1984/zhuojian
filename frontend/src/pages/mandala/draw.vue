@@ -149,7 +149,7 @@
     </view>
 
     <!-- 背景音乐 -->
-    <BgmPlayer default-track="mindful" accent="#C45AB3" :bottom="420" />
+    <BgmPlayer accent="#C45AB3" :bottom="420" />
   </view>
 </template>
 

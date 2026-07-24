@@ -211,7 +211,7 @@
     </view>
 
     <!-- 背景音乐 -->
-    <BgmPlayer default-track="meditation" accent="#4A7A9E" dark />
+    <BgmPlayer accent="#4A7A9E" dark />
 
     <!-- 成就解锁弹窗 -->
     <view v-if="showAchievement && newAchievements[achievementIdx]" class="sheet-mask" @click.stop>

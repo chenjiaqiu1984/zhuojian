@@ -231,7 +231,6 @@ const canvas2d = useCanvas2d({
       if (!bubblesReady) {
         initBubbles();
       }
-      startPhysics();
       // #ifdef H5
       requestAnimationFrame(() => bindH5Pointer());
       // #endif
@@ -292,18 +291,28 @@ function bindH5Pointer() {
 }
 // #endif
 
-// 破裂音效：三种声音，每种建一个小音频池支持快速连戳重叠
-const POP_SOUNDS = ['/static/squeeze/pop1.wav', '/static/squeeze/pop2.wav', '/static/squeeze/pop3.wav'];
+// 破裂音效：微信 Windows 模拟器对缺失/WAV 会狂抛 Unable to decode audio data，
+// 因此仅在确认有资源时初始化；MP 端优先 mp3，没有则静音。
+const POP_SOUNDS = [
+  // #ifdef H5
+  '/static/squeeze/pop1.wav',
+  '/static/squeeze/pop2.wav',
+  '/static/squeeze/pop3.wav',
+  // #endif
+];
 let soundPools = [];
 let soundIdx = 0;
 
 function initSounds() {
+  soundPools = [];
+  if (!POP_SOUNDS.length) return;
   soundPools = POP_SOUNDS.map(src => {
     const pool = [];
     for (let i = 0; i < 3; i++) {
       const a = uni.createInnerAudioContext();
       a.src = src;
       a.volume = 0.6;
+      a.onError(() => { /* 忽略单次解码失败，避免刷屏 */ });
       pool.push(a);
     }
     return pool;
@@ -466,7 +475,12 @@ const MP_SOLVER_ITERS = 7;
 let physicsId = null;
 let lastTouchPopTs = 0;
 
-function initBubbles() {
+/**
+ * @param {{ animate?: boolean }} [opts]
+ * animate=true：重置等场景保留下落动画；默认静默 settle，避免进场首屏卡顿
+ */
+function initBubbles(opts = {}) {
+  const { animate = false } = opts;
   const N = bubbleCount.value;
   const W = canvasW.value;
   const H = canvasH.value;
@@ -477,16 +491,18 @@ function initBubbles() {
   const rMin = avgR * 0.78;
   const rMax = avgR * 1.18;
 
-  // 从上方散开生成，减少开局就挤在底部的重叠
+  // 从画布下半区生成，配合进场前静默 settle，避免用户看到整屏球下落
   for (let i = 0; i < N; i++) {
     const r = rMin + Math.random() * (rMax - rMin);
     const spanY = Math.max(H * 0.55, r * 4);
+    const yBase = Math.max(r, H - spanY - r);
+    const yMax = Math.min(H - r, yBase + spanY);
     list.push({
       x: r + Math.random() * (W - 2 * r),
-      y: r + Math.random() * spanY,
+      y: yBase + Math.random() * Math.max(r, yMax - yBase),
       r,
-      vx: (Math.random() - 0.5) * 1.2,
-      vy: Math.random() * 1.2,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: 0,
       mass: r * r,
       invMass: 1 / (r * r),
       popped: false,
@@ -508,7 +524,32 @@ function initBubbles() {
     resolveCollisions();
     clampBubblesToBounds();
   }
-  startPhysics();
+  if (animate) {
+    startPhysics();
+  } else {
+    settleBubbles();
+    drawBubbles();
+  }
+}
+
+/** 进场前同步跑物理至静止，避免首屏可见下落 + rAF 连帧卡顿 */
+function settleBubbles(maxSteps = 360) {
+  for (let i = 0; i < maxSteps; i++) {
+    if (!stepPhysics()) break;
+  }
+  clampBubblesToBounds();
+  for (let k = 0; k < 8; k++) {
+    resolveCollisions();
+    clampBubblesToBounds();
+  }
+  for (const b of bubbleList) {
+    if (b.popped) continue;
+    b.vx = 0;
+    b.vy = 0;
+    b.resting = true;
+    b.squash = 0;
+    b.squashV = 0;
+  }
 }
 
 function resetBubbles() {
@@ -517,7 +558,7 @@ function resetBubbles() {
   stains = [];
   stopAllAnim();
   bubblesReady = false;
-  initBubbles();
+  initBubbles({ animate: false });
 }
 
 // ── 物理引擎 ──────────────────────────────────────────────────────────────
@@ -1170,7 +1211,7 @@ function switchCount(key) {
   stains = [];
   stopAllAnim();
   bubblesReady = false;
-  nextTick(() => initBubbles());
+  nextTick(() => initBubbles({ animate: false }));
 }
 
 // ── 返回 ──────────────────────────────────────────────────────────────────
