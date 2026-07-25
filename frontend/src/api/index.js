@@ -68,6 +68,10 @@ export const aboutApi = {
   update: d => put('/about', d)
 };
 
+export const islandApi = {
+  get: () => get('/island'),
+};
+
 export const consultantApi = {
   list: () => get('/consultants'),
   get: id => get(`/consultants/${id}`),

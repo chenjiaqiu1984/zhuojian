@@ -7,6 +7,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [vue()],
     base: '/admin/',
-    server: { port: 5174, proxy: { '/api': target, '/uploads': target } }
+    server: { port: 5174, proxy: { '/api': target, '/uploads': target, '/static': target } }
   };
 });
