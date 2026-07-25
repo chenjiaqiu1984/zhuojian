@@ -1,0 +1,745 @@
+<template>
+  <view class="island-map" :style="{ height: viewH + 'px' }">
+    <view class="island-brand">
+      <image class="island-brand-logo" src="/static/logo.jpg" mode="aspectFit" />
+    </view>
+    <view v-if="showBack" class="island-toolbar">
+      <view class="island-chip" @click="emit('navigate', '/pages/about/index')">
+        <text class="island-chip-text">关于我们</text>
+      </view>
+      <view class="island-chip" @click="emit('back')">
+        <text class="island-chip-text">进入主页</text>
+      </view>
+    </view>
+
+    <!-- 一屏等比缩放，不滚动 -->
+    <view class="island-stage">
+      <view
+        class="island-canvas"
+        :style="{
+          width: imgW + 'px',
+          height: imgH + 'px',
+          left: offsetX + 'px',
+          top: offsetY + 'px',
+        }"
+      >
+        <image
+          class="island-img"
+          :src="imgSrc"
+          mode="scaleToFill"
+          :style="{ width: imgW + 'px', height: imgH + 'px' }"
+          @error="onImgError"
+        />
+
+        <view
+          v-for="spot in spots"
+          :key="spot.id"
+          class="hotspot"
+          :class="{ 'hotspot--active': activeId === spot.id }"
+          :style="spotHitStyle(spot)"
+          @click.stop="onSpot(spot)"
+        >
+          <view class="marker">
+            <view class="marker-ring" />
+            <view class="marker-core" />
+          </view>
+          <view
+            class="marker-label"
+            :class="'marker-label--' + (spot.labelSide || 'bottom')"
+          >
+            <text class="marker-label-text">{{ spot.name }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 功能介绍弹窗 -->
+    <view v-if="panelSpot" class="intro-mask" @click="closePanel">
+      <view class="intro-card" @click.stop>
+        <text class="intro-place">{{ panelSpot.place }} · {{ panelSpot.tip }}</text>
+        <text class="intro-name">{{ panelSpot.name }}</text>
+        <view class="intro-line" />
+        <text class="intro-desc">{{ panelSpot.desc }}</text>
+        <view class="intro-actions">
+          <view class="intro-btn intro-btn--ghost" @click="closePanel">
+            <text class="intro-btn-ghost-text">再逛逛</text>
+          </view>
+          <view class="intro-btn intro-btn--primary" @click="goPanel">
+            <text class="intro-btn-primary-text">{{ panelSpot.cta }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 进入：雨雾淡出，显出心镜岛 -->
+    <view class="enter-mist" :class="{ 'enter-mist--hide': !enterMist }">
+      <view class="enter-mist-layer enter-mist-layer--a" />
+      <view class="enter-mist-layer enter-mist-layer--b" />
+      <view class="enter-rain">
+        <view v-for="n in 12" :key="n" class="rain-drop" :style="rainStyle(n)" />
+      </view>
+    </view>
+
+    <view class="cloud-mask" :class="{ 'cloud-mask--show': cloudShow }">
+      <view class="cloud cloud-a" />
+      <view class="cloud cloud-b" />
+      <view class="cloud cloud-c" />
+      <view class="cloud cloud-d" />
+    </view>
+
+    <!-- 备案号叠在图上 -->
+    <view v-if="showBack" class="island-beian">
+      <view class="island-beian-pill">
+        <text class="island-beian-text" @click.stop="emit('icp')">苏ICP备2026043098号</text>
+        <text class="island-beian-sep">·</text>
+        <image class="island-beian-icon" src="/static/beian.png" mode="aspectFit" @click.stop="emit('beian')" />
+        <text class="island-beian-text" @click.stop="emit('beian')">苏公网安备32010402002563号</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import { ref, onMounted, watch } from 'vue';
+import { getWindowSize } from '../utils/windowSize';
+
+const props = defineProps({
+  height: { type: Number, default: 0 },
+  showBack: { type: Boolean, default: false },
+});
+
+const emit = defineEmits(['navigate', 'back', 'icp', 'beian']);
+
+/** 竖版原图宽/高 */
+const IMG_RATIO = 768 / 1376;
+const IMG_JPG = '/static/island/island-mist.jpg';
+
+/**
+ * cy 相对原版整体下移约 5%
+ * name：岛上雅称；tip：功能名；desc：介绍；cta：按钮文案
+ */
+const spots = [
+  {
+    id: 'cliff',
+    name: '正念呼吸',
+    tip: '正念呼吸',
+    place: '云雾栈道',
+    desc: '云雾缭绕的崖边栈道，风轻轻拂过。跟随引导做正念呼吸练习，让呼吸把心带回此刻。',
+    cta: '去呼吸',
+    cx: 72, cy: 15, hit: 10, labelSide: 'bottom',
+    url: '/pages/breathing/select',
+  },
+  {
+    id: 'lighthouse',
+    name: '预约咨询师',
+    tip: '预约咨询师',
+    place: '云中灯塔',
+    desc: '灯塔暖光为你照路。在这里浏览咨询师资料、预约时段，开启一段被看见的专业陪伴。',
+    cta: '去预约',
+    cx: 42, cy: 24, hit: 10, labelSide: 'bottom',
+    url: '/pages/consultants/index',
+  },
+  {
+    id: 'stairs',
+    name: '学习培训',
+    tip: '学习培训',
+    place: '石阶小径',
+    desc: '灯塔下的石阶拾级而上。查看考级报名与培训课程，一步一步走向专业成长。',
+    cta: '去学习',
+    cx: 59, cy: 37, hit: 9, labelSide: 'right',
+    url: '/pages/learning/index',
+  },
+  {
+    id: 'pavilion',
+    name: '咨询工具',
+    tip: '咨询工具',
+    place: '湖畔沙滩',
+    desc: '湖边柔软的沙岸，适合静静坐下来。打开情绪日记、CBT、梦工作等练习工具，慢慢整理内心。',
+    cta: '去练习',
+    cx: 52, cy: 61, hit: 10, labelSide: 'bottom',
+    url: '/pages/homework/index',
+  },
+  {
+    id: 'cave',
+    name: '探索自己',
+    tip: '心理测评',
+    place: '湖心倒影',
+    desc: '望向湖心的倒影，水面映出真实的你。完成专业心理测评，温柔地认识此刻的身心状态。',
+    cta: '去测评',
+    cx: 30, cy: 60, hit: 8, labelSide: 'bottom',
+    url: '/pages/assessment/index',
+  },
+  {
+    id: 'bridge',
+    name: '咨询活动',
+    tip: '咨询活动',
+    place: '湖心石桥',
+    desc: '石桥连起湖的两岸，也连起人与人。报名心理健康主题活动，与伙伴一起探索与成长。',
+    cta: '去报名',
+    cx: 40, cy: 48, hit: 7, labelSide: 'top',
+    url: '/pages/activity/index',
+  },
+  {
+    id: 'mirror',
+    name: '心理图卡',
+    tip: '心理图卡',
+    place: '立镜之林',
+    desc: '林间立着一面椭圆古镜。抽取心理图卡，让图像替你说话，看见内心未曾言说的风景。',
+    cta: '去抽卡',
+    cx: 78, cy: 56, hit: 10, labelSide: 'bottom',
+    url: '/pages/ohcard/index',
+  },
+  {
+    id: 'garden',
+    name: '曼达拉',
+    tip: '曼达拉',
+    place: '花间草地',
+    desc: '镜旁花开成片的草地，适合静心创作。用色彩画出曼达拉，在一圈一圈中找回平静与专注。',
+    cta: '去创作',
+    cx: 88, cy: 68, hit: 9, labelSide: 'left',
+    url: '/pages/mandala/index',
+  },
+  {
+    id: 'beast',
+    name: '情绪怪兽',
+    tip: '情绪怪兽',
+    place: '瀑布洞窟',
+    desc: '瀑布后的山洞里，住着你的情绪小怪兽。创建、喂养并陪伴它，学会看见情绪、与它和解。',
+    cta: '去看看',
+    cx: 26, cy: 75, hit: 11, labelSide: 'bottom',
+    url: '/pages/monster/index',
+  },
+  {
+    id: 'cabin',
+    name: '个人中心',
+    tip: '个人中心',
+    place: '岸边木屋',
+    desc: '岸边木屋灯火温暖，像属于你的小屋。查看预约、订单、券码与成就，安顿好自己的日常。',
+    cta: '进入',
+    cx: 72, cy: 84, hit: 10, labelSide: 'top',
+    url: '/pages/profile/index',
+  },
+  {
+    id: 'pier',
+    name: '解压捏捏乐',
+    tip: '解压捏捏乐',
+    place: '湖畔栈桥',
+    desc: '伸向湖面的小栈桥，适合歇一歇脚。玩玩捏捏乐，指尖一点戳破烦恼，让压力随泡泡散开。',
+    cta: '去解压',
+    cx: 48, cy: 91, hit: 9, labelSide: 'top',
+    url: '/pages/squeeze/index',
+  },
+];
+
+const cloudShow = ref(false);
+const enterMist = ref(true);
+const activeId = ref('');
+const viewH = ref(500);
+const viewW = ref(375);
+const imgW = ref(375);
+const imgH = ref(Math.round(375 / IMG_RATIO));
+const offsetX = ref(0);
+const offsetY = ref(0);
+const navigating = ref(false);
+const imgSrc = ref(IMG_JPG);
+const panelSpot = ref(null);
+
+function rainStyle(n) {
+  const left = 4 + (n * 7.5) % 92;
+  const delay = ((n * 0.13) % 1.2).toFixed(2);
+  const dur = (0.9 + (n % 5) * 0.12).toFixed(2);
+  return {
+    left: `${left}%`,
+    animationDelay: `${delay}s`,
+    animationDuration: `${dur}s`,
+  };
+}
+
+function layout() {
+  const { windowWidth, windowHeight } = getWindowSize();
+  const winW = windowWidth || 375;
+  const h = props.height > 0 ? props.height : (windowHeight || 600);
+  viewW.value = winW;
+  viewH.value = h;
+
+  // contain：整图缩进一屏，不裁切、不滚动
+  let w = winW;
+  let ih = w / IMG_RATIO;
+  if (ih > h) {
+    ih = h;
+    w = ih * IMG_RATIO;
+  }
+  imgW.value = Math.round(w);
+  imgH.value = Math.round(ih);
+  offsetX.value = Math.round((winW - w) / 2);
+  offsetY.value = Math.round((h - ih) / 2);
+}
+
+function onImgError() {
+  uni.showToast({ title: '岛图加载失败', icon: 'none' });
+}
+
+function spotHitStyle(spot) {
+  const hit = spot.hit || 10;
+  return {
+    left: `${spot.cx - hit}%`,
+    top: `${spot.cy - hit}%`,
+    width: `${hit * 2}%`,
+    height: `${hit * 2}%`,
+  };
+}
+
+function onSpot(spot) {
+  if (navigating.value || enterMist.value) return;
+  activeId.value = spot.id;
+  panelSpot.value = spot;
+}
+
+function closePanel() {
+  panelSpot.value = null;
+  activeId.value = '';
+}
+
+function goPanel() {
+  const spot = panelSpot.value;
+  if (!spot || navigating.value) return;
+  navigating.value = true;
+  panelSpot.value = null;
+  cloudShow.value = true;
+  // 云雾遮满后再跳转
+  setTimeout(() => {
+    emit('navigate', spot.url);
+    setTimeout(() => {
+      cloudShow.value = false;
+      activeId.value = '';
+      navigating.value = false;
+    }, 400);
+  }, 720);
+}
+
+function playEnterMist() {
+  enterMist.value = true;
+  setTimeout(() => {
+    enterMist.value = false;
+  }, 1400);
+}
+
+onMounted(() => {
+  layout();
+  playEnterMist();
+});
+watch(() => props.height, layout);
+</script>
+
+<style scoped lang="scss">
+.island-map {
+  position: relative;
+  width: 100%;
+  background: #d7e8ef;
+  overflow: hidden;
+}
+
+.island-brand {
+  position: absolute;
+  top: 12rpx;
+  left: 20rpx;
+  z-index: 10;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 22rpx;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4rpx 12rpx rgba(28, 42, 39, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.island-brand-logo {
+  width: 82rpx;
+  height: 82rpx;
+}
+
+.island-toolbar {
+  position: absolute;
+  top: 16rpx;
+  right: 20rpx;
+  z-index: 10;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12rpx;
+}
+.island-chip {
+  padding: 8rpx 20rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1rpx solid rgba(255, 255, 255, 0.65);
+  &:active { opacity: 0.75; }
+}
+.island-chip-text {
+  font-size: 22rpx;
+  color: rgba(28, 42, 39, 0.82);
+  letter-spacing: 0.08em;
+  text-shadow: 0 1rpx 2rpx rgba(255, 255, 255, 0.55);
+}
+
+.island-beian {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16rpx;
+  z-index: 10;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16rpx;
+  pointer-events: none;
+}
+.island-beian-pill {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  max-width: 100%;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4rpx 14rpx rgba(28, 42, 39, 0.12);
+}
+.island-beian-icon {
+  width: 22rpx;
+  height: 22rpx;
+  flex-shrink: 0;
+}
+.island-beian-sep {
+  font-size: 18rpx;
+  color: rgba(28, 42, 39, 0.45);
+  flex-shrink: 0;
+}
+.island-beian-text {
+  font-size: 18rpx;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #1c2a27;
+  white-space: nowrap;
+  font-family: $zj-font-serif;
+  &:active { opacity: 0.7; }
+}
+
+.island-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.island-canvas {
+  position: absolute;
+  overflow: hidden;
+}
+
+.island-img {
+  display: block;
+  vertical-align: top;
+}
+
+.hotspot {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker {
+  position: relative;
+  width: 20rpx;
+  height: 20rpx;
+  z-index: 2;
+}
+
+.marker-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12rpx;
+  height: 12rpx;
+  margin: -6rpx 0 0 -6rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+  border: 2rpx solid rgba(74, 138, 122, 0.7);
+  box-shadow: 0 2rpx 8rpx rgba(28, 42, 39, 0.18);
+}
+
+.marker-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22rpx;
+  height: 22rpx;
+  margin: -11rpx 0 0 -11rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(255, 255, 255, 0.38);
+  animation: marker-breathe 2.4s ease-in-out infinite;
+}
+
+.hotspot--active .marker-core {
+  background: rgba(74, 138, 122, 0.8);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+.marker-label {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4rpx 14rpx rgba(28, 42, 39, 0.12);
+  backdrop-filter: blur(6px);
+}
+.marker-label-text {
+  font-size: 22rpx;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1c2a27;
+  white-space: nowrap;
+  font-family: $zj-font-serif;
+}
+
+.marker-label--bottom {
+  top: calc(50% + 18rpx);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.marker-label--top {
+  bottom: calc(50% + 18rpx);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.marker-label--left {
+  right: calc(50% + 18rpx);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.marker-label--right {
+  left: calc(50% + 18rpx);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@keyframes marker-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.7); opacity: 0.12; }
+}
+
+/* 介绍弹窗 */
+.intro-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: rgba(26, 46, 53, 0.38);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 36rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.intro-card {
+  width: 100%;
+  max-width: 640rpx;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 28rpx;
+  padding: 40rpx 36rpx 32rpx;
+  box-shadow: 0 16rpx 48rpx rgba(28, 42, 39, 0.16);
+  box-sizing: border-box;
+}
+
+.intro-place {
+  display: block;
+  font-size: 20rpx;
+  letter-spacing: 0.28em;
+  color: #9bbcb4;
+  margin-bottom: 12rpx;
+}
+
+.intro-name {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #1c2a27;
+  letter-spacing: 0.16em;
+  font-family: $zj-font-serif;
+  margin-bottom: 20rpx;
+}
+
+.intro-line {
+  width: 48rpx;
+  height: 3rpx;
+  background: linear-gradient(90deg, #4a8a7a, transparent);
+  margin-bottom: 22rpx;
+}
+
+.intro-desc {
+  display: block;
+  font-size: 26rpx;
+  line-height: 1.75;
+  color: #4a5751;
+  letter-spacing: 0.04em;
+  margin-bottom: 36rpx;
+}
+
+.intro-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.intro-btn {
+  flex: 1;
+  text-align: center;
+  padding: 22rpx 0;
+  border-radius: 44rpx;
+  &:active { opacity: 0.88; }
+}
+
+.intro-btn--ghost {
+  background: #f5f7f6;
+  border: 1rpx solid #e8efed;
+}
+.intro-btn-ghost-text {
+  font-size: 26rpx;
+  color: #617870;
+  letter-spacing: 0.08em;
+}
+
+.intro-btn--primary {
+  background: linear-gradient(135deg, #4a8a7a, #3a6e80);
+  box-shadow: 0 8rpx 20rpx rgba(74, 138, 122, 0.28);
+}
+.intro-btn-primary-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.1em;
+}
+
+.cloud-mask {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  overflow: hidden;
+}
+.cloud-mask--show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cloud {
+  position: absolute;
+  width: 160%;
+  height: 60%;
+  border-radius: 50%;
+  filter: blur(32px);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(197, 221, 232, 0.72) 42%, transparent 72%);
+}
+.cloud-a {
+  top: -18%;
+  left: -55%;
+  animation: drift-a 0.85s ease-in forwards;
+}
+.cloud-b {
+  top: 18%;
+  left: -60%;
+  height: 65%;
+  animation: drift-b 0.85s ease-in forwards;
+}
+.cloud-c {
+  bottom: -18%;
+  left: -50%;
+  animation: drift-c 0.85s ease-in forwards;
+}
+.cloud-d {
+  top: 8%;
+  left: -70%;
+  height: 70%;
+  opacity: 0.85;
+  animation: drift-b 0.95s ease-in forwards;
+}
+
+@keyframes drift-a {
+  from { transform: translateX(0); }
+  to { transform: translateX(70%); }
+}
+@keyframes drift-b {
+  from { transform: translateX(0); }
+  to { transform: translateX(85%); }
+}
+@keyframes drift-c {
+  from { transform: translateX(0); }
+  to { transform: translateX(75%); }
+}
+
+/* 进入雨雾 */
+.enter-mist {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 1.1s ease;
+}
+.enter-mist--hide {
+  opacity: 0;
+}
+.enter-mist-layer {
+  position: absolute;
+  inset: -10%;
+  background: radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.82) 0%, rgba(215, 232, 239, 0.75) 40%, rgba(197, 221, 232, 0.55) 70%, transparent 100%);
+  filter: blur(18px);
+}
+.enter-mist-layer--a {
+  animation: mist-drift 1.4s ease-out forwards;
+}
+.enter-mist-layer--b {
+  opacity: 0.7;
+  transform: scale(1.1);
+  animation: mist-drift-rev 1.4s ease-out forwards;
+}
+.enter-rain {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.rain-drop {
+  position: absolute;
+  top: -12%;
+  width: 2rpx;
+  height: 56rpx;
+  border-radius: 2rpx;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation-name: rain-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes rain-fall {
+  from { transform: translateY(0); opacity: 0.55; }
+  to { transform: translateY(120vh); opacity: 0; }
+}
+@keyframes mist-drift {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to { transform: translateY(-8%) scale(1.05); opacity: 0.15; }
+}
+@keyframes mist-drift-rev {
+  from { transform: translateX(0) scale(1.05); opacity: 0.85; }
+  to { transform: translateX(6%) scale(1.12); opacity: 0.1; }
+}
+</style>

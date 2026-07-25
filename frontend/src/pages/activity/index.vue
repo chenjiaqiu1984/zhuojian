@@ -2,14 +2,13 @@
   <view class="page">
 
     <!-- Hero -->
-    <view class="hero">
-      <view class="hero-glow" />
+    <IslandHero src="/static/island/hero-activity.jpg" custom-class="hero">
       <view class="hero-content">
         <text class="hero-eyebrow">活动中心</text>
         <text class="hero-title">参与 · 成长</text>
         <text class="hero-sub">心理健康主题活动，陪你探索内心世界</text>
       </view>
-    </view>
+    </IslandHero>
 
     <!-- Loading -->
     <view v-if="loading" class="status-center">
@@ -86,6 +85,7 @@ import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { newsApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
+import IslandHero from '../../components/IslandHero.vue';
 
 // #ifndef H5
 defineOptions({
@@ -219,10 +219,8 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
 }
 
 /* Hero (mirrors assessment/index) */
-.hero {
-  position: relative;
+:deep(.hero) {
   padding: 88rpx 48rpx 72rpx;
-  background: linear-gradient(135deg, $teal 0%, $teal-dark 100%);
 }
 .hero-glow {
   position: absolute;

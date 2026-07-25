@@ -2,14 +2,13 @@
   <view class="page">
 
     <!-- Hero -->
-    <view class="hero">
-      <view class="hero-glow" />
+    <IslandHero src="/static/island/hero-consultants.jpg" custom-class="hero">
       <view class="hero-content">
         <text class="hero-eyebrow">咨询师团队</text>
         <text class="hero-title">专业陪伴</text>
         <text class="hero-sub">每一位咨询师都经过严格认证，用专业守护你的心理健康</text>
       </view>
-    </view>
+    </IslandHero>
 
     <!-- Loading -->
     <view v-if="loading" class="status-center">
@@ -99,6 +98,7 @@ import { ref, onMounted } from 'vue';
 import { consultantApi } from '../../api/index';
 import { SERVER } from '../../config';
 import { track } from '../../utils/track';
+import IslandHero from '../../components/IslandHero.vue';
 
 const consultants = ref([]);
 const loading = ref(true);
@@ -145,11 +145,10 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
 }
 
 /* Hero */
-.hero {
-  position: relative;
+:deep(.hero) {
   padding: 88rpx 48rpx 72rpx;
-  background: linear-gradient(135deg, $teal 0%, $teal-dark 100%);
 }
+.hero-glow { display: none; }
 .hero-glow {
   position: absolute;
   top: -160rpx;

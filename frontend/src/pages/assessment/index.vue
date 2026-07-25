@@ -2,16 +2,14 @@
   <view class="page">
 
     <!-- Hero -->
-    <view class="hero">
-      <view class="hero-glow" />
-      <view class="hero-glow hero-glow--b" />
+    <IslandHero src="/static/island/hero-ohcard.jpg" custom-class="hero">
       <view class="hero-content">
         <text class="hero-eyebrow">心理测评中心</text>
         <text class="hero-title">了解自己</text>
-        <text class="hero-sub">让测评成为认识自己的镜子</text>
+        <text class="hero-sub">望向湖心倒影，温柔地认识此刻的你</text>
       </view>
       <view class="hero-arc" />
-    </view>
+    </IslandHero>
 
     <!-- Recommended -->
     <view v-if="topScales.length" class="section">
@@ -167,6 +165,7 @@ import { assessmentApi } from '../../api/index.js';
 import { useUserStore } from '../../store/user.js';
 import { track } from '../../utils/track.js';
 import ZjIcon from '../../components/ZjIcon.vue';
+import IslandHero from '../../components/IslandHero.vue';
 
 // #ifndef H5
 defineOptions({
@@ -297,10 +296,8 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
 }
 
 /* ── Hero ─────────────────────────────────────────────────────── */
-.hero {
-  position: relative;
+:deep(.hero) {
   padding: 88rpx 48rpx 96rpx;
-  background: linear-gradient(140deg, $teal 0%, $teal-dark 100%);
 }
 
 .hero-glow {
@@ -348,6 +345,7 @@ $shadow-card: 0 4rpx 24rpx rgba(28,42,39,0.06);
   height: 48rpx;
   background: $bg;
   border-radius: 48rpx 48rpx 0 0;
+  z-index: 3;
 }
 
 /* ── Section header ───────────────────────────────────────────── */

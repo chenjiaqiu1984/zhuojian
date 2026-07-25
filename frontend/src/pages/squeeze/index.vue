@@ -15,8 +15,7 @@
     </view>
 
     <!-- 页头卡片 -->
-    <view class="hero-card">
-      <view class="hero-glow" />
+    <IslandHero src="/static/island/hero-squeeze.jpg" custom-class="hero-card">
       <text class="hero-emoji">🫧</text>
       <text class="hero-title">解压泡泡</text>
       <text class="hero-desc">五彩泡泡随机铺开，手指戳破每一个</text>
@@ -36,7 +35,7 @@
           <text class="stat-label">连击</text>
         </view>
       </view>
-    </view>
+    </IslandHero>
 
     <!-- Canvas 区域 -->
     <view class="canvas-wrap">
@@ -109,6 +108,7 @@ import { getViewportHeight, bindViewportHeight } from '@/utils/viewport';
 import { raf } from '@/utils/raf';
 import { track } from '@/utils/track';
 import { relaxApi } from '@/api';
+import IslandHero from '@/components/IslandHero.vue';
 
 // #ifndef H5
 defineOptions({
@@ -1322,13 +1322,11 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.06);
 .mode-btn-arrow { font-size: 26rpx; color: $muted; }
 
 /* ── 页头卡片 ── */
-.hero-card {
-  position: relative;
+:deep(.hero-card) {
   margin: 20rpx 24rpx 0;
   border-radius: $card-r;
-  background: linear-gradient(135deg, $purple 0%, #9B6EC0 100%);
   padding: 32rpx 32rpx 28rpx;
-  box-shadow: 0 8rpx 32rpx rgba(123,78,158,0.28);
+  box-shadow: 0 8rpx 32rpx rgba(74, 138, 122, 0.22);
 }
 .hero-glow {
   display: none;

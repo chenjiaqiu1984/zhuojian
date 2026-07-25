@@ -1,19 +1,29 @@
 <template>
-  <view class="home">
+  <view class="home" :class="{ 'home--island': showIsland }">
+    <!-- 心镜岛（保留底部 Tab） -->
+    <view v-if="showIsland" class="island-wrap">
+      <IslandMap
+        :height="islandH"
+        show-back
+        @navigate="onIslandNav"
+        @back="closeIsland"
+        @icp="openIcp"
+        @beian="openBeian"
+      />
+    </view>
 
-    <!-- Hero -->
-    <view class="hero">
-      <view class="hero-glow" />
+    <template v-else>
+    <!-- Hero：心镜岛 -->
+    <view class="hero" @click="openIsland()">
+      <image class="hero-bg" src="/static/island/entry.jpg" mode="aspectFill" />
+      <view class="hero-mask" />
       <view class="hero-content">
-        <text class="hero-eyebrow">专业心理服务平台</text>
-        <text class="hero-title">走进内心<text class="hero-title-em">，找到答案</text></text>
-        <text class="hero-sub">一对一咨询 · 心理测评 · 自助工具</text>
+        <text class="hero-eyebrow">艺术疗愈地图</text>
+        <text class="hero-title">心镜岛</text>
+        <text class="hero-sub">点地标探索功能 · 走进内心风景</text>
         <view class="hero-actions">
-          <view class="hero-btn-primary" @click="nav('/pages/consultants/index')">
-            <text class="hero-btn-primary-text">预约咨询师</text>
-          </view>
-          <view class="hero-btn-ghost" @click="nav('/pages/assessment/index')">
-            <text class="hero-btn-ghost-text">心理测评</text>
+          <view class="hero-btn-primary" @click.stop="openIsland()">
+            <text class="hero-btn-primary-text">进入心镜岛</text>
           </view>
         </view>
       </view>
@@ -103,16 +113,20 @@
         <text class="icp-text">苏公网安备32010402002563号</text>
       </view>
     </view>
+    </template>
 
     <TermsConfirmModal ref="termsModalRef" />
   </view>
 </template>
 
 <script setup>
-import {ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { consultantApi, newsApi, aboutApi } from '../../api/index';
 import { SERVER } from '../../config';
 import TermsConfirmModal from '../../components/TermsConfirmModal.vue';
+import IslandMap from '../../components/IslandMap.vue';
+import { getWindowSize } from '../../utils/windowSize';
 
 // #ifndef H5
 defineOptions({
@@ -130,6 +144,8 @@ const consultants = ref([]);
 const news = ref([]);
 const tickerItems = ref([]);
 const termsModalRef = ref(null);
+const showIsland = ref(true);
+const islandH = ref(500);
 
 const menuGroups = ref([
   {
@@ -161,7 +177,51 @@ const menuGroups = ref([
   },
 ]);
 
+function calcIslandH() {
+  const { windowHeight } = getWindowSize();
+  islandH.value = Math.max(320, windowHeight || 600);
+}
+
+function openIsland() {
+  calcIslandH();
+  showIsland.value = true;
+  uni.setNavigationBarTitle({ title: '心镜岛' });
+  // 展开后再量一次，避免首次高度为 0
+  setTimeout(() => calcIslandH(), 50);
+}
+
+function closeIsland() {
+  showIsland.value = false;
+  uni.setNavigationBarTitle({ title: '卓见心理' });
+}
+
+function onIslandNav(url) {
+  if (TAB_PATHS.has(url)) {
+    if (url === '/pages/index/index') return;
+    uni.switchTab({ url });
+  } else {
+    uni.navigateTo({ url });
+  }
+}
+
+onShow(() => {
+  try {
+    if (uni.getStorageSync('zj_open_island') === '1') {
+      uni.removeStorageSync('zj_open_island');
+      openIsland();
+    }
+  } catch (e) {}
+  if (showIsland.value) {
+    uni.setNavigationBarTitle({ title: '心镜岛' });
+  }
+});
+
 onMounted(async () => {
+  calcIslandH();
+  if (showIsland.value) {
+    uni.setNavigationBarTitle({ title: '心镜岛' });
+    setTimeout(() => calcIslandH(), 50);
+  }
   consultantApi.list().then(cs => { consultants.value = (cs.items ?? cs).slice(0, 5); }).catch(() => {});
   newsApi.list({ limit: 5 }).then(ns => { news.value = ns.items ?? ns; }).catch(() => {});
   aboutApi.get().then(cfg => {
@@ -224,48 +284,76 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   background: $bg;
   padding-bottom: 80rpx;
 }
+.home--island {
+  min-height: 0;
+  padding-bottom: 0;
+  background: #d7e8ef;
+  overflow: hidden;
+}
 
-/* ── Hero ── */
+.island-wrap {
+  width: 100%;
+  background: #d7e8ef;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Hero：心镜岛 ── */
 .hero {
   position: relative;
-  padding: 96rpx 48rpx 80rpx;
-  background: linear-gradient(135deg, $teal 0%, $teal-dark 100%);
+  overflow: hidden;
+  min-height: 420rpx;
+  padding: 72rpx 48rpx 64rpx;
+  background: #3a6e80;
+  &:active { opacity: 0.98; }
 }
-.hero-glow {
-  display: none;
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+.hero-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    165deg,
+    rgba(26, 46, 53, 0.35) 0%,
+    rgba(58, 110, 128, 0.42) 48%,
+    rgba(26, 46, 53, 0.52) 100%
+  );
 }
 .hero-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 .hero-eyebrow {
   display: block;
   font-size: 20rpx;
   letter-spacing: 0.32em;
-  color: rgba(255,255,255,0.72);
-  margin-bottom: 28rpx;
+  color: rgba(255,255,255,0.78);
+  margin-bottom: 20rpx;
 }
 .hero-title {
   display: block;
-  font-size: 60rpx;
+  font-size: 64rpx;
   font-weight: 700;
   color: #fff;
-  letter-spacing: 0.04em;
-  line-height: 1.25;
-  margin-bottom: 24rpx;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  margin-bottom: 16rpx;
   font-family: $zj-font-display;
-}
-.hero-title-em {
-  color: rgba(255,255,255,0.78);
-  font-weight: 500;
+  text-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.18);
 }
 .hero-sub {
   display: block;
-  font-size: 25rpx;
-  color: rgba(255,255,255,0.80);
-  line-height: 1.8;
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.88);
+  line-height: 1.7;
   letter-spacing: 0.06em;
-  margin-bottom: 48rpx;
+  margin-bottom: 40rpx;
 }
 .hero-actions {
   display: flex;
@@ -273,28 +361,17 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   align-items: center;
 }
 .hero-btn-primary {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.94);
   border-radius: 44rpx;
   padding: 20rpx 48rpx;
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.12);
   &:active { opacity: 0.90; }
 }
 .hero-btn-primary-text {
   font-size: 28rpx;
   font-weight: 700;
   color: $teal-dark;
-  letter-spacing: 0.03em;
-}
-.hero-btn-ghost {
-  border: 2rpx solid rgba(255,255,255,0.58);
-  border-radius: 44rpx;
-  padding: 18rpx 40rpx;
-  &:active { background: rgba(255,255,255,0.10); }
-}
-.hero-btn-ghost-text {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: rgba(255,255,255,0.90);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.08em;
 }
 
 /* ── 轮播 ── */

@@ -3,7 +3,7 @@
     "mp-html": "@/components/mp-html/mp-html.vue"
   },
   "pages": [
-    { "path": "pages/index/index",         "style": { "navigationBarTitleText": "卓见心理" } },
+    { "path": "pages/index/index",         "style": { "navigationBarTitleText": "心镜岛" } },
     { "path": "pages/consultants/index",   "style": { "navigationBarTitleText": "预约咨询师" } },
     { "path": "pages/consultants/detail",  "style": { "navigationBarTitleText": "咨询师详情" } },
     { "path": "pages/consultants/schedule","style": { "navigationBarTitleText": "排班管理" } },
@@ -139,6 +139,20 @@
       "pages": [
         { "path": "index", "style": { "navigationBarTitleText": "树洞" } }
       ]
+    },
+    {
+      "root": "pages/island",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationBarTitleText": "心镜岛",
+            "navigationBarBackgroundColor": "#4A8A7A",
+            "navigationBarTextStyle": "white",
+            "backgroundColor": "#D7E8EF"
+          }
+        }
+      ]
     }
   ],
   "globalStyle": {
@@ -153,7 +167,7 @@
     "borderStyle": "white",
     "backgroundColor": "#fff",
     "list": [
-      { "pagePath": "pages/index/index",      "text": "首页",    "iconPath": "static/icons/home.png",            "selectedIconPath": "static/icons/home-active.png" },
+      { "pagePath": "pages/index/index",      "text": "心镜岛",  "iconPath": "static/icons/home.png",            "selectedIconPath": "static/icons/home-active.png" },
       { "pagePath": "pages/consultants/index","text": "预约咨询师",  "iconPath": "static/icons/consultant.png",      "selectedIconPath": "static/icons/consultant-active.png" },
       { "pagePath": "pages/ohcard/index",     "text": "心理图卡","iconPath": "static/icons/card.png",            "selectedIconPath": "static/icons/card-active.png" },
       { "pagePath": "pages/assessment/index", "text": "测评",    "iconPath": "static/icons/news.png",            "selectedIconPath": "static/icons/news-active.png" },

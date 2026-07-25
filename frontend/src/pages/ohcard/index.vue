@@ -1,12 +1,12 @@
 <template>
   <view class="page">
-    <view class="hero">
+    <IslandHero src="/static/island/hero-assessment.jpg" custom-class="hero">
       <view class="hero-content">
         <text class="hero-eyebrow">心理投射工具</text>
         <text class="hero-title">图卡探索</text>
-        <text class="hero-sub">让图像成为语言，看见内心深处的声音</text>
+        <text class="hero-sub">林间立镜前，让图像成为语言</text>
       </view>
-    </view>
+    </IslandHero>
 
     <view class="content">
       <!-- 单卡牌组合 -->
@@ -106,6 +106,7 @@ import { track } from '../../utils/track';
 import { SERVER } from '../../config';
 import { ohcardApi } from '../../api/index';
 import ZjIcon from '../../components/ZjIcon.vue';
+import IslandHero from '../../components/IslandHero.vue';
 
 // #ifndef H5
 defineOptions({
@@ -256,9 +257,8 @@ onMounted(async () => {
 }
 
 /* ---- Hero ---- */
-.hero {
+:deep(.hero) {
   padding: 96rpx 48rpx 72rpx;
-  background: $zj-teal;
 }
 
 .hero-content {

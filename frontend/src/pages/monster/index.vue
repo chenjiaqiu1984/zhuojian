@@ -1,15 +1,13 @@
 <template>
   <view class="page">
     <!-- Hero -->
-    <view class="hero">
-      <view class="hero-glow" />
-      <view class="hero-blob" />
+    <IslandHero src="/static/island/hero-monster.jpg" custom-class="hero">
       <view class="hero-content">
         <text class="hero-eyebrow">情绪探索</text>
         <text class="hero-title">怪兽小屋</text>
         <text class="hero-sub">画出内心的小怪兽，每天陪它慢慢长大</text>
       </view>
-    </view>
+    </IslandHero>
 
     <!-- 小屋房间背景装饰 -->
     <view class="room-scene">
@@ -143,6 +141,7 @@ import ZjIcon from '../../components/ZjIcon.vue';
 import MonsterView from '../../components/MonsterView.vue';
 import { parseParts } from '@/utils/monsterParts';
 import { track } from '@/utils/track';
+import IslandHero from '../../components/IslandHero.vue';
 
 const store = useUserStore();
 const monsters = ref([]);
@@ -280,10 +279,8 @@ $white: #FFFFFF;
 }
 
 /* Hero */
-.hero {
-  position: relative;
+:deep(.hero) {
   padding: 96rpx 48rpx 80rpx;
-  background: linear-gradient(155deg, #7B4E9E 0%, #4A2870 100%);
 }
 .hero-glow {
   display: none;

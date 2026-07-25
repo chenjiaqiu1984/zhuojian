@@ -2,16 +2,14 @@
   <view class="page">
 
     <!-- Hero -->
-    <view class="hero">
-      <view class="hero-glow" />
-      <view class="hero-glow hero-glow--b" />
+    <IslandHero src="/static/island/hero-learning.jpg" custom-class="hero">
       <view class="hero-content">
         <text class="hero-eyebrow">专业成长</text>
         <text class="hero-title">学习 · 进阶</text>
         <text class="hero-sub">考级报名与培训课程，助力专业技能提升</text>
       </view>
       <view class="hero-arc" />
-    </view>
+    </IslandHero>
 
     <!-- Tabs -->
     <view class="tabs-wrap">
@@ -97,6 +95,7 @@ defineOptions(createMpShare('learning/index'));
 import { ref, onMounted } from 'vue';
 import { newsApi } from '../../api/index';
 import { track } from '../../utils/track';
+import IslandHero from '../../components/IslandHero.vue';
 
 const TAB_LIST = [
   { value: '', label: '全部' },
@@ -194,10 +193,8 @@ $shadow:     0 4rpx 24rpx rgba(28,42,39,0.06);
 }
 
 /* ── Hero ─────────────────────────────────────────────────────── */
-.hero {
-  position: relative;
+:deep(.hero) {
   padding: 88rpx 48rpx 96rpx;
-  background: linear-gradient(140deg, $teal 0%, $teal-dark 100%);
 }
 
 .hero-glow {
@@ -261,6 +258,7 @@ $shadow:     0 4rpx 24rpx rgba(28,42,39,0.06);
   height: 48rpx;
   background: $bg;
   border-radius: 48rpx 48rpx 0 0;
+  z-index: 3;
 }
 
 /* ── Tabs ─────────────────────────────────────────────────────── */

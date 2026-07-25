@@ -1,9 +1,7 @@
 <template>
   <view class="page">
     <!-- Hero -->
-    <view class="hero">
-      <view class="hero-glow" />
-      <view class="hero-blob" />
+    <IslandHero src="/static/island/hero-mandala.jpg" custom-class="hero">
       <view class="hero-content">
         <text class="hero-eyebrow">正念冥想</text>
         <text class="hero-title">曼达拉</text>
@@ -19,7 +17,7 @@
         </view>
         <text class="music-label">{{ isPlaying ? '暂停音乐' : '播放音乐' }}</text>
       </view>
-    </view>
+    </IslandHero>
 
     <!-- 引导词 -->
     <view class="guide-section">
@@ -79,6 +77,7 @@ defineOptions(createMpShare('mandala/index'));
 import { ref, onMounted } from 'vue';
 import { track } from '@/utils/track';
 import ZjIcon from '../../components/ZjIcon.vue';
+import IslandHero from '../../components/IslandHero.vue';
 
 const guideItems = [
   {
@@ -143,10 +142,8 @@ $card-bg: #FFFFFF;
 }
 
 /* ── Hero ── */
-.hero {
-  position: relative;
+:deep(.hero) {
   padding: 96rpx 48rpx 88rpx;
-  background: linear-gradient(155deg, #3A7E8A 0%, #1E5870 100%);
 }
 
 .hero-glow {
@@ -193,7 +190,7 @@ $card-bg: #FFFFFF;
 /* 音乐按钮 */
 .music-btn {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   margin-top: 40rpx;
   display: flex;
   align-items: center;

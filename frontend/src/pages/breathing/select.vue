@@ -10,10 +10,12 @@
     </view>
 
     <!-- Hero -->
-    <view class="hero">
-      <text class="hero-title">选择你的练习</text>
-      <text class="hero-sub">根据当下状态，找到最适合的呼吸方式</text>
-    </view>
+    <IslandHero src="/static/island/hero-breathing.jpg" custom-class="hero">
+      <view>
+        <text class="hero-title">选择你的练习</text>
+        <text class="hero-sub">根据当下状态，找到最适合的呼吸方式</text>
+      </view>
+    </IslandHero>
 
     <!-- 呼吸课程 -->
     <view class="section">
@@ -96,6 +98,7 @@ import { ref, computed, onMounted } from 'vue';
 import ZjIcon from '../../components/ZjIcon.vue';
 import { track } from '@/utils/track';
 import { relaxApi } from '../../api/index';
+import IslandHero from '../../components/IslandHero.vue';
 
 // #ifndef H5
 defineOptions({
@@ -203,9 +206,8 @@ $card-r: 20rpx;
 }
 
 /* ── Hero ── */
-.hero {
+:deep(.hero) {
   padding: 48rpx 40rpx 36rpx;
-  background: linear-gradient(155deg, #3A7E8A 0%, #1E5870 100%);
 }
 .hero-title {
   display: block;

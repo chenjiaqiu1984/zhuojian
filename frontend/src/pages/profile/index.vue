@@ -6,16 +6,18 @@
       <view class="login-btn" @click="uni.navigateTo({url:'/pages/login/index'})">去登录</view>
     </view>
     <view v-else>
-      <view class="header">
-        <image class="avatar" :src="store.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" @click="changeAvatar()" />
-        <view class="header-info">
-          <text class="name">{{store.user?.name || store.user?.username || '未设置昵称'}}</text>
-          <view class="badges-row">
-            <view class="role-badge">{{roleLabel[store.user?.role] || '用户'}}</view>
-            <view v-if="store.isPending" class="pending-badge" @click="uni.navigateTo({url:'/pages/login/complete'})">待完善 →</view>
+      <IslandHero src="/static/island/hero-profile.jpg" custom-class="header">
+        <view class="header-inner">
+          <image class="avatar" :src="store.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" @click="changeAvatar()" />
+          <view class="header-info">
+            <text class="name">{{store.user?.name || store.user?.username || '未设置昵称'}}</text>
+            <view class="badges-row">
+              <view class="role-badge">{{roleLabel[store.user?.role] || '用户'}}</view>
+              <view v-if="store.isPending" class="pending-badge" @click="uni.navigateTo({url:'/pages/login/complete'})">待完善 →</view>
+            </view>
           </view>
         </view>
-      </view>
+      </IslandHero>
       <view class="menus">
         <view class="menu-item" v-for="m in menus" :key="m.label" @click="menuClick(m)">
           <ZjIcon class="menu-icon" :name="m.icon" :size="40" color="#4A8A7A" />
@@ -45,6 +47,7 @@ import { useUserStore } from '../../store/user';
 import { authApi, bookingApi, paymentApi } from '../../api/index';
 import { SERVER } from '../../config';
 import { track } from '../../utils/track';
+import IslandHero from '../../components/IslandHero.vue';
 
 const BASE_URL = SERVER;
 const store = useUserStore();
@@ -131,7 +134,15 @@ function logout() {
 .empty-text { font-size: 30rpx; color: #9BBCB4; }
 .login-btn { margin-top: 8rpx; background: #4A8A7A; color: #fff; font-size: 28rpx; padding: 20rpx 80rpx; border-radius: 50rpx; }
 
-.header { display: flex; gap: 24rpx; align-items: center; background: linear-gradient(135deg,#4A8A7A,#3A6E80); padding: 60rpx 32rpx 40rpx; }
+:deep(.header) {
+  padding: 60rpx 32rpx 40rpx;
+}
+.header-inner {
+  display: flex;
+  gap: 24rpx;
+  align-items: center;
+  width: 100%;
+}
 .avatar { width: 120rpx; height: 120rpx; border-radius: 50%; border: 4rpx solid rgba(255,255,255,.4); }
 .header-info { display: flex; flex-direction: column; gap: 12rpx; }
 .name { font-size: 34rpx; font-weight: bold; color: #fff; }
