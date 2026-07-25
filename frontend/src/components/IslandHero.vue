@@ -1,6 +1,6 @@
 <template>
   <view class="island-hero" :class="customClass">
-    <image class="island-hero__bg" :src="src" mode="aspectFill" />
+    <image class="island-hero__bg" :src="resolvedSrc" mode="aspectFill" />
     <view class="island-hero__dim" />
     <view class="island-hero__body">
       <slot />
@@ -9,10 +9,15 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue';
+import { staticUrl } from '../utils/staticUrl';
+
+const props = defineProps({
   src: { type: String, required: true },
   customClass: { type: String, default: '' },
 });
+
+const resolvedSrc = computed(() => staticUrl(props.src));
 </script>
 
 <style scoped lang="scss">

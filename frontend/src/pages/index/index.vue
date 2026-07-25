@@ -15,7 +15,7 @@
     <template v-else>
     <!-- Hero：心镜岛 -->
     <view class="hero" @click="openIsland()">
-      <image class="hero-bg" src="/static/island/entry.jpg" mode="aspectFill" />
+      <image class="hero-bg" :src="islandEntrySrc" mode="aspectFill" />
       <view class="hero-mask" />
       <view class="hero-content">
         <text class="hero-eyebrow">艺术疗愈地图</text>
@@ -127,6 +127,9 @@ import { SERVER } from '../../config';
 import TermsConfirmModal from '../../components/TermsConfirmModal.vue';
 import IslandMap from '../../components/IslandMap.vue';
 import { getWindowSize } from '../../utils/windowSize';
+import { staticUrl } from '../../utils/staticUrl';
+
+const islandEntrySrc = staticUrl('/static/island/entry.jpg');
 
 // #ifndef H5
 defineOptions({

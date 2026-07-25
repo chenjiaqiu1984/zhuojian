@@ -254,6 +254,9 @@ location /api {
 location /uploads {
     proxy_pass http://127.0.0.1:3000;
 }
+location /static {
+    proxy_pass http://127.0.0.1:3000;
+}
 location /socket.io {
     proxy_pass http://127.0.0.1:3000;
     proxy_http_version 1.1;

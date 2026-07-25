@@ -1,7 +1,7 @@
 <template>
   <view class="island-map" :style="{ height: viewH + 'px' }">
     <view class="island-brand">
-      <image class="island-brand-logo" src="/static/logo.jpg" mode="aspectFit" />
+      <image class="island-brand-logo" :src="LOGO_SRC" mode="aspectFit" />
     </view>
     <view v-if="showBack" class="island-toolbar">
       <view class="island-chip" @click="emit('navigate', '/pages/about/index')">
@@ -92,7 +92,7 @@
       <view class="island-beian-pill">
         <text class="island-beian-text" @click.stop="emit('icp')">苏ICP备2026043098号</text>
         <text class="island-beian-sep">·</text>
-        <image class="island-beian-icon" src="/static/beian.png" mode="aspectFit" @click.stop="emit('beian')" />
+        <image class="island-beian-icon" :src="BEIAN_SRC" mode="aspectFit" @click.stop="emit('beian')" />
         <text class="island-beian-text" @click.stop="emit('beian')">苏公网安备32010402002563号</text>
       </view>
     </view>
@@ -102,6 +102,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { getWindowSize } from '../utils/windowSize';
+import { staticUrl } from '../utils/staticUrl';
 
 const props = defineProps({
   height: { type: Number, default: 0 },
@@ -112,7 +113,9 @@ const emit = defineEmits(['navigate', 'back', 'icp', 'beian']);
 
 /** 竖版原图宽/高 */
 const IMG_RATIO = 768 / 1376;
-const IMG_JPG = '/static/island/island-mist.jpg';
+const IMG_JPG = staticUrl('/static/island/island-mist.jpg');
+const LOGO_SRC = staticUrl('/static/logo.jpg');
+const BEIAN_SRC = staticUrl('/static/beian.png');
 
 /**
  * cy 相对原版整体下移约 5%
