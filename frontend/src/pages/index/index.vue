@@ -123,11 +123,10 @@
 import { ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { consultantApi, newsApi, aboutApi } from '../../api/index';
-import { SERVER } from '../../config';
+import { SERVER, staticUrl } from '../../config';
 import TermsConfirmModal from '../../components/TermsConfirmModal.vue';
 import IslandMap from '../../components/IslandMap.vue';
 import { getWindowSize } from '../../utils/windowSize';
-import { staticUrl } from '../../utils/staticUrl';
 
 const islandEntrySrc = staticUrl('/static/island/entry.jpg');
 

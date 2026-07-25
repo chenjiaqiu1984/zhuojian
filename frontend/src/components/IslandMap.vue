@@ -102,9 +102,9 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { getWindowSize } from '../utils/windowSize';
-import { staticUrl } from '../utils/staticUrl';
 import { islandApi } from '../api/index';
 import { DEFAULT_ISLAND_SPOTS, normalizeIslandSpots } from '../utils/islandSpots';
+import { staticUrl } from '../config';
 
 const props = defineProps({
   height: { type: Number, default: 0 },

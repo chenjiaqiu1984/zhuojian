@@ -10,7 +10,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { staticUrl } from '../utils/staticUrl';
+import { staticUrl } from '../config';
 
 const props = defineProps({
   src: { type: String, required: true },
