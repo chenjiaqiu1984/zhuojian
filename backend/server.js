@@ -88,6 +88,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/achievements', require('./routes/achievements'));
 app.use('/api/breathing', require('./routes/breathing'));
 app.use('/api/treehole', require('./routes/treehole'));
+app.use('/api/relax', require('./routes/relax'));
 
 require('./socket/rooms')(io);
 

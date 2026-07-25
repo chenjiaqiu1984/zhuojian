@@ -77,13 +77,28 @@ router.delete('/:id', ...auth, async (req, res) => {
   res.json({ ok: true });
 });
 
-/** 管理端：仅「写给平台」（含旧 feedback），绝不返回「写给自己」 */
+function isAdminVisible(post) {
+  if (!post) return false;
+  if (post.visibility === 'anonymous') return true;
+  return normalizeCategory(post.category) === 'platform';
+}
+
+/** 管理端：写给平台 / 历史匿名上墙；绝不返回「写给自己」私密内容 */
 router.get('/admin', ...adminAuth, async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
-  const where = {
-    category: { in: ['platform', 'feedback'] },
-  };
+  const scope = req.query.scope === 'anonymous' ? 'anonymous' : 'platform';
+
+  const where = scope === 'anonymous'
+    ? { visibility: 'anonymous' }
+    : {
+        category: { in: ['platform', 'feedback'] },
+        NOT: { visibility: 'anonymous' },
+      };
+
+  if (scope === 'anonymous' && (req.query.status === 'visible' || req.query.status === 'hidden')) {
+    where.status = req.query.status;
+  }
 
   const [total, list] = await Promise.all([
     prisma.treeholePost.count({ where }),
@@ -98,29 +113,31 @@ router.get('/admin', ...adminAuth, async (req, res) => {
   res.json({
     total,
     page,
+    scope,
     list: list.map(p => ({
       ...p,
-      category: normalizeCategory(p.category),
-      visibility: 'admin',
+      category: scope === 'anonymous' ? p.category : normalizeCategory(p.category),
+      visibility: p.visibility === 'anonymous' ? 'anonymous' : 'admin',
     })),
   });
 });
 
-/** 管理端：回复（仅平台留言） */
+/** 管理端：回复；匿名上墙可隐藏/恢复 */
 router.patch('/admin/:id', ...adminAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const post = await prisma.treeholePost.findUnique({ where: { id } });
     if (!post) return res.status(404).json({ error: '不存在' });
-
-    const cat = normalizeCategory(post.category);
-    if (cat !== 'platform') {
+    if (!isAdminVisible(post)) {
       return res.status(403).json({ error: '写给自己的内容仅用户本人可见，管理员不可操作' });
     }
 
     const data = {};
     if (typeof req.body.adminReply === 'string') {
       data.adminReply = req.body.adminReply.trim() || null;
+    }
+    if (post.visibility === 'anonymous' && (req.body.status === 'visible' || req.body.status === 'hidden')) {
+      data.status = req.body.status;
     }
     if (!Object.keys(data).length) return res.status(400).json({ error: '无有效更新' });
 
@@ -129,6 +146,23 @@ router.patch('/admin/:id', ...adminAuth, async (req, res) => {
   } catch (err) {
     console.error('[treehole] admin patch failed', err);
     res.status(500).json({ error: '操作失败' });
+  }
+});
+
+/** 管理端：删除匿名上墙记录 */
+router.delete('/admin/:id', ...adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const post = await prisma.treeholePost.findUnique({ where: { id } });
+    if (!post) return res.status(404).json({ error: '不存在' });
+    if (post.visibility !== 'anonymous') {
+      return res.status(403).json({ error: '仅可删除匿名上墙记录' });
+    }
+    await prisma.treeholePost.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[treehole] admin delete failed', err);
+    res.status(500).json({ error: '删除失败' });
   }
 });
 

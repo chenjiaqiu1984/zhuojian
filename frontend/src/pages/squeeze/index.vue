@@ -102,11 +102,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, getCurrentInstance } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, getCurrentInstance } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useCanvas2d } from '@/composables/useCanvas2d';
 import { getViewportHeight, bindViewportHeight } from '@/utils/viewport';
 import { raf } from '@/utils/raf';
+import { track } from '@/utils/track';
+import { relaxApi } from '@/api';
 
 // #ifndef H5
 defineOptions({
@@ -128,11 +130,12 @@ function createPageQuery() {
 }
 // ── 常量 ──────────────────────────────────────────────────────────────────
 // 数量档位：可配置。球的大小由数量自动推算，使总面积约占画布的 80%
-const COUNTS = [
+const FALLBACK_COUNTS = [
   { key: 60,  label: '60 个',  desc: '大颗粒，戳起来更过瘾' },
   { key: 80,  label: '80 个',  desc: '大小适中，经典解压手感' },
   { key: 100, label: '100 个', desc: '小而密，连戳超爽' },
 ];
+const COUNTS = ref([...FALLBACK_COUNTS]);
 
 // 目标覆盖率：所有球面积之和 ≈ 画布面积的比例
 // 有重力后球会往下掉、堆到底部，局部密度远高于此值；过高必重叠
@@ -324,8 +327,17 @@ function destroySounds() {
   soundPools = [];
 }
 
-const currentCount = computed(() => COUNTS.find(c => c.key === bubbleCount.value) || COUNTS[1]);
+const currentCount = computed(() => COUNTS.value.find(c => c.key === bubbleCount.value) || COUNTS.value[1] || FALLBACK_COUNTS[1]);
 const isAllPopped = computed(() => totalCount.value > 0 && poppedCount.value === totalCount.value);
+
+watch(isAllPopped, (done) => {
+  if (done) {
+    track('squeeze_complete', 'squeeze', {
+      bubbleCount: bubbleCount.value,
+      popped: poppedCount.value,
+    });
+  }
+});
 
 function syncBubbleStats() {
   totalCount.value = bubbleList.length;
@@ -438,7 +450,22 @@ function relayoutPage(opts = {}) {
   });
 }
 
-onMounted(() => {
+onMounted(async () => {
+  track('page_view', 'squeeze');
+  track('squeeze_start', 'squeeze', { bubbleCount: bubbleCount.value });
+  try {
+    const cfg = await relaxApi.squeezeConfig();
+    if (cfg?.counts?.length) {
+      COUNTS.value = cfg.counts.map(c => ({
+        key: Number(c.key),
+        label: c.label,
+        desc: c.desc || '',
+      }));
+      if (!COUNTS.value.some(c => c.key === bubbleCount.value)) {
+        bubbleCount.value = COUNTS.value[0]?.key || 80;
+      }
+    }
+  } catch (_) {}
   initSounds();
   relayoutPage();
   // H5 视口变化才需要重布局；微信 bindViewportHeight 为空操作

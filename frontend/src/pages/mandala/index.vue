@@ -43,9 +43,14 @@
           v-for="m in moods" :key="m.key"
           class="mood-item"
           :class="{ selected: selectedMood === m.key }"
-          @click="selectedMood = m.key"
+          @click="selectMood(m.key)"
         >
-          <text class="mood-emoji">{{ m.emoji }}</text>
+          <ZjIcon
+            class="mood-icon"
+            :name="m.icon"
+            :size="44"
+            :color="selectedMood === m.key ? '#3A7E8A' : m.color"
+          />
           <text class="mood-label">{{ m.label }}</text>
         </view>
       </view>
@@ -53,8 +58,12 @@
 
     <!-- 开始按钮 -->
     <view class="cta-section">
-      <view class="cta-btn" @click="uni.navigateTo({url:'/pages/mandala/draw?mood='+selectedMood})">开始创作 →</view>
-      <view class="gallery-btn" @click="uni.navigateTo({url:'/pages/mandala/gallery'})">我的画廊</view>
+      <view class="cta-btn" @click="startCreate()">
+        <text class="cta-text">开始创作 →</text>
+      </view>
+      <view class="gallery-btn" @click="goGallery()">
+        <text class="gallery-text">我的画廊</text>
+      </view>
     </view>
 
     <!-- 底部留白 -->
@@ -67,7 +76,9 @@
 import { createMpShare } from '@/utils/mpShare';
 defineOptions(createMpShare('mandala/index'));
 // #endif
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { track } from '@/utils/track';
+import ZjIcon from '../../components/ZjIcon.vue';
 
 const guideItems = [
   {
@@ -88,19 +99,34 @@ const guideItems = [
 ];
 
 const moods = [
-  { key: 'happy',   emoji: '😊', label: '快乐' },
-  { key: 'calm',    emoji: '😌', label: '平静' },
-  { key: 'sad',     emoji: '😢', label: '悲伤' },
-  { key: 'angry',   emoji: '😡', label: '愤怒' },
-  { key: 'anxious', emoji: '😨', label: '焦虑' },
+  { key: 'happy',   icon: 'smile',         label: '快乐', color: '#D4A017' },
+  { key: 'calm',    icon: 'meh',           label: '平静', color: '#3A7E8A' },
+  { key: 'sad',     icon: 'frown',         label: '悲伤', color: '#6B8FA3' },
+  { key: 'angry',   icon: 'angry',         label: '愤怒', color: '#E07050' },
+  { key: 'anxious', icon: 'circle-alert',  label: '焦虑', color: '#9B7BB8' },
 ];
 
 const selectedMood = ref('');
 const isPlaying = ref(false);
 
+function selectMood(key) {
+  selectedMood.value = key;
+}
+
+function startCreate() {
+  track('mandala_start', 'mandala', { mood: selectedMood.value || null });
+  uni.navigateTo({ url: '/pages/mandala/draw?mood=' + selectedMood.value });
+}
+
+function goGallery() {
+  uni.navigateTo({ url: '/pages/mandala/gallery' });
+}
+
 function toggleMusic() {
   uni.showToast({ title: '请进入创作页播放音乐', icon: 'none' });
 }
+
+onMounted(() => track('page_view', 'mandala'));
 </script>
 
 <style scoped lang="scss">
@@ -172,22 +198,23 @@ $card-bg: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
   cursor: pointer;
 }
 
 .music-icon {
   display: flex;
   align-items: flex-end;
-  gap: 3rpx;
   height: 28rpx;
+  margin-right: 12rpx;
 
   .bar {
     width: 5rpx;
+    margin-right: 3rpx;
     border-radius: 3rpx;
     background: rgba(255,255,255,0.7);
     animation: none;
   }
+  .bar:last-child { margin-right: 0; }
   .b1 { height: 12rpx; }
   .b2 { height: 20rpx; }
   .b3 { height: 16rpx; }
@@ -215,7 +242,6 @@ $card-bg: #FFFFFF;
   padding: 48rpx 32rpx 0;
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
 }
 
 .guide-card {
@@ -224,7 +250,7 @@ $card-bg: #FFFFFF;
   padding: 32rpx 28rpx;
   display: flex;
   align-items: flex-start;
-  gap: 24rpx;
+  margin-bottom: 20rpx;
   box-shadow: 0 2rpx 16rpx rgba(58,110,128,0.07);
   transition: box-shadow 0.2s $zj-ease-out, transform 0.2s $zj-ease-out;
 
@@ -241,6 +267,7 @@ $card-bg: #FFFFFF;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-right: 24rpx;
 }
 
 .guide-icon {
@@ -293,7 +320,6 @@ $card-bg: #FFFFFF;
 .mood-row {
   display: flex;
   justify-content: space-between;
-  gap: 8rpx;
 }
 
 .mood-item {
@@ -301,8 +327,8 @@ $card-bg: #FFFFFF;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8rpx;
   padding: 18rpx 4rpx;
+  margin: 0 4rpx;
   border-radius: 20rpx;
   border: 2rpx solid transparent;
   background: #F5F7F6;
@@ -318,6 +344,11 @@ $card-bg: #FFFFFF;
 
 .mood-emoji {
   font-size: 40rpx;
+  margin-bottom: 8rpx;
+}
+
+.mood-icon {
+  margin-bottom: 8rpx;
 }
 
 .mood-label {
@@ -326,12 +357,16 @@ $card-bg: #FFFFFF;
   letter-spacing: 0.05em;
 }
 
+.mood-item.selected .mood-label {
+  color: #3A7E8A;
+  font-weight: 600;
+}
+
 /* ── CTA ── */
 .cta-section {
   margin: 40rpx 32rpx 0;
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
 }
 
 .cta-btn {
@@ -342,8 +377,12 @@ $card-bg: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
+  margin-bottom: 16rpx;
   box-shadow: 0 10rpx 32rpx rgba(30,88,112,0.30);
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 0.06em;
 
   &:active { transform: scale(0.97); }
 }
@@ -368,6 +407,9 @@ $card-bg: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 28rpx;
+  color: $teal;
+  letter-spacing: 0.05em;
 
   &:active { transform: scale(0.97); }
 }

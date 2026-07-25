@@ -274,6 +274,7 @@ defineOptions(createMpShare('monster/create'));
 
 import { ref, reactive, computed, onMounted } from 'vue';
 import { monsterApi } from '@/api';
+import { track } from '@/utils/track';
 import ZjIcon from '../../components/ZjIcon.vue';
 import MonsterView from '../../components/MonsterView.vue';
 import { PART_DEFS, defaultParts, defaultTransforms, partUrl, bodyColor, LAYOUT, LAYER_ORDER, layoutOf } from '@/utils/monsterParts';
@@ -483,6 +484,7 @@ function refreshCanvasRect(cb) {
 }
 
 onMounted(() => {
+  track('page_view', 'monster');
   ctx = uni.createCanvasContext('monsterCanvas');
   // 延迟测量，等布局完成
   setTimeout(() => refreshCanvasRect(), 120);
@@ -593,6 +595,7 @@ async function save() {
   uni.showLoading({ title: '创建中…' });
   try {
     await monsterApi.create({ name: form.name.trim(), emotion: form.emotion, color, drawingData, drawingType: drawMode.value });
+    track('monster_create', 'monster', { emotion: form.emotion, drawingType: drawMode.value });
     uni.hideLoading();
     uni.showToast({ title: '怪兽诞生了！', icon: 'success' });
     setTimeout(() => uni.navigateBack(), 1200);

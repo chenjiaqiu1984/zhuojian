@@ -244,6 +244,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { SERVER } from '../../config';
 import { raf, caf } from '../../utils/raf';
 import BgmPlayer from '../../components/BgmPlayer.vue';
+import { track } from '@/utils/track';
+import { relaxApi } from '../../api/index';
 
 const fromSelect = ref(false);
 
@@ -286,7 +288,7 @@ const GUIDE_WORDS = {
 };
 
 // ── 呼吸课程定义 ──────────────────────────────────────────────
-const PROGRAMS = [
+const PROGRAMS = ref([
   {
     key: 'sleep',
     name: '入睡准备',
@@ -405,9 +407,9 @@ const PROGRAMS = [
       { label: '入眠', rounds: 12, mode: '4-7-8', hint: '不用努力，让意识慢慢飘远…' },
     ],
   },
-];
+]);
 
-const MODES = [
+const MODES = ref([
   {
     key: '4-7-8',
     name: '4-7-8 放松',
@@ -451,7 +453,7 @@ const MODES = [
       { label: '呼气', duration: 5, phase: 'out'   },
     ],
   },
-];
+]);
 
 const DURATION_OPTIONS = [
   { label: '3 分钟',  value: 3  },
@@ -481,14 +483,14 @@ const round      = ref(1);
 const guideText  = ref('');
 
 // ── 计算属性 ──────────────────────────────────────────────────
-const currentMode    = computed(() => MODES.find(m => m.key === modeKey.value));
-const currentProgram = computed(() => PROGRAMS.find(p => p.key === programKey.value));
+const currentMode    = computed(() => MODES.value.find(m => m.key === modeKey.value));
+const currentProgram = computed(() => PROGRAMS.value.find(p => p.key === programKey.value));
 
 // 当前实际执行的 steps（课程模式取当前段的 mode）
 const activeSteps = computed(() => {
   if (isProgramMode.value) {
     const stage = currentProgram.value.stages[programStageIndex.value];
-    return MODES.find(m => m.key === stage.mode).steps;
+    return MODES.value.find(m => m.key === stage.mode).steps;
   }
   return currentMode.value.steps;
 });
@@ -722,8 +724,9 @@ function resetState() {
 
 function finishSession() {
   stopLoop();
+  const finishedRounds = round.value;
   const durationSec = Math.round(
-    activeSteps.value.reduce((s, st) => s + st.duration, 0) * (round.value - 1)
+    activeSteps.value.reduce((s, st) => s + st.duration, 0) * Math.max(0, finishedRounds - 1)
   );
   const modeKey_ = isProgramMode.value ? programKey.value : modeKey.value;
 
@@ -735,6 +738,13 @@ function finishSession() {
   round.value      = 1;
   guideText.value  = '';
 
+  track('breath_finish', 'breathing', {
+    type: isProgramMode.value ? 'program' : 'mode',
+    key: modeKey_,
+    rounds: finishedRounds,
+    durationSec,
+  });
+
   // 记录历史 + 检查成就
   const token = uni.getStorageSync('token');
   if (token) {
@@ -742,7 +752,7 @@ function finishSession() {
       url:    `${SERVER}/api/breathing/finish`,
       method: 'POST',
       header: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      data:   { mode: modeKey_, isProgramMode: isProgramMode.value, rounds: round.value, durationSec },
+      data:   { mode: modeKey_, isProgramMode: isProgramMode.value, rounds: finishedRounds, durationSec },
       success: (res) => {
         if (res.data?.newAchievements?.length) {
           newAchievements.value = res.data.newAchievements;
@@ -754,7 +764,7 @@ function finishSession() {
   }
 
   // 完成弹窗
-  finishInfo.value = { mode: modeKey_, rounds: round.value, durationSec };
+  finishInfo.value = { mode: modeKey_, rounds: finishedRounds, durationSec };
   showFinishModal.value = true;
 }
 
@@ -872,7 +882,15 @@ function darken(hex, amt) {
   return `rgb(${d(r)},${d(g)},${d(b)})`;
 }
 
-onMounted(() => {  const pages = getCurrentPages();
+onMounted(async () => {
+  track('page_view', 'breathing');
+  try {
+    const cfg = await relaxApi.breathingConfig();
+    if (cfg?.programs?.length) PROGRAMS.value = cfg.programs;
+    if (cfg?.modes?.length) MODES.value = cfg.modes;
+  } catch (_) {}
+
+  const pages = getCurrentPages();
   const page  = pages[pages.length - 1];
   const opts  = page.$page?.options ?? page.options ?? {};
   const { type, key } = opts;
@@ -885,6 +903,7 @@ onMounted(() => {  const pages = getCurrentPages();
       isProgramMode.value = false;
       modeKey.value       = key;
     }
+    track('breath_start', 'breathing', { type, key });
   }
 });
 

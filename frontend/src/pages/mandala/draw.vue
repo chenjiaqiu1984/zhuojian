@@ -161,6 +161,7 @@ defineOptions(createMpShare('mandala/draw'));
 import { ref, computed, onMounted, onUnmounted, nextTick, getCurrentInstance } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { mandalaApi } from '@/api';
+import { track } from '@/utils/track';
 import BgmPlayer from '@/components/BgmPlayer.vue';
 import { useCanvasPointer } from '@/composables/useCanvasPointer';
 import { useCanvas2d } from '@/composables/useCanvas2d';
@@ -332,6 +333,7 @@ onMounted(() => {
   const cur   = pages[pages.length - 1];
   const opts  = cur?.$page?.options ?? cur?.options ?? {};
   entryMood   = opts.mood || '';
+  track('page_view', 'mandala', { mood: entryMood || null });
   relayoutPage();
   unbindViewport = bindViewportHeight(() => relayoutPage());
 });
@@ -981,6 +983,7 @@ async function saveToGallery() {
   });
   try {
     await mandalaApi.create({ drawingData, mood: entryMood, symmetry: symmetryCount.value });
+    track('mandala_save', 'mandala', { mood: entryMood || null, symmetry: symmetryCount.value });
     return true;
   } catch (e) {
     if (e && e.__authRedirect) return false;

@@ -92,8 +92,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import ZjIcon from '../../components/ZjIcon.vue';
+import { track } from '@/utils/track';
+import { relaxApi } from '../../api/index';
 
 // #ifndef H5
 defineOptions({
@@ -106,7 +108,7 @@ defineOptions({
 });
 // #endif
 
-const PROGRAMS = [
+const PROGRAMS = ref([
   { key: 'sleep',      name: '入睡准备',   icon: 'moon',       desc: '渐进放松神经系统，帮助身心平静进入睡眠', totalMin: 12, color: '#6A5ACD', stages: [{ label: '热身' }, { label: '深化' }, { label: '沉降' }] },
   { key: 'focus',      name: '专注启动',   icon: 'aperture',   desc: '唤醒注意力，进入清醒专注的工作状态',     totalMin: 8,  color: '#3A7E8A', stages: [{ label: '激活' }, { label: '强化' }, { label: '锁定' }] },
   { key: 'anxiety',    name: '焦虑急救',   icon: 'droplets',   desc: '快速平复紧张情绪，降低焦虑和压力反应',   totalMin: 7,  color: '#4AB8A0', stages: [{ label: '稳定' }, { label: '释放' }, { label: '平复' }] },
@@ -116,14 +118,14 @@ const PROGRAMS = [
   { key: 'stage',      name: '演讲/上台前', icon: 'activity',  desc: '快速沉稳，缓解怯场，让声音和身体都稳下来', totalMin: 6,  color: '#4A7A9E', stages: [{ label: '沉稳' }, { label: '松肩' }, { label: '登场' }] },
   { key: 'anger',      name: '愤怒平复',   icon: 'droplets',   desc: '延长呼气降低生理唤醒，让怒火慢慢降温',   totalMin: 7,  color: '#E8705A', stages: [{ label: '降温' }, { label: '松开' }, { label: '回稳' }] },
   { key: 'deepsleep',  name: '睡前深度放松', icon: 'moon',     desc: '更长的呼气节奏，深度放松身心，滑入沉睡', totalMin: 14, color: '#5A6FCD', stages: [{ label: '卸力' }, { label: '沉降' }, { label: '入眠' }] },
-];
+]);
 
-const MODES = [
+const MODES = ref([
   { key: '4-7-8', name: '4-7-8 放松', icon: 'droplets',   desc: '吸气4秒・屏息7秒・呼气8秒，深度放松神经',    color: '#4A7A9E' },
   { key: '4-4-4', name: '4-4-4 专注', icon: 'aperture',   desc: '均匀三段，稳定注意力，适合工作前准备',        color: '#3A7E8A' },
   { key: '4-2-6', name: '4-2-6 助眠', icon: 'moon',       desc: '延长呼气激活副交感神经，帮助入睡',            color: '#6A5ACD' },
   { key: '5-5',   name: '5-5 心率同调', icon: 'activity', desc: '吸气5秒・呼气5秒，改善心率变异性',          color: '#4AB8A0' },
-];
+]);
 
 const selectedType = ref('');
 const selectedKey  = ref('');
@@ -131,18 +133,20 @@ const selectedKey  = ref('');
 const activeColor = computed(() => {
   if (!selectedKey.value) return '#4A7A9E';
   if (selectedType.value === 'program') {
-    return PROGRAMS.find(p => p.key === selectedKey.value)?.color || '#4A7A9E';
+    return PROGRAMS.value.find(p => p.key === selectedKey.value)?.color || '#4A7A9E';
   }
-  return MODES.find(m => m.key === selectedKey.value)?.color || '#4A7A9E';
+  return MODES.value.find(m => m.key === selectedKey.value)?.color || '#4A7A9E';
 });
 
 function select(type, key) {
   selectedType.value = type;
   selectedKey.value  = key;
+  track('breath_select', 'breathing', { type, key });
 }
 
 function onStart() {
   if (!selectedKey.value) return;
+  track('breath_start', 'breathing', { type: selectedType.value, key: selectedKey.value });
   uni.navigateTo({
     url: `/pages/breathing/index?type=${selectedType.value}&key=${selectedKey.value}`,
   });
@@ -151,6 +155,15 @@ function onStart() {
 function onBack() {
   uni.navigateBack();
 }
+
+onMounted(async () => {
+  track('page_view', 'breathing');
+  try {
+    const cfg = await relaxApi.breathingConfig();
+    if (cfg?.programs?.length) PROGRAMS.value = cfg.programs;
+    if (cfg?.modes?.length) MODES.value = cfg.modes;
+  } catch (_) {}
+});
 </script>
 
 <style scoped lang="scss">

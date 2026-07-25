@@ -66,6 +66,14 @@
       </el-table>
     </el-card>
 
+    <!-- 解压游戏使用量 -->
+    <el-card header="解压游戏使用量" style="margin-bottom:24px">
+      <el-table :data="stats.relaxCounts || []" size="small">
+        <el-table-column prop="label" label="指标" />
+        <el-table-column prop="count" label="次数" width="100" />
+      </el-table>
+    </el-card>
+
     <!-- 最近事件（事件类型筛选 + 用户ID搜索 + 分页 pageSize=20） -->
     <el-card header="最近事件">
       <div style="margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
@@ -112,7 +120,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import api from '../api/index';
 
-const stats = ref({ total: 0, byPage: [], byEvent: [], recent: [], homeworkCounts: [] });
+const stats = ref({ total: 0, byPage: [], byEvent: [], recent: [], homeworkCounts: [], relaxCounts: [] });
 const ohcardRanks = ref([]);
 
 const CAT_LABEL = { single: '单卡组合', combo: '跨卡牌组合', scene: '场景选卡', dilemma: '人生困境' };

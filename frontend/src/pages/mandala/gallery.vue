@@ -50,11 +50,15 @@ defineOptions(createMpShare('mandala/gallery'));
 // #endif
 import { ref, onMounted, nextTick } from 'vue';
 import { mandalaApi } from '@/api';
+import { track } from '@/utils/track';
 
 const works   = ref([]);
 const loading = ref(true);
 
-onMounted(load);
+onMounted(() => {
+  track('page_view', 'mandala');
+  load();
+});
 
 async function load() {
   loading.value = true;
@@ -147,6 +151,7 @@ function confirmDelete(w) {
       if (!res.confirm) return;
       try {
         await mandalaApi.del(w.id);
+        track('mandala_delete', 'mandala', { id: w.id });
         works.value = works.value.filter(x => x.id !== w.id);
         uni.showToast({ title: '已删除', icon: 'success' });
       } catch (e) {

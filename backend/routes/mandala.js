@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../db/database');
 const { requireRole } = require('../middleware/auth');
+const { checkAchievements } = require('./achievements');
 
 const router = express.Router();
 const auth = requireRole('user', 'admin', 'consultant');
@@ -29,7 +30,20 @@ router.post('/', ...auth, async (req, res) => {
       symmetry:    Number.isInteger(symmetry) ? symmetry : 8,
     },
   });
-  res.json(work);
+
+  try {
+    await prisma.eventLog.create({
+      data: {
+        userId: req.user.id,
+        event: 'mandala_save',
+        page: 'mandala',
+        data: JSON.stringify({ mood: mood || null, symmetry: work.symmetry }),
+      },
+    });
+  } catch (_) {}
+
+  const newAchievements = await checkAchievements(req.user.id, 'mandala');
+  res.json({ ...work, newAchievements });
 });
 
 // 获取单幅详情

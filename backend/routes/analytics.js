@@ -26,7 +26,13 @@ router.get('/ohcard-ranks', async (req, res) => {
 });
 
 router.get('/stats', ...requireRole('admin'), async (req, res) => {
-  const [total, byPage, byEvent, recent, homeworkCounts] = await Promise.all([
+  const relaxEvents = [
+    'page_view', 'mandala_save', 'mandala_start', 'mandala_delete',
+    'breath_select', 'breath_start', 'breath_finish',
+    'squeeze_start', 'squeeze_complete',
+    'monster_create', 'monster_feed', 'monster_delete',
+  ];
+  const [total, byPage, byEvent, recent, homeworkCounts, relaxEventRows, mandalaTotal, breathTotal, monsterTotal] = await Promise.all([
     prisma.eventLog.count(),
     prisma.eventLog.groupBy({ by: ['page'], _count: { id: true }, orderBy: { _count: { id: 'desc' } } }),
     prisma.eventLog.groupBy({ by: ['event'], _count: { id: true }, orderBy: { _count: { id: 'desc' } } }),
@@ -34,9 +40,38 @@ router.get('/stats', ...requireRole('admin'), async (req, res) => {
     Promise.all(['mood','cbt','dream','iceberg','rule'].map(async p => ({
       page: p,
       count: await prisma.eventLog.count({ where: { event: 'homework_save', page: p } })
-    })))
+    }))),
+    prisma.eventLog.findMany({
+      where: {
+        OR: [
+          { page: { in: ['mandala', 'breathing', 'squeeze', 'monster'] } },
+          { event: { in: relaxEvents } },
+        ],
+      },
+      select: { event: true, page: true },
+    }),
+    prisma.mandalaWork.count(),
+    prisma.breathingSession.count(),
+    prisma.monster.count(),
   ]);
-  res.json({ total, byPage, byEvent, recent, homeworkCounts });
+
+  const countBy = (pred) => relaxEventRows.filter(pred).length;
+  const relaxCounts = [
+    { key: 'mandala_view', label: '曼达拉访问', count: countBy(r => r.page === 'mandala' && r.event === 'page_view') },
+    { key: 'mandala_save', label: '曼达拉保存', count: countBy(r => r.event === 'mandala_save') },
+    { key: 'breath_view', label: '呼吸访问', count: countBy(r => r.page === 'breathing' && r.event === 'page_view') },
+    { key: 'breath_finish', label: '呼吸完成', count: countBy(r => r.event === 'breath_finish') },
+    { key: 'squeeze_view', label: '捏捏乐访问', count: countBy(r => r.page === 'squeeze' && r.event === 'page_view') },
+    { key: 'squeeze_complete', label: '捏捏乐完成', count: countBy(r => r.event === 'squeeze_complete') },
+    { key: 'monster_view', label: '怪兽访问', count: countBy(r => r.page === 'monster' && r.event === 'page_view') },
+    { key: 'monster_create', label: '怪兽创建', count: countBy(r => r.event === 'monster_create') },
+    { key: 'monster_feed', label: '怪兽喂养', count: countBy(r => r.event === 'monster_feed') },
+    { key: 'mandala_works', label: '曼达拉作品数', count: mandalaTotal },
+    { key: 'breath_sessions', label: '呼吸练习次数', count: breathTotal },
+    { key: 'monster_total', label: '怪兽总数', count: monsterTotal },
+  ];
+
+  res.json({ total, byPage, byEvent, recent, homeworkCounts, relaxCounts });
 });
 
 router.get('/assessment-stats', ...requireRole('admin'), async (req, res) => {

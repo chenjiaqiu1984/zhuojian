@@ -18,6 +18,7 @@ const routes = [
       { path: 'ohcard', component: () => import('../views/OhCard.vue') },
       { path: 'assessment', component: () => import('../views/Assessment.vue') },
       { path: 'analytics', component: () => import('../views/Analytics.vue') },
+      { path: 'relax', component: () => import('../views/RelaxGames.vue') },
       { path: 'crisis', component: () => import('../views/CrisisEvents.vue') },
       { path: 'treehole', component: () => import('../views/Treehole.vue') },
       { path: 'terms', component: () => import('../views/TermsManager.vue') },

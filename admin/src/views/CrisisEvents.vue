@@ -2,26 +2,26 @@
   <div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h2>🆘 危机事件管理</h2>
-      <el-tag type="danger">共 {{ total }} 条未跟进事件</el-tag>
+      <el-tag type="danger">共 {{ total }} 条事件</el-tag>
     </div>
 
     <!-- 筛选栏 -->
     <el-card style="margin-bottom:16px">
       <el-form inline>
         <el-form-item label="风险等级">
-          <el-select v-model="filter.level" placeholder="全部" clearable style="width:120px">
+          <el-select v-model="filter.level" placeholder="全部" clearable style="width:120px" @change="onFilter">
             <el-option label="高危" value="high" />
             <el-option label="中危" value="medium" />
           </el-select>
         </el-form-item>
         <el-form-item label="跟进状态">
-          <el-select v-model="filter.followed" placeholder="全部" clearable style="width:120px">
+          <el-select v-model="filter.followed" placeholder="全部" clearable style="width:120px" @change="onFilter">
             <el-option label="未跟进" value="false" />
             <el-option label="已跟进" value="true" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="load">查询</el-button>
+          <el-button type="primary" @click="onFilter">查询</el-button>
           <el-button @click="resetFilter">重置</el-button>
         </el-form-item>
       </el-form>
@@ -128,7 +128,7 @@ const total = ref(0);
 const page = ref(1);
 const pageSize = 20;
 
-const filter = ref({ level: '', followed: 'false' });
+const filter = ref({ level: '', followed: '' });
 
 const followDlg = ref(false);
 const followRow = ref(null);
@@ -150,6 +150,11 @@ function fmt(d) {
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
 }
 
+function onFilter() {
+  page.value = 1;
+  load();
+}
+
 async function load() {
   loading.value = true;
   try {
@@ -166,7 +171,7 @@ async function load() {
   finally { loading.value = false; }
 }
 
-function resetFilter() { filter.value = { level: '', followed: 'false' }; page.value = 1; load(); }
+function resetFilter() { filter.value = { level: '', followed: '' }; page.value = 1; load(); }
 
 onMounted(load);
 

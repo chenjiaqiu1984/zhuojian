@@ -137,19 +137,35 @@ defineOptions(createMpShare('monster/index'));
 
 import { ref, nextTick } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { monsterApi } from '@/api';
+import { monsterApi, relaxApi } from '@/api';
 import { useUserStore } from '@/store/user';
 import ZjIcon from '../../components/ZjIcon.vue';
 import MonsterView from '../../components/MonsterView.vue';
 import { parseParts } from '@/utils/monsterParts';
+import { track } from '@/utils/track';
 
 const store = useUserStore();
 const monsters = ref([]);
 const loading = ref(true);
 const loggedIn = ref(true);
+const stageConfig = ref({
+  targetDays: 30,
+  stages: [
+    { maxDays: 0, label: '诞生' },
+    { maxDays: 2, label: '灰色幼苗' },
+    { maxDays: 6, label: '初显色彩' },
+    { maxDays: 13, label: '活力成长' },
+    { maxDays: null, label: '饱满鲜艳' },
+  ],
+});
 
 // 用 onShow 而非 onMounted：从登录页返回后会重新校验并加载。
-onShow(() => {
+onShow(async () => {
+  track('page_view', 'monster');
+  try {
+    const cfg = await relaxApi.monsterStages();
+    if (cfg?.stages?.length) stageConfig.value = cfg;
+  } catch (_) {}
   loggedIn.value = store.isLoggedIn();
   if (!loggedIn.value) {
     // 未登录不请求 /api/monster，避免 401 触发全局强制跳转（开发者工具里会 navigateTo:fail timeout 卡白屏）
@@ -223,14 +239,19 @@ function growthFilter(days) {
   return 'saturate(1.2) brightness(1.05)';
 }
 
-function growthPct(days) { return Math.min(100, Math.round((days / 30) * 100)); }
+function growthPct(days) {
+  const target = stageConfig.value?.targetDays || 30;
+  return Math.min(100, Math.round((days / target) * 100));
+}
 
 function growthStage(days) {
-  if (days === 0) return '刚刚诞生';
-  if (days <= 2) return '灰色幼苗';
-  if (days <= 6) return '初显色彩';
-  if (days <= 13) return '活力成长';
-  return '饱满鲜艳';
+  const d = Number(days) || 0;
+  const stages = stageConfig.value?.stages || [];
+  for (const s of stages) {
+    if (s.maxDays === null || s.maxDays === undefined) continue;
+    if (d <= s.maxDays) return s.label;
+  }
+  return stages[stages.length - 1]?.label || '饱满鲜艳';
 }
 </script>
 

@@ -5,10 +5,10 @@ const { requireRole } = require('../middleware/auth');
 const router = express.Router();
 const auth = requireRole('user', 'admin', 'consultant');
 
-// 获取我的所有怪兽
+// 获取我的所有怪兽（不含已归档）
 router.get('/', ...auth, async (req, res) => {
   const list = await prisma.monster.findMany({
-    where: { userId: req.user.id },
+    where: { userId: req.user.id, status: 'active' },
     orderBy: { createdAt: 'desc' },
   });
   res.json(list);

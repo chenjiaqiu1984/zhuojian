@@ -6,44 +6,55 @@ const { alipayRefund } = require('../services/alipay');
 
 const router = express.Router();
 
-router.get('/admin', authMiddleware, requireRole(['admin', 'super_admin']), async (req, res) => {
-  const { q, status, page = 1, pageSize = 20 } = req.query;
-  const skip = (Number(page) - 1) * Number(pageSize);
-  const take = Number(pageSize);
+router.get('/admin', ...requireRole('admin'), async (req, res) => {
+  try {
+    const { q, status, page = 1, pageSize = 20, startDate, endDate } = req.query;
+    const skip = (Number(page) - 1) * Number(pageSize);
+    const take = Number(pageSize);
 
-  const where = {};
-  if (status) where.status = status;
+    const where = {};
+    if (status) where.status = status;
 
-  if (q) {
-    where.OR = [
-      { consultant: { name: { contains: q } } },
-      { user: { name: { contains: q } } },
-      { user: { phone: { contains: q } } },
-    ];
+    if (q) {
+      where.OR = [
+        { consultant: { name: { contains: q } } },
+        { user: { name: { contains: q } } },
+        { user: { phone: { contains: q } } },
+      ];
+    }
+
+    if (startDate || endDate) {
+      where.slot = {};
+      if (startDate) where.slot.startTime = { ...(where.slot.startTime || {}), gte: startDate };
+      if (endDate) where.slot.startTime = { ...(where.slot.startTime || {}), lte: `${endDate} 23:59` };
+    }
+
+    const [total, items] = await Promise.all([
+      prisma.booking.count({ where }),
+      prisma.booking.findMany({
+        where,
+        skip,
+        take,
+        include: { user: true, consultant: true, slot: true },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    res.json({
+      total,
+      items: items.map(b => ({
+        ...b,
+        user_name: b.user?.name,
+        user_phone: b.user?.phone,
+        consultant_name: b.consultant?.name,
+        start_time: b.slot?.startTime,
+        end_time: b.slot?.endTime,
+      })),
+    });
+  } catch (err) {
+    console.error('[booking/admin]', err);
+    res.status(500).json({ error: '加载预约失败' });
   }
-
-  const [total, items] = await Promise.all([
-    prisma.booking.count({ where }),
-    prisma.booking.findMany({
-      where,
-      skip,
-      take,
-      include: { user: true, consultant: true, slot: true },
-      orderBy: { createdAt: 'desc' },
-    }),
-  ]);
-
-  res.json({
-    total,
-    items: items.map(b => ({
-      ...b,
-      user_name: b.user?.name,
-      user_phone: b.user?.phone,
-      consultant_name: b.consultant?.name,
-      start_time: b.slot?.startTime,
-      end_time: b.slot?.endTime,
-    })),
-  });
 });
 
 router.get('/', authMiddleware, async (req, res) => {

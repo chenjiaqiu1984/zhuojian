@@ -754,10 +754,19 @@ model Monster {
   totalDays   Int      @default(0) @map("total_days")
   streak      Int      @default(0)
   lastFedAt   DateTime? @map("last_fed_at")
+  status      String   @default("active") // active | archived
   createdAt   DateTime @default(now()) @map("created_at")
   user        User     @relation(fields: [userId], references: [id])
   feedLogs    MonsterFeedLog[]
   @@map("monsters")
+}
+
+/// 解压游戏可配置项（呼吸模式/课程、捏捏乐球数、怪兽阶段等）
+model FeatureConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("feature_configs")
 }
 
 model MonsterFeedLog {

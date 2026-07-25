@@ -146,7 +146,8 @@ defineOptions(createMpShare('monster/detail'));
 // #endif
 
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { monsterApi } from '@/api';
+import { monsterApi, relaxApi } from '@/api';
+import { track } from '@/utils/track';
 import ZjIcon from '../../components/ZjIcon.vue';
 import MonsterView from '../../components/MonsterView.vue';
 import { parseParts } from '@/utils/monsterParts';
@@ -156,6 +157,16 @@ const feedLogs = ref([]);
 const showFeedPopup = ref(false);
 const feedNote = ref('');
 const feedPopupRef = ref(null);
+const stageConfig = ref({
+  targetDays: 30,
+  stages: [
+    { maxDays: 0, label: '诞生' },
+    { maxDays: 2, label: '灰色幼苗' },
+    { maxDays: 6, label: '初显色彩' },
+    { maxDays: 13, label: '活力成长' },
+    { maxDays: null, label: '饱满鲜艳' },
+  ],
+});
 
 watch(showFeedPopup, val => {
   if (val) feedPopupRef.value?.open();
@@ -180,19 +191,24 @@ const growthFilter = computed(() => {
 
 const stageLabel = computed(() => {
   const d = monster.value?.totalDays || 0;
-  if (d === 0) return '刚刚诞生';
-  if (d <= 2) return '灰色幼苗';
-  if (d <= 6) return '初显色彩';
-  if (d <= 13) return '活力成长';
-  return '饱满鲜艳';
+  const stages = stageConfig.value?.stages || [];
+  for (const s of stages) {
+    if (s.maxDays === null || s.maxDays === undefined) continue;
+    if (d <= s.maxDays) return s.label;
+  }
+  return stages[stages.length - 1]?.label || '饱满鲜艳';
 });
 
-const progressPct = computed(() => Math.min(100, Math.round(((monster.value?.totalDays || 0) / 30) * 100)));
+const progressPct = computed(() => {
+  const target = stageConfig.value?.targetDays || 30;
+  return Math.min(100, Math.round(((monster.value?.totalDays || 0) / target) * 100));
+});
 
 const progressHint = computed(() => {
   const d = monster.value?.totalDays || 0;
-  if (d >= 30) return '已完全成长，继续陪伴它吧';
-  return `再陪伴 ${30 - d} 天，怪兽将完全成长`;
+  const target = stageConfig.value?.targetDays || 30;
+  if (d >= target) return '已完全成长，继续陪伴它吧';
+  return `再陪伴 ${target - d} 天，怪兽将完全成长`;
 });
 
 const fedToday = computed(() => {
@@ -217,7 +233,11 @@ async function load() {
   const id = cur.options?.id;
   if (!id) return;
   try {
-    const data = await monsterApi.detail(Number(id));
+    const [data, cfg] = await Promise.all([
+      monsterApi.detail(Number(id)),
+      relaxApi.monsterStages().catch(() => null),
+    ]);
+    if (cfg?.stages?.length) stageConfig.value = cfg;
     monster.value = data;
     feedLogs.value = data.feedLogs || [];
     if (data.drawingType === 'canvas') {
@@ -257,6 +277,7 @@ async function doFeed() {
   uni.showLoading({ title: '喂食中…' });
   try {
     const updated = await monsterApi.feed(monster.value.id, { note: feedNote.value.trim() || null });
+    track('monster_feed', 'monster', { id: monster.value.id, emotion: monster.value.emotion });
     monster.value = { ...monster.value, ...updated };
     feedLogs.value.unshift({ id: Date.now(), note: feedNote.value.trim() || null, createdAt: new Date().toISOString() });
     feedNote.value = '';
@@ -278,6 +299,7 @@ async function confirmDelete() {
       if (!res.confirm) return;
       try {
         await monsterApi.del(monster.value.id);
+        track('monster_delete', 'monster', { id: monster.value.id });
         uni.showToast({ title: '已删除', icon: 'success' });
         setTimeout(() => uni.navigateBack(), 1000);
       } catch (e) {
@@ -288,7 +310,10 @@ async function confirmDelete() {
   });
 }
 
-onMounted(load);
+onMounted(() => {
+  track('page_view', 'monster');
+  load();
+});
 </script>
 
 <style scoped lang="scss">

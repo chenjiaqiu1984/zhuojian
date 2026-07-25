@@ -47,8 +47,8 @@
               <!-- 组内菜单项 -->
               <div v-for="(item, ii) in group.items" :key="ii"
                    style="display:flex;align-items:center;gap:8px;margin-bottom:6px;background:#fff;border:1px solid #f0f0f0;border-radius:6px;padding:8px 12px">
-                <span style="font-size:13px;color:#333;flex:1">{{ item.label }}</span>
-                <span style="font-size:12px;color:#aaa;font-family:mono">{{ item.path.split('/').pop() }}</span>
+                <el-input v-model="item.label" placeholder="单元名称" size="small" style="width:140px" />
+                <el-input v-model="item.path" placeholder="跳转路径，如 /pages/..." size="small" style="flex:1" />
                 <el-button :disabled="ii===0" size="small" circle @click="moveItem(gi,ii,-1)">↑</el-button>
                 <el-button :disabled="ii===group.items.length-1" size="small" circle @click="moveItem(gi,ii,1)">↓</el-button>
               </div>

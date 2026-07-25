@@ -218,6 +218,12 @@ export const mandalaApi = {
   del: id => del(`/mandala/${id}`),
 };
 
+export const relaxApi = {
+  breathingConfig: () => get('/relax/config/breathing'),
+  squeezeConfig: () => get('/relax/config/squeeze'),
+  monsterStages: () => get('/relax/config/monster-stages'),
+};
+
 export const treeholeApi = {
   mine: () => get('/treehole/mine'),
   create: d => post('/treehole', d),
