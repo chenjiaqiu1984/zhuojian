@@ -157,7 +157,7 @@ import { SERVER } from '@/config';
 
 // 取可播放地址。
 // BGM 托管在后端 /static/bgm（不打进小程序主包，避免超过 2MB 限制）。
-// 小程序会先 downloadFile 再播；失败则降级合成音（仅 H5）或静音。
+// 小程序会先 downloadFile 再播；失败则降级为本地合成 WAV 文件再播。
 export function trackFile(key) {
   const t = BGM_TRACKS.find(x => x.key === key);
   const file = (t && t.file) || '';

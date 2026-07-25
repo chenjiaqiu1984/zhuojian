@@ -1,12 +1,10 @@
 // 背景音乐播放器（跨端）：uni.createInnerAudioContext
 // 小程序：远程 SERVER/static/bgm/*.mp3（downloadFile 缓存后播放），不打进主包。
-// 禁止 WAV / data-URI——Windows 开发者工具会 Unable to decode audio data。
+// 远程不可用时：把合成 WAV 写到本地再播（勿用 data-URI，开发者工具常解码失败）。
 import { ref, onUnmounted } from 'vue';
-import { trackFile, BGM_TRACKS } from '@/utils/bgmSynth';
-// H5 才用合成兜底；MP 引入 getTrackDataUri 无意义且易误用
-// #ifdef H5
-import { getTrackDataUri } from '@/utils/bgmSynth';
-// #endif
+import { trackFile, BGM_TRACKS, getTrackWavBytes } from '@/utils/bgmSynth';
+
+const SYNTH_KEYS = ['meditation', 'mindful', 'rain', 'wind'];
 
 function isMp() {
   // #ifdef MP-WEIXIN
@@ -20,6 +18,11 @@ function userDataPath() {
     if (typeof uni !== 'undefined' && uni.env && uni.env.USER_DATA_PATH) return uni.env.USER_DATA_PATH;
   } catch (e) { /* ignore */ }
   return '';
+}
+
+function synthKeyFor(trackKey) {
+  const idx = BGM_TRACKS.findIndex(t => t.key === trackKey);
+  return SYNTH_KEYS[(idx >= 0 ? idx : 0) % SYNTH_KEYS.length];
 }
 
 /** 远程 mp3 下载到本地；校验体积，避免把 404 HTML 当音频播 */
@@ -70,12 +73,45 @@ function downloadToLocal(url, key) {
   });
 }
 
+/** 合成 WAV 写入本地，供小程序 InnerAudioContext 播放 */
+function writeSynthToLocal(trackKey) {
+  return new Promise((resolve, reject) => {
+    const base = userDataPath();
+    if (!base) {
+      reject(new Error('no USER_DATA_PATH'));
+      return;
+    }
+    const sk = synthKeyFor(trackKey);
+    const path = `${base}/bgm_synth_${sk}.wav`;
+    try {
+      const st = uni.getFileSystemManager().statSync(path);
+      if (st && st.size > 1024) {
+        resolve(path);
+        return;
+      }
+    } catch (e) { /* 未生成 */ }
+
+    try {
+      const bytes = getTrackWavBytes(sk);
+      const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      uni.getFileSystemManager().writeFile({
+        filePath: path,
+        data: ab,
+        success: () => resolve(path),
+        fail: (err) => reject(err || new Error('write synth failed')),
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
 export function useBgm(options = {}) {
   const playing = ref(false);
-  const currentKey = ref(options.defaultTrack || '');
+  const currentKey = ref(options.defaultTrack || (BGM_TRACKS[0] && BGM_TRACKS[0].key) || '');
   const volume = ref(options.volume != null ? options.volume : 0.6);
-  // 小程序默认关闭合成音（WAV 在 Windows 模拟器必炸）
-  const allowSynth = options.allowSynth != null ? options.allowSynth : !isMp();
+  const loading = ref(false);
+  const lastError = ref('');
 
   let audio = null;
   let playToken = 0;
@@ -89,8 +125,9 @@ export function useBgm(options = {}) {
     audio.onError((err) => {
       console.warn('[bgm] play error', err);
       playing.value = false;
+      lastError.value = (err && (err.errMsg || err.message)) || '播放失败';
     });
-    audio.onPlay(() => { playing.value = true; });
+    audio.onPlay(() => { playing.value = true; loading.value = false; });
     audio.onStop(() => { playing.value = false; });
     audio.onPause(() => { playing.value = false; });
     return audio;
@@ -108,47 +145,86 @@ export function useBgm(options = {}) {
     playing.value = true;
   }
 
+  async function playLocalSynth(k, token) {
+    const local = await writeSynthToLocal(k);
+    startSrc(local, token);
+  }
+
   async function play(key) {
     const k = key || currentKey.value || (BGM_TRACKS[0] && BGM_TRACKS[0].key);
-    if (!k) { playing.value = false; return; }
+    if (!k) {
+      playing.value = false;
+      lastError.value = '暂无可用曲目';
+      return false;
+    }
     currentKey.value = k;
     const token = ++playToken;
     const src = trackFile(k);
+    loading.value = true;
+    lastError.value = '';
 
     try {
       if (src) {
         // 包内相对路径：直接播
         if (!/^https?:\/\//i.test(src)) {
           startSrc(src, token);
-          return;
+          loading.value = false;
+          return true;
         }
-        // 远程：小程序先下载校验；H5 可直链
+        // 远程：小程序先下载校验；失败再降级本地合成
         if (isMp()) {
           try {
             const local = await downloadToLocal(src, k);
+            if (token !== playToken) return false;
             startSrc(local, token);
-            return;
+            loading.value = false;
+            return true;
           } catch (e) {
-            console.warn('[bgm] remote unavailable', e);
+            console.warn('[bgm] remote unavailable, fallback synth', e);
+          }
+          try {
+            await playLocalSynth(k, token);
+            loading.value = false;
+            return true;
+          } catch (e2) {
+            console.warn('[bgm] synth fallback failed', e2);
+            lastError.value = '音乐加载失败';
           }
         } else {
-          startSrc(src, token);
-          return;
+          // H5：先试直链，失败再合成文件/直链行为由浏览器处理
+          try {
+            startSrc(src, token);
+            loading.value = false;
+            return true;
+          } catch (e) {
+            console.warn('[bgm] remote play failed', e);
+          }
         }
       }
 
-      // 仅 H5 允许 data-URI 合成兜底
-      // #ifdef H5
-      if (allowSynth) {
-        startSrc(getTrackDataUri(k), token);
-        return;
+      // 无远程或远程失败：本地合成
+      try {
+        await playLocalSynth(k, token);
+        loading.value = false;
+        return true;
+      } catch (e) {
+        console.warn('[bgm] synth failed', e);
+        lastError.value = '音乐加载失败';
       }
-      // #endif
 
-      playing.value = false;
+      if (token === playToken) {
+        playing.value = false;
+        loading.value = false;
+      }
+      return false;
     } catch (e) {
       console.warn('[bgm] play failed', e);
-      if (token === playToken) playing.value = false;
+      if (token === playToken) {
+        playing.value = false;
+        loading.value = false;
+        lastError.value = '音乐加载失败';
+      }
+      return false;
     }
   }
 
@@ -156,6 +232,7 @@ export function useBgm(options = {}) {
     playToken += 1;
     if (audio) { try { audio.stop(); } catch (e) {} }
     playing.value = false;
+    loading.value = false;
   }
 
   function pause() {
@@ -163,9 +240,12 @@ export function useBgm(options = {}) {
     playing.value = false;
   }
 
-  function toggle() {
-    if (playing.value) pause();
-    else play(currentKey.value);
+  async function toggle() {
+    if (playing.value) {
+      pause();
+      return true;
+    }
+    return play(currentKey.value);
   }
 
   function select(key) {
@@ -186,9 +266,13 @@ export function useBgm(options = {}) {
       audio = null;
     }
     playing.value = false;
+    loading.value = false;
   }
 
   onUnmounted(destroy);
 
-  return { playing, currentKey, volume, tracks: BGM_TRACKS, play, stop, pause, toggle, select, setVolume, destroy };
+  return {
+    playing, currentKey, volume, loading, lastError, tracks: BGM_TRACKS,
+    play, stop, pause, toggle, select, setVolume, destroy,
+  };
 }
