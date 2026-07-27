@@ -1,10 +1,17 @@
 <script setup>
-import { onLaunch } from '@dcloudio/uni-app';
+import { onLaunch, onShow } from '@dcloudio/uni-app';
 import { useUserStore } from './store/user';
+import { patchH5TabBarIcons, scheduleH5TabBarIcons } from './utils/tabBarIcons';
 
 onLaunch(() => {
   const store = useUserStore();
   store.init();
+  patchH5TabBarIcons();
+  scheduleH5TabBarIcons();
+});
+
+onShow(() => {
+  scheduleH5TabBarIcons();
 });
 </script>
 

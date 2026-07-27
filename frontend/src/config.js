@@ -17,3 +17,14 @@ export function staticUrl(path) {
   // #endif
   return p;
 }
+
+/**
+ * 大文件（视频等）始终走后端域名，避免打进小程序主包。
+ */
+export function remoteUrl(path) {
+  if (!path) return '';
+  if (/^https?:\/\//i.test(path) || path.startsWith('data:')) return path;
+  const p = path.startsWith('/') ? path : `/${path}`;
+  if (SERVER) return `${String(SERVER).replace(/\/$/, '')}${p}`;
+  return p;
+}

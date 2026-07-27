@@ -19,6 +19,40 @@
     "router": { "mode": "hash" }
   },
   "app-plus": {
+    "usingComponents": true,
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    },
+    "modules": {},
+    "distribute": {
+      "android": {
+        "permissions": [
+          "<uses-permission android:name=\"android.permission.INTERNET\"/>",
+          "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+          "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\"/>",
+          "<uses-permission android:name=\"android.permission.CAMERA\"/>",
+          "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>",
+          "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" android:maxSdkVersion=\"28\"/>"
+        ],
+        "abiFilters": ["armeabi-v7a", "arm64-v8a"],
+        "minSdkVersion": 21,
+        "targetSdkVersion": 33
+      },
+      "icons": {
+        "android": {
+          "hdpi": "static/logo.jpg",
+          "xhdpi": "static/logo.jpg",
+          "xxhdpi": "static/logo.jpg",
+          "xxxhdpi": "static/logo.jpg"
+        }
+      },
+      "splashscreen": {
+        "useOriginalMsgbox": true
+      }
+    },
     "nativePlugins": []
   }
 }

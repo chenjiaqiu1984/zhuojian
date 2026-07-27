@@ -56,7 +56,10 @@
       <div class="side-panel">
         <el-card shadow="never" class="list-card">
           <template #header>
-            <span>点位列表（排序）</span>
+            <div class="card-header-row">
+              <span>点位列表（排序）</span>
+              <el-button type="primary" size="small" @click="addSpot">添加点位</el-button>
+            </div>
           </template>
           <div
             v-for="(spot, idx) in spots"
@@ -77,9 +80,15 @@
 
         <el-card v-if="selected" shadow="never" class="form-card">
           <template #header>
-            <span>编辑：{{ selected.id }}</span>
+            <div class="card-header-row">
+              <span>编辑：{{ selected.id }}</span>
+              <el-button type="danger" size="small" text @click="removeSpot">删除</el-button>
+            </div>
           </template>
           <el-form label-width="72px" size="small">
+            <el-form-item label="标识">
+              <el-input v-model="selected.id" placeholder="英文标识，如 pier" @change="onSpotIdChange" />
+            </el-form-item>
             <el-form-item label="名称">
               <el-input v-model="selected.name" @input="markDirty" />
             </el-form-item>
@@ -96,16 +105,22 @@
               <el-input v-model="selected.cta" @input="markDirty" />
             </el-form-item>
             <el-form-item label="跳转">
-              <el-select
+              <el-autocomplete
                 v-model="selected.url"
-                filterable
-                allow-create
-                default-first-option
+                :fetch-suggestions="queryUrlSuggestions"
+                placeholder="输入或选择页面路径，如 /pages/breathing/select"
+                clearable
                 style="width:100%"
-                @change="markDirty"
+                @select="markDirty"
+                @input="markDirty"
               >
-                <el-option v-for="u in urlOptions" :key="u.value" :label="u.label" :value="u.value" />
-              </el-select>
+                <template #default="{ item }">
+                  <div class="url-suggest">
+                    <span class="url-suggest-label">{{ item.label }}</span>
+                    <span class="url-suggest-path">{{ item.value }}</span>
+                  </div>
+                </template>
+              </el-autocomplete>
             </el-form-item>
             <el-form-item label="标签侧">
               <el-radio-group v-model="selected.labelSide" @change="markDirty">
@@ -145,7 +160,9 @@ import api from '../api';
 const mapSrc = '/static/island/island-mist.jpg';
 
 const urlOptions = [
-  { label: '正念呼吸', value: '/pages/breathing/select' },
+  { label: '首页', value: '/pages/index/index' },
+  { label: '正念呼吸（选择页）', value: '/pages/breathing/select' },
+  { label: '正念呼吸（练习页）', value: '/pages/breathing/index' },
   { label: '预约咨询师', value: '/pages/consultants/index' },
   { label: '学习培训', value: '/pages/learning/index' },
   { label: '咨询工具', value: '/pages/homework/index' },
@@ -156,6 +173,12 @@ const urlOptions = [
   { label: '情绪怪兽', value: '/pages/monster/index' },
   { label: '个人中心', value: '/pages/profile/index' },
   { label: '解压捏捏乐', value: '/pages/squeeze/index' },
+  { label: '心镜岛', value: '/pages/island/index' },
+  { label: '资讯', value: '/pages/news/index' },
+  { label: '树洞', value: '/pages/treehole/index' },
+  { label: '预约下单', value: '/pages/booking/index' },
+  { label: '我的订单', value: '/pages/orders/index' },
+  { label: '关于我们', value: '/pages/about/index' },
 ];
 
 const loading = ref(false);
@@ -181,6 +204,79 @@ function reindexSort() {
 
 function select(id) {
   selectedId.value = id;
+}
+
+function nextSpotId() {
+  let n = 1;
+  while (spots.value.some(s => s.id === `spot${n}`)) n += 1;
+  return `spot${n}`;
+}
+
+function addSpot() {
+  const id = nextSpotId();
+  spots.value.push({
+    id,
+    name: '新热点',
+    tip: '新热点',
+    place: '',
+    desc: '',
+    cta: '进入',
+    cx: 50,
+    cy: 50,
+    hit: 10,
+    labelSide: 'bottom',
+    url: '/pages/index/index',
+    enabled: true,
+    sort: (spots.value.length + 1) * 10,
+  });
+  selectedId.value = id;
+  markDirty();
+}
+
+async function removeSpot() {
+  const spot = selected.value;
+  if (!spot) return;
+  try {
+    await ElMessageBox.confirm(`确定删除点位「${spot.name}」？`, '删除点位');
+  } catch {
+    return;
+  }
+  const idx = spots.value.findIndex(s => s.id === spot.id);
+  if (idx < 0) return;
+  spots.value.splice(idx, 1);
+  selectedId.value = spots.value[Math.min(idx, spots.value.length - 1)]?.id || '';
+  markDirty();
+}
+
+function onSpotIdChange(val) {
+  const trimmed = String(val || '').trim().replace(/\s+/g, '_');
+  const spot = selected.value;
+  if (!spot) return;
+  if (!trimmed) {
+    ElMessage.warning('标识不能为空');
+    spot.id = selectedId.value;
+    return;
+  }
+  if (spots.value.some(s => s !== spot && s.id === trimmed)) {
+    ElMessage.warning('标识已存在');
+    spot.id = selectedId.value;
+    return;
+  }
+  const oldId = selectedId.value;
+  spot.id = trimmed;
+  if (oldId !== trimmed) selectedId.value = trimmed;
+  markDirty();
+}
+
+function queryUrlSuggestions(queryString, cb) {
+  const q = (queryString || '').trim().toLowerCase();
+  const matched = urlOptions.filter(o =>
+    !q || o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q),
+  );
+  if (q && !matched.some(o => o.value === queryString.trim())) {
+    matched.unshift({ label: '自定义路径', value: queryString.trim() });
+  }
+  cb(matched);
 }
 
 function spotStyle(spot) {
@@ -452,4 +548,19 @@ onMounted(async () => {
   gap: 8px;
   flex-wrap: wrap;
 }
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.url-suggest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.url-suggest-label { font-size: 13px; color: #303133; }
+.url-suggest-path { font-size: 12px; color: #909399; flex-shrink: 0; }
 </style>

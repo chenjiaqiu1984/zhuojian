@@ -1,5 +1,20 @@
 <template>
   <view class="island-map" :style="{ height: viewH + 'px' }">
+    <!-- #ifdef MP-WEIXIN -->
+    <cover-view class="island-brand island-brand--cover">
+      <cover-image class="island-brand-logo" :src="LOGO_SRC" />
+    </cover-view>
+    <cover-view v-if="showBack" class="island-toolbar island-toolbar--cover">
+      <cover-view class="island-chip island-chip--cover" @click="emit('navigate', '/pages/about/index')">
+        <cover-view class="island-chip-text">关于我们</cover-view>
+      </cover-view>
+      <cover-view class="island-chip island-chip--cover" @click="emit('back')">
+        <cover-view class="island-chip-text">进入主页</cover-view>
+      </cover-view>
+    </cover-view>
+    <!-- #endif -->
+
+    <!-- #ifndef MP-WEIXIN -->
     <view class="island-brand">
       <image class="island-brand-logo" :src="LOGO_SRC" mode="aspectFit" />
     </view>
@@ -11,6 +26,7 @@
         <text class="island-chip-text">进入主页</text>
       </view>
     </view>
+    <!-- #endif -->
 
     <!-- 一屏等比缩放，不滚动 -->
     <view class="island-stage">
@@ -23,6 +39,7 @@
           top: offsetY + 'px',
         }"
       >
+        <!-- 静态封面：加载中 / 视频失败 / 弹层时兜底 -->
         <image
           class="island-img"
           :src="imgSrc"
@@ -30,7 +47,55 @@
           :style="{ width: imgW + 'px', height: imgH + 'px' }"
           @error="onImgError"
         />
+        <!-- 循环短视频底图（远程，不占主包） -->
+        <video
+          v-if="videoActive"
+          id="islandMistVideo"
+          class="island-video"
+          :src="videoSrc"
+          :poster="imgSrc"
+          :style="{ width: imgW + 'px', height: imgH + 'px' }"
+          autoplay
+          loop
+          muted
+          :controls="false"
+          :show-center-play-btn="false"
+          :show-play-btn="false"
+          :show-fullscreen-btn="false"
+          :show-progress="false"
+          :show-loading="false"
+          :enable-progress-gesture="false"
+          :show-mute-btn="false"
+          object-fit="fill"
+          playsinline
+          webkit-playsinline
+          @error="onVideoError"
+          @play="onVideoPlay"
+        />
 
+        <!-- #ifdef MP-WEIXIN -->
+        <!-- 视频为原生组件，热区需 cover-view 才能点到 -->
+        <cover-view
+          v-for="spot in spots"
+          :key="'cv-' + spot.id"
+          class="hotspot hotspot--cover"
+          :class="{ 'hotspot--active': activeId === spot.id }"
+          :style="spotHitStyle(spot)"
+          @click.stop="onSpot(spot)"
+        >
+          <cover-view class="marker marker--cover">
+            <cover-view class="marker-core marker-core--cover" />
+          </cover-view>
+          <cover-view
+            class="marker-label marker-label--cover"
+            :class="'marker-label--' + (spot.labelSide || 'bottom')"
+          >
+            <cover-view class="marker-label-text">{{ spot.name }}</cover-view>
+          </cover-view>
+        </cover-view>
+        <!-- #endif -->
+
+        <!-- #ifndef MP-WEIXIN -->
         <view
           v-for="spot in spots"
           :key="spot.id"
@@ -50,6 +115,7 @@
             <text class="marker-label-text">{{ spot.name }}</text>
           </view>
         </view>
+        <!-- #endif -->
       </view>
     </view>
 
@@ -88,6 +154,16 @@
     </view>
 
     <!-- 备案号叠在图上 -->
+    <!-- #ifdef MP-WEIXIN -->
+    <cover-view v-if="showBack" class="island-beian island-beian--cover">
+      <cover-view class="island-beian-pill island-beian-pill--cover">
+        <cover-view class="island-beian-text" @click="emit('icp')">苏ICP备2026043098号</cover-view>
+        <cover-view class="island-beian-sep">·</cover-view>
+        <cover-view class="island-beian-text" @click="emit('beian')">苏公网安备32010402002563号</cover-view>
+      </cover-view>
+    </cover-view>
+    <!-- #endif -->
+    <!-- #ifndef MP-WEIXIN -->
     <view v-if="showBack" class="island-beian">
       <view class="island-beian-pill">
         <text class="island-beian-text" @click.stop="emit('icp')">苏ICP备2026043098号</text>
@@ -96,15 +172,16 @@
         <text class="island-beian-text" @click.stop="emit('beian')">苏公网安备32010402002563号</text>
       </view>
     </view>
+    <!-- #endif -->
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { getWindowSize } from '../utils/windowSize';
 import { islandApi } from '../api/index';
 import { DEFAULT_ISLAND_SPOTS, normalizeIslandSpots } from '../utils/islandSpots';
-import { staticUrl } from '../config';
+import { staticUrl, remoteUrl } from '../config';
 
 const props = defineProps({
   height: { type: Number, default: 0 },
@@ -116,6 +193,7 @@ const emit = defineEmits(['navigate', 'back', 'icp', 'beian']);
 /** 竖版原图宽/高 */
 const IMG_RATIO = 768 / 1376;
 const IMG_JPG = staticUrl('/static/island/island-mist.jpg');
+const VIDEO_MP4 = remoteUrl('/static/island/island-mist.mp4');
 const LOGO_SRC = staticUrl('/static/logo.jpg');
 const BEIAN_SRC = staticUrl('/static/beian.png');
 
@@ -141,7 +219,20 @@ const offsetX = ref(0);
 const offsetY = ref(0);
 const navigating = ref(false);
 const imgSrc = ref(IMG_JPG);
+const videoSrc = ref(VIDEO_MP4);
+const videoFailed = ref(false);
+const videoPlaying = ref(false);
 const panelSpot = ref(null);
+
+/** 弹层/转场时关掉原生 video，避免挡住 view；失败时只留静图 */
+const videoActive = computed(() => (
+  !videoFailed.value
+  && !enterMist.value
+  && !panelSpot.value
+  && !cloudShow.value
+  && !!videoSrc.value
+));
+
 
 function rainStyle(n) {
   const left = 4 + (n * 7.5) % 92;
@@ -176,6 +267,15 @@ function layout() {
 
 function onImgError() {
   uni.showToast({ title: '岛图加载失败', icon: 'none' });
+}
+
+function onVideoError() {
+  videoFailed.value = true;
+  videoPlaying.value = false;
+}
+
+function onVideoPlay() {
+  videoPlaying.value = true;
 }
 
 function spotHitStyle(spot) {
@@ -259,6 +359,9 @@ watch(() => props.height, layout);
   width: 82rpx;
   height: 82rpx;
 }
+.island-brand--cover {
+  overflow: hidden;
+}
 
 .island-toolbar {
   position: absolute;
@@ -282,6 +385,9 @@ watch(() => props.height, layout);
   color: rgba(28, 42, 39, 0.82);
   letter-spacing: 0.08em;
   text-shadow: 0 1rpx 2rpx rgba(255, 255, 255, 0.55);
+}
+.island-chip--cover {
+  display: inline-block;
 }
 
 .island-beian {
@@ -329,6 +435,14 @@ watch(() => props.height, layout);
   font-family: $zj-font-serif;
   &:active { opacity: 0.7; }
 }
+.island-beian--cover {
+  pointer-events: auto;
+}
+.island-beian-pill--cover {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
 
 .island-stage {
   position: relative;
@@ -345,6 +459,17 @@ watch(() => props.height, layout);
 .island-img {
   display: block;
   vertical-align: top;
+  position: relative;
+  z-index: 0;
+}
+
+.island-video {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  /* 避免抢点击：热区在上层 / cover-view */
+  pointer-events: none;
 }
 
 .hotspot {
@@ -355,11 +480,26 @@ watch(() => props.height, layout);
   justify-content: center;
 }
 
+.hotspot--cover {
+  /* cover-view 布局能力有限，用绝对定位热区 */
+  display: block;
+}
+
 .marker {
   position: relative;
   width: 20rpx;
   height: 20rpx;
   z-index: 2;
+}
+
+.marker--cover {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20rpx;
+  height: 20rpx;
+  margin-left: -10rpx;
+  margin-top: -10rpx;
 }
 
 .marker-core {
@@ -373,6 +513,17 @@ watch(() => props.height, layout);
   background: rgba(255, 255, 255, 0.62);
   border: 2rpx solid rgba(74, 138, 122, 0.7);
   box-shadow: 0 2rpx 8rpx rgba(28, 42, 39, 0.18);
+}
+
+.marker-core--cover {
+  left: 4rpx;
+  top: 4rpx;
+  margin: 0;
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.75);
+  border: 2rpx solid rgba(74, 138, 122, 0.75);
 }
 
 .marker-ring {
@@ -402,6 +553,13 @@ watch(() => props.height, layout);
   border: 1rpx solid rgba(255, 255, 255, 0.45);
   box-shadow: 0 4rpx 14rpx rgba(28, 42, 39, 0.12);
   backdrop-filter: blur(6px);
+}
+
+.marker-label--cover {
+  pointer-events: none;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  background-color: rgba(255, 255, 255, 0.7);
 }
 .marker-label-text {
   font-size: 22rpx;

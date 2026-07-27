@@ -13,6 +13,18 @@ const ISLAND_SPOTS = [
     sort: 10,
   },
   {
+    id: 'news',
+    name: '新闻资讯',
+    tip: '新闻资讯',
+    place: '崖边报亭',
+    desc: '崖边立着一座小报亭，风从湖面吹来，带来最新的讯息。在这里浏览心理科普、行业动态与活动公告，了解卓见与心理世界的新鲜故事。',
+    cta: '去阅读',
+    cx: 20, cy: 32, hit: 9, labelSide: 'bottom',
+    url: '/pages/news/index',
+    enabled: true,
+    sort: 15,
+  },
+  {
     id: 'lighthouse',
     name: '预约咨询师',
     tip: '预约咨询师',

@@ -167,11 +167,11 @@
     "borderStyle": "white",
     "backgroundColor": "#fff",
     "list": [
-      { "pagePath": "pages/index/index",      "text": "心镜岛",  "iconPath": "static/icons/home.png",            "selectedIconPath": "static/icons/home-active.png" },
-      { "pagePath": "pages/consultants/index","text": "预约咨询师",  "iconPath": "static/icons/consultant.png",      "selectedIconPath": "static/icons/consultant-active.png" },
-      { "pagePath": "pages/ohcard/index",     "text": "心理图卡","iconPath": "static/icons/card.png",            "selectedIconPath": "static/icons/card-active.png" },
-      { "pagePath": "pages/assessment/index", "text": "测评",    "iconPath": "static/icons/news.png",            "selectedIconPath": "static/icons/news-active.png" },
-      { "pagePath": "pages/profile/index",    "text": "我的",    "iconPath": "static/icons/profile.png",         "selectedIconPath": "static/icons/profile-active.png" }
+      { "pagePath": "pages/index/index",      "text": "心镜岛",  "iconPath": "/static/icons/home.png",            "selectedIconPath": "/static/icons/home-active.png" },
+      { "pagePath": "pages/consultants/index","text": "预约咨询师",  "iconPath": "/static/icons/consultant.png",      "selectedIconPath": "/static/icons/consultant-active.png" },
+      { "pagePath": "pages/ohcard/index",     "text": "心理图卡","iconPath": "/static/icons/card.png",            "selectedIconPath": "/static/icons/card-active.png" },
+      { "pagePath": "pages/assessment/index", "text": "测评",    "iconPath": "/static/icons/news.png",            "selectedIconPath": "/static/icons/news-active.png" },
+      { "pagePath": "pages/profile/index",    "text": "我的",    "iconPath": "/static/icons/profile.png",         "selectedIconPath": "/static/icons/profile-active.png" }
     ]
   }
 }

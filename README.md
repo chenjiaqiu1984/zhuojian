@@ -1,6 +1,6 @@
 # 卓见心理 小程序
 
-uni-app 跨平台应用（微信小程序 / H5）+ Node.js 后端 + Vue3 管理后台
+uni-app 跨平台应用（微信小程序 / H5 / Android App）+ Node.js 后端 + Vue3 管理后台
 
 功能模块：关于我们、咨询师预约、OH卡心理工具、心理评估（PHQ-9 / GAD-7 / SDS / SAS / ISI / 大五人格 / MBTI / SCL-90 等156个量表）、自助工具（CBT / 梦境 / 冰山模型 / 情绪追踪）、危机干预、合规体系
 
@@ -82,7 +82,9 @@ cd frontend; npm run dev:h5    # http://localhost:5173
 
 ```
 frontend/.env.development   # dev 环境前端地址
-frontend/.env.production    # prod 环境前端地址
+frontend/.env.production    # prod 环境前端地址（H5 / App 生产构建）
+frontend/.env.app           # App 专用（API 指向线上）
+frontend/.env.mp-weixin     # 微信小程序构建
 admin/.env.development      # dev 环境 admin 代理目标
 admin/.env.production       # prod 环境 admin 代理目标
 ```
@@ -310,6 +312,52 @@ cd frontend && npm run build:mp-weixin
 # 用微信开发者工具打开 dist/build/mp-weixin → 上传 → 提交审核
 ```
 
+**Android App（APK）：**
+
+> CLI 只能编译 App 资源，**生成 APK 需 HBuilderX 云打包**。详细说明见 [DEV_APP.md](./DEV_APP.md)。
+
+**1. 发版前检查**
+
+- 修改 `frontend/src/manifest.json` 中的 `versionName`、`versionCode`（每次发版 versionCode +1）
+- 确认 `frontend/.env.production` / `.env.app` 中 `VITE_SERVER` 为线上 HTTPS 域名
+- 确保后端 API 与 `/static` 静态资源可访问
+
+**2. 编译 App 资源**
+
+```powershell
+cd frontend
+npm install          # 首次或依赖变更后
+npm run build:app
+```
+
+产物目录：`frontend/dist/build/app`
+
+**3. HBuilderX 云打包（推荐）**
+
+1. 安装 [HBuilderX](https://www.dcloud.io/hbuilderx.html)，登录 [DCloud 开发者中心](https://dev.dcloud.net.cn/)
+2. **文件 → 导入** → 选择 `frontend` 目录
+3. **发行 → 原生 App-云打包** → 勾选 **Android**
+   - **测试包**：DCloud 公共证书，快速内测
+   - **正式包**：上传自有签名证书（`.keystore`）
+4. 打包完成后下载 `.apk` 安装测试
+
+**4. Android 签名证书（正式发版）**
+
+```powershell
+keytool -genkey -alias zhuojian -keyalg RSA -keysize 2048 -validity 36500 -keystore zhuojian-release.keystore
+```
+
+keystore 与密码需妥善保管，后续更新必须使用同一证书。
+
+**5. 本地真机调试（可选）**
+
+```powershell
+cd frontend
+npm run dev:app
+```
+
+HBuilderX → **运行 → 运行到手机或模拟器 → Android**。真机调试时 `VITE_SERVER` 需改为电脑局域网 IP（如 `http://192.168.1.100:3000`），不能用 `localhost`。
+
 ---
 
 ## 安全清单（上线前必须完成）
@@ -331,10 +379,11 @@ ohcard/
 │   ├── prisma/           # 数据库 schema (SQLite)
 │   ├── services/         # SMS / Email / 危机检测
 │   └── scripts/          # seed 脚本
-├── frontend/             # uni-app Vue3 小程序/H5
+├── frontend/             # uni-app Vue3 小程序/H5/App
 │   └── src/pages/        # index / about / consultants / booking / ohcard / homework / legal / login
 ├── admin/                # Vue3 + Element Plus 管理后台
 │   └── src/views/        # Dashboard / Consultants / Booking / News / CrisisEvents / TermsManager
+├── DEV_APP.md            # Android App / APK 发布详细指南
 ├── ROADMAP.md            # 产品路线图
 └── start.bat             # 一键启动（Windows）
 ```
@@ -386,6 +435,14 @@ npm run db:deploy
 pm2 restart zhuojian-backend
 ```
 
+**Q: `npm run build:app` 报 `isInSSRComponentSetup` 错误？**
+
+缺少 `@dcloudio/uni-app-plus`，在 `frontend` 目录执行 `npm install` 后重试。详见 [DEV_APP.md](./DEV_APP.md)。
+
+**Q: App 里接口或图片加载失败？**
+
+确认 `VITE_SERVER` 为手机可访问的 HTTPS 域名；Android 9+ 默认禁止明文 HTTP。
+
 **Q: 宝塔面板 Nginx 无法用 `systemctl reload` 重载？**
 
 ```bash
@@ -434,15 +491,4 @@ pm2 restart zhuojian-backend
 | 登录报 40029 | 检查后端 `.env` 中 AppID/AppSecret |
 | 审核被拒（涉及医疗） | 上传营业执照和资质证明 |
 | Socket 连接失败 | 在 socket 合法域名中添加 wss 地址 |
-
-# 终端 1 - 后端
-cd E:\work_fold\ohcard\backend
-npm run dev
-# 终端 2 - 管理后台
-cd E:\work_fold\ohcard\admin
-npm run dev
-# 终端 3 - 前端 H5
-$env:Path = "$env:LOCALAPPDATA\nodejs;$env:Path"
-cd E:\work_fold\ohcard\frontend
-npm run dev:h5
 

@@ -29,9 +29,7 @@
           v-for="p in PROGRAMS"
           :key="p.key"
           class="program-card"
-          :class="{ selected: selectedType === 'program' && selectedKey === p.key }"
-          :style="selectedType === 'program' && selectedKey === p.key ? { borderColor: p.color } : {}"
-          @click="select('program', p.key)"
+          @click="onSelect('program', p.key)"
         >
           <view class="program-left">
             <view class="program-icon-wrap" :style="{ background: p.color + '18' }">
@@ -46,9 +44,7 @@
               </view>
             </view>
           </view>
-          <view class="check-circle" :style="selectedType === 'program' && selectedKey === p.key ? { background: p.color, borderColor: p.color } : {}">
-            <text v-if="selectedType === 'program' && selectedKey === p.key" class="check-icon">✓</text>
-          </view>
+          <text class="program-arrow">→</text>
         </view>
       </view>
     </view>
@@ -65,9 +61,7 @@
           v-for="m in MODES"
           :key="m.key"
           class="mode-card"
-          :class="{ selected: selectedType === 'mode' && selectedKey === m.key }"
-          :style="selectedType === 'mode' && selectedKey === m.key ? { borderColor: m.color, background: m.color + '12' } : {}"
-          @click="select('mode', m.key)"
+          @click="onSelect('mode', m.key)"
         >
           <view class="mode-icon-wrap" :style="{ background: m.color + '18' }">
             <ZjIcon :name="m.icon" :size="36" :color="m.color" />
@@ -78,23 +72,11 @@
       </view>
     </view>
 
-    <!-- 底部开始按钮 -->
-    <view class="footer">
-      <view
-        class="start-btn"
-        :class="{ disabled: !selectedKey }"
-        :style="selectedKey ? { background: activeColor } : {}"
-        @click="onStart()"
-      >
-        <text class="start-text" @click="onStart()">{{ selectedKey ? '开始练习' : '请先选择练习' }}</text>
-        <text v-if="selectedKey" class="start-arrow" @click="onStart()">→</text>
-      </view>
-    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import ZjIcon from '../../components/ZjIcon.vue';
 import { track } from '@/utils/track';
 import { relaxApi } from '../../api/index';
@@ -130,28 +112,11 @@ const MODES = ref([
   { key: '5-5',   name: '5-5 心率同调', icon: 'activity', desc: '吸气5秒・呼气5秒，改善心率变异性',          color: '#4AB8A0' },
 ]);
 
-const selectedType = ref('');
-const selectedKey  = ref('');
-
-const activeColor = computed(() => {
-  if (!selectedKey.value) return '#4A7A9E';
-  if (selectedType.value === 'program') {
-    return PROGRAMS.value.find(p => p.key === selectedKey.value)?.color || '#4A7A9E';
-  }
-  return MODES.value.find(m => m.key === selectedKey.value)?.color || '#4A7A9E';
-});
-
-function select(type, key) {
-  selectedType.value = type;
-  selectedKey.value  = key;
+function onSelect(type, key) {
   track('breath_select', 'breathing', { type, key });
-}
-
-function onStart() {
-  if (!selectedKey.value) return;
-  track('breath_start', 'breathing', { type: selectedType.value, key: selectedKey.value });
+  track('breath_start', 'breathing', { type, key });
   uni.navigateTo({
-    url: `/pages/breathing/index?type=${selectedType.value}&key=${selectedKey.value}`,
+    url: `/pages/breathing/index?type=${type}&key=${key}`,
   });
 }
 
@@ -181,7 +146,7 @@ $card-r: 20rpx;
 .page {
   min-height: 100vh;
   background: $bg;
-  padding-bottom: 40rpx;
+  padding-bottom: 48rpx;
 }
 
 /* ── 顶部栏 ── */
@@ -253,7 +218,6 @@ $card-r: 20rpx;
   transition: border-color 0.2s $zj-ease-out, box-shadow 0.2s $zj-ease-out;
   box-shadow: $zj-shadow-card;
 
-  &.selected { box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.10); }
   &:active { transform: scale(0.99); }
 }
 .program-left {
@@ -280,14 +244,9 @@ $card-r: 20rpx;
   padding: 2rpx 14rpx;
   &--time { color: $teal; }
 }
-.check-circle {
-  width: 44rpx; height: 44rpx; border-radius: 50%;
-  border: 2rpx solid $border;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  transition: background 0.2s, border-color 0.2s;
+.program-arrow {
+  font-size: 28rpx; color: $muted; flex-shrink: 0;
 }
-.check-icon { font-size: 22rpx; color: #fff; font-weight: 700; }
 
 /* ── 模式网格 ── */
 .mode-grid {
@@ -300,7 +259,6 @@ $card-r: 20rpx;
   box-shadow: $zj-shadow-card;
   transition: border-color 0.2s $zj-ease-out, background 0.2s $zj-ease-out;
 
-  &.selected { box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.10); }
   &:active { transform: scale(0.97); }
 }
 .mode-icon-wrap {
@@ -316,23 +274,4 @@ $card-r: 20rpx;
   display: block; font-size: 20rpx; color: $text-2; line-height: 1.6;
 }
 
-/* ── 底部按钮 ── */
-.footer {
-  padding: 40rpx 28rpx 48rpx;
-}
-.start-btn {
-  height: 96rpx; border-radius: 48rpx;
-  background: #C8D8D2;
-  display: flex; align-items: center; justify-content: center;
-  gap: 12rpx;
-  transition: background 0.3s $zj-ease-out, box-shadow 0.3s $zj-ease-out;
-  box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.12);
-
-  &:active:not(.disabled) { opacity: 0.88; }
-  &.disabled { box-shadow: none; }
-}
-.start-text {
-  font-size: 30rpx; font-weight: 700; color: #fff; letter-spacing: 0.04em;
-}
-.start-arrow { font-size: 30rpx; color: rgba(255,255,255,0.85); }
 </style>
