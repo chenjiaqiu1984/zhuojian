@@ -131,6 +131,7 @@ defineOptions(createMpShare('about/index'));
 
 import {ref, onMounted, watch } from 'vue';
 import { aboutApi } from '../../api/index';
+import { openIcp, openBeian } from '../../utils/openBeian';
 import ZjIcon from '../../components/ZjIcon.vue';
 
 
@@ -168,25 +169,6 @@ const missions = [
 onMounted(async () => {
   try { about.value = await aboutApi.get(); } catch {}
 });
-
-function openIcp() {
-  // #ifdef H5
-  window.open('https://beian.miit.gov.cn/', '_blank');
-  // #endif
-  // #ifndef H5
-  uni.navigateTo({ url: '/pages/webview/index?url=' + encodeURIComponent('https://beian.miit.gov.cn/') });
-  // #endif
-}
-
-function openBeian() {
-  const url = 'https://beian.mps.gov.cn/portal/registerSystemInfo?recordcode=32010402002563';
-  // #ifdef H5
-  window.open(url, '_blank');
-  // #endif
-  // #ifndef H5
-  uni.navigateTo({ url: '/pages/webview/index?url=' + encodeURIComponent(url) });
-  // #endif
-}
 </script>
 
 <style scoped lang="scss">

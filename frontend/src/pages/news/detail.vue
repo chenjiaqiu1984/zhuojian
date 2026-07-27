@@ -73,8 +73,10 @@ import { ref, onMounted, computed } from 'vue';
 import DOMPurify from 'dompurify';
 import { newsApi } from '../../api/index';
 import { requireActive } from '../../utils/requireActive';
+import { showShareActions } from '../../utils/shareMoments';
 // #ifndef H5
 import mpHtml from '@/components/mp-html/mp-html.vue';
+import { buildTimelineShare } from '@/utils/mpShare';
 
 defineOptions({
   onShareAppMessage() {
@@ -87,7 +89,7 @@ defineOptions({
   onShareTimeline() {
     const pages = getCurrentPages();
     const title = pages[pages.length - 1]?.$vm?.news?.title || '卓见心理 — 最新动态';
-    return { title };
+    return buildTimelineShare(title);
   },
 });
 // #endif
@@ -216,12 +218,14 @@ async function toggleFavorite() {
 }
 
 function share() {
+  const title = news.value?.title || '卓见心理 — 最新动态';
+  const subtitle = news.value?.summary || '卓见心理动态 — 知识 · 洞见';
   // #ifdef H5
   const url = `${window.location.origin}${window.location.pathname}#/pages/news/detail?id=${newsId}`;
-  uni.setClipboardData({ data: url, success: () => uni.showToast({ title: '链接已复制', icon: 'none' }) });
+  showShareActions({ title, subtitle, url });
   // #endif
   // #ifndef H5
-  uni.showShareMenu({ withShareTicket: true });
+  showShareActions({ title, subtitle });
   // #endif
 }
 

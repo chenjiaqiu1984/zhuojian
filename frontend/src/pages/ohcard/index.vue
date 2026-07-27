@@ -109,12 +109,14 @@ import ZjIcon from '../../components/ZjIcon.vue';
 import IslandHero from '../../components/IslandHero.vue';
 
 // #ifndef H5
+import { buildTimelineShare } from '@/utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     return { title: '卓见心理图卡 — 让图像成为语言，看见内心深处的声音', path: '/pages/ohcard/index' };
   },
   onShareTimeline() {
-    return { title: '卓见心理图卡 — 探索内心世界的投射工具' };
+    return buildTimelineShare('卓见心理图卡 — 探索内心世界的投射工具');
   },
 });
 // #endif

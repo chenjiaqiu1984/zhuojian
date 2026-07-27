@@ -2,12 +2,19 @@
 import { onLaunch, onShow } from '@dcloudio/uni-app';
 import { useUserStore } from './store/user';
 import { patchH5TabBarIcons, scheduleH5TabBarIcons } from './utils/tabBarIcons';
+import ShareMomentsModal from './components/ShareMomentsModal.vue';
 
 onLaunch(() => {
   const store = useUserStore();
   store.init();
   patchH5TabBarIcons();
   scheduleH5TabBarIcons();
+  // #ifndef H5
+  uni.showShareMenu({
+    withShareTicket: true,
+    menus: ['shareAppMessage', 'shareTimeline'],
+  });
+  // #endif
 });
 
 onShow(() => {
@@ -16,6 +23,7 @@ onShow(() => {
 </script>
 
 <template>
+  <ShareMomentsModal />
 </template>
 
 <style lang="scss">

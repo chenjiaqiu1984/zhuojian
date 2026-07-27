@@ -96,6 +96,8 @@ import { computed, ref, nextTick } from 'vue';
 import { onLoad, onReady } from '@dcloudio/uni-app';
 
 // #ifndef H5
+import { buildTimelineShare } from '@/utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     const pages = getCurrentPages();
@@ -104,7 +106,7 @@ defineOptions({
     return { title: `我在用卓见心理探索「${title}」，快来看看`, path: '/pages/ohcard/index' };
   },
   onShareTimeline() {
-    return { title: '卓见心理图卡 — 人生困境玩法，看见卡住你的那个结' };
+    return buildTimelineShare('卓见心理图卡 — 人生困境玩法，看见卡住你的那个结');
   },
 });
 // #endif

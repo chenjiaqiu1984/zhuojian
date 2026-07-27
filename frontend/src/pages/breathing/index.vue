@@ -206,6 +206,11 @@
           </view>
         </view>
         <button class="finish-share-btn" open-type="share">分享给朋友</button>
+        <ShareMomentsButton
+          class="finish-moments-btn"
+          :title="`我刚完成了「${finishInfo.mode || '正念呼吸'}」练习 — 卓见心理`"
+          subtitle="正念呼吸 · 找到属于你的呼吸节奏"
+        />
         <view class="finish-close-btn" @click="showFinishModal = false">继续练习</view>
       </view>
     </view>
@@ -244,6 +249,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { SERVER } from '../../config';
 import { raf, caf } from '../../utils/raf';
 import BgmPlayer from '../../components/BgmPlayer.vue';
+import ShareMomentsButton from '../../components/ShareMomentsButton.vue';
 import { track } from '@/utils/track';
 import { relaxApi } from '../../api/index';
 
@@ -1516,6 +1522,14 @@ $accent:   #4A7A9E;
   width: 100%; background: #4A7A9E; color: #fff;
   border: none; border-radius: 16rpx; padding: 20rpx 0;
   font-size: 28rpx; margin-bottom: 16rpx;
+}
+.finish-moments-btn {
+  width: 100%;
+  background: #EFF7F5;
+  border: 1rpx solid #4A8A7A;
+  border-radius: 16rpx;
+  padding: 20rpx 0;
+  margin-bottom: 16rpx;
 }
 .finish-close-btn {
   color: #8DAAB8; font-size: 26rpx; padding: 12rpx 0;

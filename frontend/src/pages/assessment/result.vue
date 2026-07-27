@@ -104,6 +104,8 @@ import { useUserStore } from '../../store/user.js';
 import CrisisAlert from '../../components/CrisisAlert.vue';
 
 // #ifndef H5
+import { buildTimelineShare } from '../../utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     const pages = getCurrentPages();
@@ -123,7 +125,7 @@ defineOptions({
     const title = name
       ? (isFun ? `我测了「${name}」— 卓见心理` : `我完成了「${name}」测评 — 卓见心理`)
       : '卓见心理测评 — 了解真实的自己';
-    return { title };
+    return buildTimelineShare(title);
   },
 });
 // #endif

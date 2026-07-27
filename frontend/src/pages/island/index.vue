@@ -9,14 +9,6 @@ import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import IslandMap from '../../components/IslandMap.vue';
 
-const TAB_PATHS = new Set([
-  '/pages/index/index',
-  '/pages/consultants/index',
-  '/pages/ohcard/index',
-  '/pages/assessment/index',
-  '/pages/profile/index',
-]);
-
 const viewH = ref(600);
 
 onLoad(() => {
@@ -25,9 +17,8 @@ onLoad(() => {
   uni.switchTab({ url: '/pages/index/index' });
 });
 
-function onNavigate(url) {
-  if (TAB_PATHS.has(url)) uni.switchTab({ url });
-  else uni.navigateTo({ url });
+function onNavigate() {
+  // 跳转已在 IslandMap 内同步完成，此处仅保留接口兼容
 }
 </script>
 

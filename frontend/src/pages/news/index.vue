@@ -105,6 +105,7 @@ defineOptions(createMpShare('news/index'));
 import { ref, onMounted } from 'vue';
 import { newsApi } from '../../api/index';
 import { track } from '../../utils/track';
+import { showShareActions } from '../../utils/shareMoments';
 
 const TAB_LIST = [
   { key: '', label: '全部' },
@@ -181,8 +182,20 @@ async function toggleFavorite(n) {
 }
 
 function share(n) {
+  // #ifdef H5
   const url = `${window.location.origin}${window.location.pathname}#/pages/news/detail?id=${n.id}`;
-  uni.setClipboardData({ data: url, success: () => uni.showToast({ title: '链接已复制', icon: 'none' }) });
+  showShareActions({
+    title: n.title,
+    subtitle: n.summary || '卓见心理动态 — 知识 · 洞见',
+    url,
+  });
+  // #endif
+  // #ifndef H5
+  showShareActions({
+    title: n.title,
+    subtitle: n.summary || '卓见心理动态 — 知识 · 洞见',
+  });
+  // #endif
 }
 </script>
 

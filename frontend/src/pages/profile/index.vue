@@ -48,6 +48,7 @@ import { authApi, bookingApi, paymentApi } from '../../api/index';
 import { SERVER } from '../../config';
 import { track } from '../../utils/track';
 import IslandHero from '../../components/IslandHero.vue';
+import { openShareMoments } from '../../utils/shareMoments';
 
 const BASE_URL = SERVER;
 const store = useUserStore();
@@ -91,6 +92,7 @@ const menus = computed(() => {
     { label: '心理测评',   icon: 'clipboard-pen',  action: () => uni.navigateTo({ url: '/pages/assessment/my' }) },
     { label: '测评记录',   icon: 'clipboard-list', action: () => uni.navigateTo({ url: '/pages/assessment/results' }) },
     { label: '我的成就',   icon: 'trophy',         action: () => uni.navigateTo({ url: '/pages/profile/achievements' }) },
+    { label: '分享到朋友圈', icon: 'link',        action: () => openShareMoments({ title: '卓见心理 — 专业心理服务平台', subtitle: '一对一咨询 · 心理测评 · 自助工具 · 艺术疗愈' }) },
     { label: '树洞',       icon: 'sprout',         action: () => uni.navigateTo({ url: '/pages/treehole/index' }) },
     { label: '抽卡记录',   icon: 'layers',         action: () => uni.navigateTo({ url: '/pages/ohcard/record' }) },
     { label: '我的券码',   icon: 'ticket',         action: () => uni.navigateTo({ url: '/pages/profile/coupons' }) },

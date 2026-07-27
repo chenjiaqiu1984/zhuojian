@@ -64,6 +64,8 @@ import { ref, computed, nextTick } from 'vue';
 import { onLoad, onReady } from '@dcloudio/uni-app';
 
 // #ifndef H5
+import { buildTimelineShare } from '@/utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     const pages = getCurrentPages();
@@ -72,7 +74,7 @@ defineOptions({
     return { title: `我在用「${title}」做心理探索，快来试试`, path: '/pages/ohcard/index' };
   },
   onShareTimeline() {
-    return { title: '卓见心理图卡 — 多卡组合，深度探索内心世界' };
+    return buildTimelineShare('卓见心理图卡 — 多卡组合，深度探索内心世界');
   },
 });
 // #endif

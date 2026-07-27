@@ -1,12 +1,12 @@
 <template>
-  <view class="home" :class="{ 'home--island': showIsland }">
+  <view class="home" :class="{ 'home--island': islandOpen }">
     <!-- 心镜岛（保留底部 Tab） -->
-    <view v-if="showIsland" class="island-wrap">
+    <view v-if="islandOpen" class="island-wrap">
       <IslandMap
+        :key="islandMountKey"
         :height="islandH"
         show-back
         @navigate="onIslandNav"
-        @back="closeIsland"
         @icp="openIcp"
         @beian="openBeian"
       />
@@ -121,22 +121,27 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onHide } from '@dcloudio/uni-app';
 import { consultantApi, newsApi, aboutApi } from '../../api/index';
 import { SERVER, staticUrl } from '../../config';
 import TermsConfirmModal from '../../components/TermsConfirmModal.vue';
 import IslandMap from '../../components/IslandMap.vue';
 import { getWindowSize } from '../../utils/windowSize';
+import { pageNav } from '../../utils/islandNav';
+import { openIcp, openBeian } from '../../utils/openBeian';
+import { islandOpen, openIslandMode, closeIslandMode } from '../../utils/islandMode';
 
 const islandEntrySrc = staticUrl('/static/island/entry.jpg');
 
 // #ifndef H5
+import { buildTimelineShare } from '../../utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     return { title: '卓见心理 — 专业心理服务平台', path: '/pages/index/index' };
   },
   onShareTimeline() {
-    return { title: '卓见心理 — 一对一咨询 · 心理测评 · 自助工具' };
+    return buildTimelineShare('卓见心理 — 一对一咨询 · 心理测评 · 自助工具');
   },
 });
 // #endif
@@ -146,8 +151,9 @@ const consultants = ref([]);
 const news = ref([]);
 const tickerItems = ref([]);
 const termsModalRef = ref(null);
-const showIsland = ref(true);
 const islandH = ref(500);
+const islandMountKey = ref(0);
+let islandPageWasHidden = false;
 
 const menuGroups = ref([
   {
@@ -186,25 +192,19 @@ function calcIslandH() {
 
 function openIsland() {
   calcIslandH();
-  showIsland.value = true;
-  uni.setNavigationBarTitle({ title: '心镜岛' });
-  // 展开后再量一次，避免首次高度为 0
+  islandMountKey.value += 1;
+  openIslandMode();
   setTimeout(() => calcIslandH(), 50);
 }
 
-function closeIsland() {
-  showIsland.value = false;
-  uni.setNavigationBarTitle({ title: '卓见心理' });
+function onIslandNav() {
+  // 子组件已同步 pageNav / closeIslandMode；此处兜底关闭岛图
+  closeIslandMode();
 }
 
-function onIslandNav(url) {
-  if (TAB_PATHS.has(url)) {
-    if (url === '/pages/index/index') return;
-    uni.switchTab({ url });
-  } else {
-    uni.navigateTo({ url });
-  }
-}
+onHide(() => {
+  islandPageWasHidden = true;
+});
 
 onShow(() => {
   try {
@@ -213,14 +213,19 @@ onShow(() => {
       openIsland();
     }
   } catch (e) {}
-  if (showIsland.value) {
+  if (islandOpen.value) {
     uni.setNavigationBarTitle({ title: '心镜岛' });
+    // 从子页/其他 Tab 返回且仍在岛模式时，重建组件以恢复热点
+    if (islandPageWasHidden) {
+      islandMountKey.value += 1;
+    }
   }
+  islandPageWasHidden = false;
 });
 
 onMounted(async () => {
   calcIslandH();
-  if (showIsland.value) {
+  if (islandOpen.value) {
     uni.setNavigationBarTitle({ title: '心镜岛' });
     setTimeout(() => calcIslandH(), 50);
   }
@@ -242,32 +247,13 @@ function navTicker(item) {
   else if (item.type === 'ohcard') nav(`/pages/ohcard/index?categoryId=${item.id}`);
 }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('zh-CN') : ''; }
-const TAB_PATHS = new Set(['/pages/index/index','/pages/consultants/index','/pages/ohcard/index','/pages/assessment/index','/pages/profile/index']);
 function nav(p) {
-  if (TAB_PATHS.has(p)) uni.switchTab({ url: p });
-  else uni.navigateTo({ url: p });
+  pageNav(p);
 }
 function navConsultant(id) { uni.navigateTo({ url: `/pages/consultants/detail?id=${id}` }); }
 function navNews(id) { uni.navigateTo({ url: `/pages/news/detail?id=${id}` }); }
 
-function openIcp() {
-  // #ifdef H5
-  window.open('https://beian.miit.gov.cn/', '_blank');
-  // #endif
-  // #ifndef H5
-  uni.navigateTo({ url: '/pages/webview/index?url=' + encodeURIComponent('https://beian.miit.gov.cn/') });
-  // #endif
-}
-
-function openBeian() {
-  const url = 'https://beian.mps.gov.cn/portal/registerSystemInfo?recordcode=32010402002563';
-  // #ifdef H5
-  window.open(url, '_blank');
-  // #endif
-  // #ifndef H5
-  uni.navigateTo({ url: '/pages/webview/index?url=' + encodeURIComponent(url) });
-  // #endif
-}
+// openIcp / openBeian 来自 utils/openBeian.js，模板直接调用
 </script>
 
 <style scoped lang="scss">

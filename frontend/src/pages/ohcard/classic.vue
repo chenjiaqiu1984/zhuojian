@@ -81,6 +81,8 @@ import { ref, computed, onMounted, nextTick , watch } from 'vue';
 import { onBackPress, onLoad } from '@dcloudio/uni-app';
 
 // #ifndef H5
+import { buildTimelineShare } from '@/utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     const pages = getCurrentPages();
@@ -89,7 +91,7 @@ defineOptions({
     return { title: `我在用「${name}」探索内心，快来试试`, path: '/pages/ohcard/index' };
   },
   onShareTimeline() {
-    return { title: '卓见心理图卡 — 让图像成为语言，看见内心深处的声音' };
+    return buildTimelineShare('卓见心理图卡 — 让图像成为语言，看见内心深处的声音');
   },
 });
 // #endif

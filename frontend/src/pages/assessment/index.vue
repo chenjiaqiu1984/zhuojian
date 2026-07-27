@@ -168,12 +168,14 @@ import ZjIcon from '../../components/ZjIcon.vue';
 import IslandHero from '../../components/IslandHero.vue';
 
 // #ifndef H5
+import { buildTimelineShare } from '../../utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     return { title: '卓见心理测评中心 — 了解真实的自己', path: '/pages/assessment/index' };
   },
   onShareTimeline() {
-    return { title: '卓见心理测评 — 让测评成为认识自己的镜子' };
+    return buildTimelineShare('卓见心理测评 — 让测评成为认识自己的镜子');
   },
 });
 // #endif

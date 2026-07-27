@@ -1,4 +1,6 @@
 /** 心镜岛本地兜底点位（与后端 islandDefaults 保持同步） */
+import { normalizeIslandUrl } from './islandNav';
+
 export const DEFAULT_ISLAND_SPOTS = [
   {
     id: 'cliff',
@@ -162,10 +164,11 @@ export function normalizeIslandSpots(list) {
       cy: Number(s.cy),
       hit: Number(s.hit) || 10,
       labelSide: s.labelSide || 'bottom',
-      url: s.url,
+      url: normalizeIslandUrl(s.url) || String(s.url || '').trim(),
       enabled: s.enabled !== false,
       sort: Number.isFinite(Number(s.sort)) ? Number(s.sort) : (i + 1) * 10,
     }))
+    .filter(s => s.url)
     .sort((a, b) => (a.sort - b.sort) || String(a.id).localeCompare(String(b.id)));
   return out.length ? out : fallback;
 }

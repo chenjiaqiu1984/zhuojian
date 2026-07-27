@@ -111,12 +111,14 @@ import { relaxApi } from '@/api';
 import IslandHero from '@/components/IslandHero.vue';
 
 // #ifndef H5
+import { buildTimelineShare } from '@/utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     return { title: '我在卓见心理玩解压捏捏乐，超解压！快来试试', path: '/pages/squeeze/index' };
   },
   onShareTimeline() {
-    return { title: '卓见心理解压捏捏乐 — 戳破泡泡，释放压力' };
+    return buildTimelineShare('卓见心理解压捏捏乐 — 戳破泡泡，释放压力');
   },
 });
 // #endif

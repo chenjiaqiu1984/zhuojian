@@ -1,0 +1,45 @@
+---
+description: 微信小程序可点击 UI 规范（view/cover-view/事件绑定）
+globs: frontend/src/**/*.vue
+alwaysApply: false
+---
+
+# 微信小程序点击与层级
+
+## 事件绑定
+
+- 在 **`view` 上绑定 `@click="handler()"`**，与其他页面（TermsConfirmModal、ohcard）一致
+- **不要**在 `text` 上绑点击；项目内已有注释：`text 不支持 @click`，改用 `view` 包裹
+- **不要**写 `@click="handler()"` 时在括号里传复杂表达式导致提前执行；只传函数引用或 `handler()`
+
+```vue
+<!-- ✅ -->
+<view class="btn" @click="save()">保存</view>
+<view class="chip" @click.stop="onAboutTap()">
+  <view class="chip-text">关于我们</view>
+</view>
+
+<!-- ❌ -->
+<text @click="save()">保存</text>
+<cover-view @click="emit('back')">
+  <cover-view>进入主页</cover-view>
+</cover-view>
+```
+
+## cover-view 使用限制
+
+- **`cover-view` 仅在有原生组件（`<video>`、`<map>`、`<canvas>` 等）且必须盖在上面时使用**
+- **无 video 时不要使用 `cover-view`**，否则整页点击可能失效
+- 若必须用 `cover-view`：**文字直接写在同一节点上**，不要嵌套子 `cover-view` 放文字
+- 介绍弹窗、普通按钮：**一律用 `view` + `@click`**
+
+## 层级
+
+- 可点击的顶栏/弹窗/按钮：放在 DOM **靠后**的位置，并设较高 `z-index`（如 300+）
+- 全屏装饰层（雨雾等）：`pointer-events: none`，动画结束后用 `v-if` 移除
+
+## 心镜岛跳转
+
+- 跳转与首页 `nav()` 共用 `utils/islandNav.js` 的 `pageNav(url)`
+- Tab 页（咨询/图卡/测评/我的）走 `switchTab`，分包页走 `navigateTo`
+- 后台 URL 需以 `/pages/` 开头；前端用 `normalizeIslandUrl` 规范化

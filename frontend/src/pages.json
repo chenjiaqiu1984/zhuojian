@@ -141,6 +141,12 @@
       ]
     },
     {
+      "root": "pages/webview",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "备案信息" } }
+      ]
+    },
+    {
       "root": "pages/island",
       "pages": [
         {

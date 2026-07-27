@@ -175,7 +175,11 @@ function normalizeSpot(raw, index = 0) {
     cy: clamp(raw.cy, 0, 100, 50),
     hit: clamp(raw.hit, 3, 25, 10),
     labelSide,
-    url: String(raw.url || '').trim(),
+    url: (() => {
+      let u = String(raw.url || '').trim();
+      if (u && !u.startsWith('/')) u = `/${u}`;
+      return u;
+    })(),
     enabled: raw.enabled !== false,
     sort: Number.isFinite(Number(raw.sort)) ? Number(raw.sort) : (index + 1) * 10,
   };

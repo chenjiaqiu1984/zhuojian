@@ -126,6 +126,8 @@ import { SERVER } from '../../config';
 import { track } from '../../utils/track';
 
 // #ifndef H5
+import { buildTimelineShare } from '../../utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     const pages = getCurrentPages();
@@ -141,7 +143,7 @@ defineOptions({
     const pages = getCurrentPages();
     const cur = pages[pages.length - 1];
     const name = cur?.$vm?.consultant?.name;
-    return { title: name ? `${name} — 卓见心理咨询师` : '卓见心理 — 专业咨询师' };
+    return buildTimelineShare(name ? `${name} — 卓见心理咨询师` : '卓见心理 — 专业咨询师');
   },
 });
 // #endif

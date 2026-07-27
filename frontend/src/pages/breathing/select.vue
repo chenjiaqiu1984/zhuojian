@@ -83,12 +83,14 @@ import { relaxApi } from '../../api/index';
 import IslandHero from '../../components/IslandHero.vue';
 
 // #ifndef H5
+import { buildTimelineShare } from '@/utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     return { title: '我在用卓见心理做正念呼吸练习，一起来放松吧', path: '/pages/breathing/select' };
   },
   onShareTimeline() {
-    return { title: '卓见心理正念呼吸 — 找到属于你的呼吸节奏' };
+    return buildTimelineShare('卓见心理正念呼吸 — 找到属于你的呼吸节奏');
   },
 });
 // #endif

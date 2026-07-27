@@ -69,6 +69,12 @@
         <button v-if="detail.unlocked" class="share-btn" open-type="share" @click="onShareAchievement(detail)">
           分享给朋友
         </button>
+        <ShareMomentsButton
+          v-if="detail.unlocked"
+          class="moments-btn"
+          :title="`我解锁了「${detail.name}」成就 — 卓见心理`"
+          :subtitle="detail.desc"
+        />
         <view class="detail-close" @click="detail = null">关闭</view>
       </view>
     </view>
@@ -83,8 +89,11 @@ let pendingShareAchievement = null;
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { SERVER } from '../../config';
+import ShareMomentsButton from '../../components/ShareMomentsButton.vue';
 
 // #ifndef H5
+import { buildTimelineShare } from '../../utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     const a = pendingShareAchievement;
@@ -94,7 +103,7 @@ defineOptions({
     return { title: '我在卓见心理解锁了好多成就，快来看看', path: '/pages/index/index' };
   },
   onShareTimeline() {
-    return { title: '卓见心理 — 解锁成就，记录成长' };
+    return buildTimelineShare('卓见心理 — 解锁成就，记录成长');
   },
 });
 // #endif
@@ -318,6 +327,15 @@ $text2:   #8DAAB8;
   border-radius: 16rpx;
   padding: 20rpx 0;
   font-size: 28rpx;
+  text-align: center;
+}
+.moments-btn {
+  margin-top: 12rpx;
+  width: 100%;
+  background: #EFF7F5;
+  border: 1rpx solid #4A8A7A;
+  border-radius: 16rpx;
+  padding: 20rpx 0;
   text-align: center;
 }
 .detail-close {

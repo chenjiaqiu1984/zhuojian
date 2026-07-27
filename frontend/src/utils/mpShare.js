@@ -7,6 +7,10 @@
  * // #endif
  */
 
+import { enrichTimeline } from './miniprogramPromo';
+
+export { buildTimelineShare, enrichTimeline } from './miniprogramPromo';
+
 const DEFAULT = {
   app: { title: '卓见心理 — 专业心理服务平台', path: '/pages/index/index' },
   timeline: { title: '卓见心理 — 一对一咨询 · 心理测评 · 自助工具' },
@@ -183,7 +187,8 @@ export function createMpShare(pageKey, overrides = {}) {
       return typeof config.app === 'function' ? config.app() : config.app;
     },
     onShareTimeline() {
-      return typeof config.timeline === 'function' ? config.timeline() : config.timeline;
+      const timeline = typeof config.timeline === 'function' ? config.timeline() : config.timeline;
+      return enrichTimeline(timeline);
     },
   };
 }

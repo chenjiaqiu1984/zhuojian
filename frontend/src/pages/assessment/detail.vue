@@ -109,6 +109,8 @@
 import { ref, computed, onMounted, watch } from 'vue';
 
 // #ifndef H5
+import { buildTimelineShare } from '../../utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     const pages = getCurrentPages();
@@ -124,7 +126,7 @@ defineOptions({
     const pages = getCurrentPages();
     const vm = pages[pages.length - 1]?.$vm;
     const isFun = vm?.scale?.category === 'fun';
-    return { title: isFun ? '卓见心理趣味测评 — 轻松了解自己' : '卓见心理专业测评 — 科学认识自我' };
+    return buildTimelineShare(isFun ? '卓见心理趣味测评 — 轻松了解自己' : '卓见心理专业测评 — 科学认识自我');
   },
 });
 // #endif

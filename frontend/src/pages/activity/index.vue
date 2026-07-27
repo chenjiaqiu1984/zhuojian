@@ -88,12 +88,14 @@ import { useUserStore } from '../../store/user';
 import IslandHero from '../../components/IslandHero.vue';
 
 // #ifndef H5
+import { buildTimelineShare } from '../../utils/mpShare';
+
 defineOptions({
   onShareAppMessage() {
     return { title: '卓见心理 — 心理健康主题活动，陪你探索内心世界', path: '/pages/activity/index' };
   },
   onShareTimeline() {
-    return { title: '卓见心理活动中心 — 参与 · 成长' };
+    return buildTimelineShare('卓见心理活动中心 — 参与 · 成长');
   },
 });
 // #endif
