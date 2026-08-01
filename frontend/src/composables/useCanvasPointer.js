@@ -42,9 +42,9 @@ export function useCanvasPointer(options) {
   /** @type {CanvasRect | null} */
   let transformedRect = null;
 
-  /** H5 同步读取变换后的 canvas 视觉包围盒（缩放/平移后立即生效） */
+  /** H5/App 同步读取变换后的 canvas 视觉包围盒（缩放/平移后立即生效） */
   function syncTransformedRectDom() {
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     if (typeof document === 'undefined' || !transformedSelector) return;
     const { wrap, canvas } = findCanvasBySelector(transformedSelector);
     const el = canvas || wrap;

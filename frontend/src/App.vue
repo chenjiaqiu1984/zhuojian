@@ -9,7 +9,8 @@ onLaunch(() => {
   store.init();
   patchH5TabBarIcons();
   scheduleH5TabBarIcons();
-  // #ifndef H5
+  // showShareMenu 仅微信小程序支持；App 调用会抛 TypeError 中断启动
+  // #ifdef MP-WEIXIN
   uni.showShareMenu({
     withShareTicket: true,
     menus: ['shareAppMessage', 'shareTimeline'],
@@ -32,10 +33,8 @@ onShow(() => {
 <style lang="scss">
 @import 'uview-plus/index.scss';
 
-// ── Google Fonts: Playfair Display ──
-// #ifdef H5
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap');
-// #endif
+// 不引用 fonts.googleapis.com：国内常触发 net::ERR_SSL_PROTOCOL_ERROR，且与业务无关
+// Playfair 不可用时回退到 tokens 中的 Noto Serif SC / 系统衬线
 
 page {
   box-sizing: border-box;
@@ -77,8 +76,8 @@ page {
   letter-spacing: 0.03em;
 }
 
-// 防横向滚动（H5）
-// #ifdef H5
+// 防横向滚动（H5 / App WebView）
+// #ifdef H5 || APP-PLUS
 html, body {
   overflow-x: clip;
 }

@@ -42,6 +42,18 @@
 
     <!-- Canvas 区域 -->
     <view class="canvas-wrap">
+      <!-- #ifdef APP-PLUS -->
+      <SqueezeAppCanvas
+        class="squeeze-canvas"
+        :bubble-count="bubbleCount"
+        :action="appCanvasAction"
+        :action-id="appCanvasActionId"
+        @ready="onAppCanvasReady"
+        @fail="onAppCanvasFail"
+        @stats="onAppCanvasStats"
+        @pop="onAppCanvasPop"
+      />
+      <!-- #endif -->
       <!-- #ifdef MP-WEIXIN -->
       <canvas
         type="2d"
@@ -53,7 +65,7 @@
         @click="onCanvasClick($event)"
       />
       <!-- #endif -->
-      <!-- #ifdef H5 || APP-PLUS -->
+      <!-- #ifdef H5 -->
       <canvas
         type="2d"
         id="squeezeCanvas"
@@ -112,6 +124,9 @@ import { raf } from '@/utils/raf';
 import { track } from '@/utils/track';
 import { relaxApi } from '@/api';
 import IslandHero from '@/components/IslandHero.vue';
+// #ifdef APP-PLUS
+import SqueezeAppCanvas from '@/components/SqueezeAppCanvas.vue';
+// #endif
 
 // #ifndef H5
 import { buildTimelineShare } from '@/utils/mpShare';
@@ -171,6 +186,33 @@ const comboTimer = ref(null);
 const poppedCount = ref(0);
 const totalCount = ref(0);
 
+// #ifdef APP-PLUS
+const appCanvasAction = ref('idle');
+const appCanvasActionId = ref(0);
+const appCanvasReady = ref(false);
+
+function onAppCanvasReady() {
+  appCanvasReady.value = true;
+}
+function onAppCanvasFail() {
+  uni.showToast({ title: '画布加载失败，请重试', icon: 'none' });
+}
+function onAppCanvasStats(s) {
+  if (!s) return;
+  totalCount.value = s.total || 0;
+  poppedCount.value = s.popped || 0;
+  comboCount.value = s.combo || 0;
+}
+function onAppCanvasPop() {
+  playPopSound();
+  triggerVibration();
+}
+function triggerAppAction(action) {
+  appCanvasAction.value = action;
+  appCanvasActionId.value += 1;
+}
+// #endif
+
 const canvasW = ref(0);
 const canvasH = ref(0);
 const canvasTop = ref(0);
@@ -201,7 +243,13 @@ function cancelFrame(id) {
 }
 
 const canvas2d = useCanvas2d({
+  // #ifdef APP-PLUS
+  // App 走 SqueezeAppCanvas/renderjs，这里占位避免编译空引用；不会被 init
+  selector: '#squeezeUnused',
+  // #endif
+  // #ifndef APP-PLUS
   selector: '#squeezeCanvas',
+  // #endif
   getLogicalSize: () => (
     canvasW.value > 0 && canvasH.value > 0
       ? { w: canvasW.value, h: canvasH.value }
@@ -251,7 +299,7 @@ const canvas2d = useCanvas2d({
 
 function syncCanvasRect(done) {
   createPageQuery()
-    .select('#squeezeCanvas')
+    .select('.canvas-wrap')
     .boundingClientRect((rect) => {
       if (rect && rect.width > 0) {
         canvasTop.value = rect.top;
@@ -423,6 +471,11 @@ function relayoutPage(opts = {}) {
   layoutToken += 1;
   const token = layoutToken;
   pageH.value = getViewportHeight() + 'px';
+  // #ifdef APP-PLUS
+  // App：画布由 SqueezeAppCanvas/renderjs 接管，这里只同步页面高度
+  if (forceBubbles) triggerAppAction('reset');
+  return;
+  // #endif
   nextTick(() => {
     raf(() => {
       if (token !== layoutToken) return;
@@ -443,11 +496,10 @@ function relayoutPage(opts = {}) {
           lastLayoutH = h;
         }
 
-        // 仅首次就绪、尺寸明显变化、或显式强制时重建球，避免反复 init 造成抖动
         if (forceBubbles || !bubblesReady || needResize) {
           initBubbles();
         }
-        // #ifdef H5 || APP-PLUS
+        // #ifdef H5
         bindH5Pointer();
         // #endif
       });
@@ -478,6 +530,9 @@ onMounted(async () => {
 });
 
 onShow(() => {
+  // #ifdef APP-PLUS
+  return;
+  // #endif
   // 已初始化则只唤醒物理，不重建球（onMounted+onShow 双触发是抖动主因）
   if (bubblesReady && canvas2d.getCanvas()) {
     startPhysics();
@@ -585,6 +640,11 @@ function settleBubbles(maxSteps = 360) {
 }
 
 function resetBubbles() {
+  // #ifdef APP-PLUS
+  comboCount.value = 0;
+  triggerAppAction('reset');
+  return;
+  // #endif
   comboCount.value = 0;
   particles = [];
   stains = [];
@@ -1224,6 +1284,14 @@ function updateCombo() {
 
 // ── 一键全破 ──────────────────────────────────────────────────────────────
 function popAll() {
+  // #ifdef APP-PLUS
+  triggerAppAction('popAll');
+  playPopSound();
+  // #ifndef H5
+  uni.vibrateLong({ fail: () => {} });
+  // #endif
+  return;
+  // #endif
   for (const b of bubbleList) { if (!b.popped) spawnStains(b); }
   for (const b of bubbleList) { b.popped = true; }
   syncBubbleStats();
@@ -1239,6 +1307,10 @@ function switchCount(key) {
   bubbleCount.value = key;
   showModeSheet.value = false;
   comboCount.value = 0;
+  // #ifdef APP-PLUS
+  // bubbleCount watch → SqueezeAppCanvas reset
+  return;
+  // #endif
   particles = [];
   stains = [];
   stopAllAnim();

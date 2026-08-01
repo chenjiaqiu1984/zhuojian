@@ -30,6 +30,21 @@
     <!-- 画布区域 -->
     <view class="canvas-wrap" id="canvasWrap">
       <view class="canvas-box" id="canvasBox" :style="canvasBoxStyle">
+        <!-- #ifdef APP-PLUS -->
+        <MandalaAppCanvas
+          :size="boxSize || 320"
+          :color="brushColor"
+          :brush-size="brushSize"
+          :eraser="isEraser"
+          :symmetry="symmetry"
+          :symmetry-count="symmetryCount"
+          :action="appCanvasAction"
+          :action-id="appCanvasActionId"
+          @ready="onAppCanvasReady"
+          @fail="onAppCanvasFail"
+          @empty-change="onAppEmptyChange"
+        />
+        <!-- #endif -->
         <!-- #ifdef MP-WEIXIN -->
         <canvas
           type="2d"
@@ -43,7 +58,7 @@
           @touchend="e => onTouchEnd(e)"
         />
         <!-- #endif -->
-        <!-- #ifdef H5 || APP-PLUS -->
+        <!-- #ifdef H5 -->
         <canvas
           type="2d"
           canvas-id="mandalaCanvas"
@@ -58,16 +73,13 @@
         <view v-if="symmetry" class="sym-badge">
           <text class="sym-badge-text">{{ symmetryCount }} 折对称</text>
         </view>
-        <!-- 缩放比例提示（非1.0时显示） -->
-        <view v-if="Math.abs(transform.scale - 1.0) > 0.05" class="zoom-badge">
-          <text class="zoom-badge-text">{{ transform.scale.toFixed(1) }}x</text>
-        </view>
       </view>
     </view>
 
     <!-- 底部工具面板 -->
     <view class="toolbar">
-      <!-- 笔触模式行 -->
+      <!-- 笔触模式行（App 仅自由画） -->
+      <!-- #ifndef APP-PLUS -->
       <scroll-view scroll-x class="mode-scroll">
         <view class="mode-row">
           <view
@@ -81,6 +93,7 @@
           </view>
         </view>
       </scroll-view>
+      <!-- #endif -->
 
       <!-- 颜色行 -->
       <scroll-view scroll-x class="color-scroll">
@@ -167,6 +180,9 @@ import { useCanvasPointer } from '@/composables/useCanvasPointer';
 import { useCanvas2d } from '@/composables/useCanvas2d';
 import { getViewportHeight, bindViewportHeight } from '@/utils/viewport';
 import { raf } from '@/utils/raf';
+// #ifdef APP-PLUS
+import MandalaAppCanvas from '@/components/MandalaAppCanvas.vue';
+// #endif
 
 const pageInstance = getCurrentInstance();
 
@@ -204,6 +220,23 @@ const isEraser      = ref(false);
 const symmetry      = ref(true);
 const drawMode      = ref('free'); // 'free' | 'line' | 'arc'
 
+// #ifdef APP-PLUS
+const appCanvasAction = ref('idle');
+const appCanvasActionId = ref(0);
+const appHasContent = ref(false);
+function onAppCanvasReady() {}
+function onAppCanvasFail() {
+  uni.showToast({ title: '画布加载失败，请重试', icon: 'none' });
+}
+function onAppEmptyChange(empty) {
+  appHasContent.value = !empty;
+}
+function triggerAppCanvas(action) {
+  appCanvasAction.value = action;
+  appCanvasActionId.value += 1;
+}
+// #endif
+
 // 变换状态
 const transform = ref({ scale: 1.0, offsetX: 0, offsetY: 0 });
 
@@ -220,8 +253,14 @@ const canvasBoxStyle = computed(() =>
 // 撤销/重做栈
 const undoStack = ref([]);
 const redoStack = ref([]);
+// #ifdef APP-PLUS
+const canUndo = computed(() => appHasContent.value);
+const canRedo = computed(() => false);
+// #endif
+// #ifndef APP-PLUS
 const canUndo   = computed(() => undoStack.value.length > 0);
 const canRedo   = computed(() => redoStack.value.length > 0);
+// #endif
 
 // canvas transform style
 const canvasTransformStyle = computed(() => {
@@ -245,11 +284,21 @@ let isMouseDown = false;
 const pointer = useCanvasPointer({
   transform,
   getCanvasSize: () => canvasSize,
+  // #ifndef APP-PLUS
   transformedSelector: '#mandalaCanvas',
+  // #endif
+  // #ifdef APP-PLUS
+  transformedSelector: '#canvasBox',
+  // #endif
 });
 
 const canvas2d = useCanvas2d({
+  // #ifdef APP-PLUS
+  selector: '#mandalaUnused',
+  // #endif
+  // #ifndef APP-PLUS
   selector: '#mandalaCanvas',
+  // #endif
   getLogicalSize: () => (boxSize.value > 0 ? { w: boxSize.value, h: boxSize.value } : null),
   onReady: ({ canvas, ctx: c, canvasSize: size, dpr: d }) => {
     canvasNode = canvas;
@@ -308,6 +357,10 @@ let unbindViewport = null;
 function relayoutPage() {
   pageH.value = getViewportHeight() + 'px';
   computeBoxSize(() => {
+    // #ifdef APP-PLUS
+    // App 画布由 MandalaAppCanvas/renderjs 接管
+    return;
+    // #endif
     nextTick(() => {
       raf(() => {
         if (!canvas2d.getCanvas()) {
@@ -319,7 +372,7 @@ function relayoutPage() {
           drawBackground();
           if (paths.length) redrawCanvas(false);
           pointer.refreshRect();
-          // #ifdef H5 || APP-PLUS
+          // #ifdef H5
           bindH5Pointer();
           // #endif
         }
@@ -903,6 +956,10 @@ function setDrawMode(mode) {
 
 // ── 撤销 / 重做 ──
 function undo() {
+  // #ifdef APP-PLUS
+  triggerAppCanvas('undo');
+  return;
+  // #endif
   if (!canUndo.value) return;
   redoStack.value.push(paths.map(p => ({ ...p, points: [...p.points] })));
   undoStack.value.pop();
@@ -927,11 +984,17 @@ function clearCanvas() {
     content: '确定要清空当前作品吗？',
     success: (res) => {
       if (!res.confirm) return;
+      // #ifdef APP-PLUS
+      triggerAppCanvas('clear');
+      appHasContent.value = false;
+      return;
+      // #endif
       pushUndo();
       paths       = [];
       currentPath = null;
       arcState    = 0;
       arcStart    = null;
+      arcEnd      = null;
       redoStack.value = [];
       redrawCanvas(false);
     },
@@ -945,6 +1008,11 @@ function resetCanvas() {
     content: '将清空所有笔迹并恢复初始画布，确定吗？',
     success: (res) => {
       if (!res.confirm) return;
+      // #ifdef APP-PLUS
+      triggerAppCanvas('clear');
+      appHasContent.value = false;
+      return;
+      // #endif
       paths           = [];
       currentPath     = null;
       arcState        = 0;
@@ -992,6 +1060,18 @@ async function saveToGallery() {
 }
 
 function onSave() {
+  // #ifdef APP-PLUS
+  if (!appHasContent.value) {
+    uni.showToast({ title: '请先画点什么', icon: 'none' });
+    return;
+  }
+  uni.showLoading({ title: '保存中…' });
+  saveToGallery().then((saved) => {
+    uni.hideLoading();
+    uni.showToast({ title: saved ? '已保存到画廊' : '保存失败', icon: saved ? 'success' : 'none' });
+  });
+  return;
+  // #endif
   if (paths.length === 0) {
     uni.showToast({ title: '请先画点什么', icon: 'none' });
     return;
@@ -1013,8 +1093,8 @@ function onSave() {
     }
     // #endif
     uni.canvasToTempFilePath({
-      // Canvas 2d 导出需传 canvas node（小程序 / App）；H5 仍可用 canvasId。
-      // #ifdef MP-WEIXIN || APP-PLUS
+      // 仅微信 type=2d 需要传 canvas node；App 经典 canvas 用 canvasId 即可
+      // #ifdef MP-WEIXIN
       canvas: canvasNode,
       // #endif
       canvasId: 'mandalaCanvas',
@@ -1048,6 +1128,18 @@ function onSave() {
 
 // ── 返回 ──
 function onBack() {
+  // #ifdef APP-PLUS
+  if (appHasContent.value) {
+    uni.showModal({
+      title:   '离开创作',
+      content: '作品尚未保存，确定要离开吗？',
+      success: (res) => { if (res.confirm) uni.navigateBack(); },
+    });
+    return;
+  }
+  uni.navigateBack();
+  return;
+  // #endif
   if (paths.length > 0) {
     uni.showModal({
       title:   '离开创作',

@@ -8,7 +8,7 @@
  */
 
 import { getCurrentInstance } from 'vue';
-import { findCanvasBySelector, resolveCanvasWrap } from '@/utils/h5PageDom';
+import { findCanvasBySelector, resolveCanvasWrap, queryInCurrentPage } from '@/utils/h5PageDom';
 
 function readDpr() {
   // #ifdef H5 || APP-PLUS
@@ -62,6 +62,7 @@ function create2dContext(canvas) {
 /**
  * @param {object} options
  * @param {string} options.selector - canvas 选择器，如 '#mandalaCanvas'
+ * @param {string} [options.hostSelector] - App 注入真实 HTMLCanvas 的容器（view），避免 uni-canvas nodeId 崩溃
  * @param {() => { w: number, h: number } | void} [options.getLogicalSize]
  * @param {(payload: {
  *   canvas: HTMLCanvasElement,
@@ -76,6 +77,7 @@ function create2dContext(canvas) {
 export function useCanvas2d(options) {
   const {
     selector,
+    hostSelector,
     getLogicalSize,
     onReady,
     onFail,
@@ -118,8 +120,39 @@ export function useCanvas2d(options) {
     return null;
   }
 
+  /** App：在 view 容器内注入真实 HTMLCanvasElement，彻底绕开 uni-canvas */
+  function ensureAppDomCanvas() {
+    // #ifdef APP-PLUS
+    if (typeof document === 'undefined') return null;
+    const hostSel = hostSelector || selector;
+    const host = queryInCurrentPage(hostSel) || document.querySelector(hostSel);
+    if (!host) return null;
+    if (isRealCanvas(host)) {
+      return { host: host.parentElement || host, canvas: host };
+    }
+
+    let canvas = host.querySelector?.('canvas[data-zj-app-canvas="1"]');
+    if (!isRealCanvas(canvas)) {
+      canvas = document.createElement('canvas');
+      canvas.setAttribute('data-zj-app-canvas', '1');
+      canvas.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;max-width:100%;max-height:100%;box-sizing:border-box;';
+      try {
+        while (host.firstChild) host.removeChild(host.firstChild);
+      } catch { /* ignore */ }
+      try {
+        host.appendChild(canvas);
+      } catch {
+        return null;
+      }
+    }
+    return { host, canvas };
+    // #endif
+    return null;
+  }
+
   function resolveEventTarget(queryNode) {
     // #ifdef H5 || APP-PLUS
+    if (canvasNode?.parentElement) return canvasNode.parentElement;
     const { wrap, canvas } = findCanvasBySelector(selector);
     if (wrap) return wrap;
     if (canvas) return canvas.parentElement || canvas;
@@ -133,8 +166,23 @@ export function useCanvas2d(options) {
 
   function measureDisplaySize() {
     // #ifdef H5 || APP-PLUS
+    // App 优先量 host 容器，避免量到尚未布局的注入 canvas
+    // #ifdef APP-PLUS
+    {
+      const hostSel = hostSelector || selector;
+      const host = queryInCurrentPage(hostSel) || document.querySelector(hostSel);
+      const rect = host?.getBoundingClientRect?.();
+      if (rect && rect.width > 0 && rect.height > 0) {
+        return { w: rect.width, h: rect.height };
+      }
+      const parentRect = host?.parentElement?.getBoundingClientRect?.();
+      if (parentRect?.width > 0 && parentRect?.height > 0) {
+        return { w: parentRect.width, h: parentRect.height };
+      }
+    }
+    // #endif
     const { wrap, canvas } = findCanvasBySelector(selector);
-    const el = wrap || canvas;
+    const el = wrap || canvas || canvasNode;
     if (!el?.getBoundingClientRect) return { w: 0, h: 0 };
     const rect = el.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
@@ -189,7 +237,9 @@ export function useCanvas2d(options) {
       canvasNode.style.display = 'block';
       canvasNode.style.boxSizing = 'border-box';
       const wrap = canvasNode.parentElement;
-      if (wrap && wrap !== canvasNode && wrap.tagName?.toLowerCase?.() === 'uni-canvas') {
+      const wrapTag = wrap?.tagName?.toLowerCase?.() || '';
+      // H5: uni-canvas；App 注入: uni-view host
+      if (wrap && wrap !== canvasNode && (wrapTag === 'uni-canvas' || wrapTag === 'uni-view' || wrapTag === 'view' || canvasNode.getAttribute?.('data-zj-app-canvas'))) {
         wrap.style.display = 'block';
         wrap.style.boxSizing = 'border-box';
         wrap.style.overflow = 'hidden';
@@ -262,27 +312,43 @@ export function useCanvas2d(options) {
   }
 
   function initFromDom() {
-    // #ifdef H5 || APP-PLUS
+    // #ifdef APP-PLUS
+    const pair = ensureAppDomCanvas();
+    if (!pair?.canvas) return false;
+    canvasNode = pair.canvas;
+    eventTarget = pair.host || pair.canvas;
+    displaySize = measureDisplaySize();
+    const logical = getLogicalSize?.();
+    let w = logical?.w || displaySize.w;
+    let h = logical?.h || displaySize.h;
+    ({ w, h } = normalizeLogicalSize(w, h));
+    ctx = create2dContext(canvasNode);
+    if (!ctx || !applyBuffer(w, h, !logical?.w)) return false;
+    return finishReady(!logical?.w);
+    // #endif
+    // #ifdef H5
     if (typeof document === 'undefined') return false;
     const { wrap, canvas } = findCanvasBySelector(selector);
     if (!isRealCanvas(canvas)) return false;
     canvasNode = canvas;
     eventTarget = wrap || canvas;
     displaySize = measureDisplaySize();
-    const logical = getLogicalSize?.();
-    let w = logical?.w || displaySize.w;
-    let h = logical?.h || displaySize.h;
-    ({ w, h } = normalizeLogicalSize(w, h));
+    const logicalH5 = getLogicalSize?.();
+    let w2 = logicalH5?.w || displaySize.w;
+    let h2 = logicalH5?.h || displaySize.h;
+    ({ w: w2, h: h2 } = normalizeLogicalSize(w2, h2));
     ctx = create2dContext(canvas);
-    if (!ctx || !applyBuffer(w, h, !logical?.w)) return false;
-    return finishReady(!logical?.w);
+    if (!ctx || !applyBuffer(w2, h2, !logicalH5?.w)) return false;
+    return finishReady(!logicalH5?.w);
     // #endif
     return false;
   }
 
   function scheduleRetry(retry) {
     if (retry < maxRetry) {
-      setTimeout(() => init(retry + 1), retry === 0 ? 50 : 120);
+      // App WebView 首帧布局更慢，稍后重试
+      const delay = retry === 0 ? 80 : 150 + retry * 40;
+      setTimeout(() => init(retry + 1), delay);
       return true;
     }
     return false;
@@ -290,8 +356,11 @@ export function useCanvas2d(options) {
 
   function init(retry = 0) {
     // #ifdef APP-PLUS
-    // App WebView：selectorQuery 的 node 常是无 getContext 的代理，直接调用会抛错中断回调
+    // App：禁止 uni-canvas / fields({ node })，只注入真实 HTMLCanvas
     if (initFromDom()) return;
+    if (scheduleRetry(retry)) return;
+    onFail?.();
+    return;
     // #endif
 
     createQuery()
@@ -303,11 +372,11 @@ export function useCanvas2d(options) {
           const real = resolveRealCanvas(info?.node);
 
           if (!real) {
-            // #ifdef H5 || APP-PLUS
+            // #ifdef H5
             if (initFromDom()) return;
             // #endif
             if (scheduleRetry(retry)) return;
-            // #ifdef H5 || APP-PLUS
+            // #ifdef H5
             if (initFromDom()) return;
             // #endif
             onFail?.();
@@ -324,7 +393,7 @@ export function useCanvas2d(options) {
           ctx = create2dContext(canvasNode);
           const fillParent = !logical?.w;
           if (!ctx || !applyBuffer(w, h, fillParent)) {
-            // #ifdef H5 || APP-PLUS
+            // #ifdef H5
             if (initFromDom()) return;
             // #endif
             if (scheduleRetry(retry)) return;
@@ -334,7 +403,7 @@ export function useCanvas2d(options) {
           finishReady(fillParent);
         } catch (err) {
           console.warn('[useCanvas2d] init failed', err);
-          // #ifdef H5 || APP-PLUS
+          // #ifdef H5
           if (initFromDom()) return;
           // #endif
           if (scheduleRetry(retry)) return;
