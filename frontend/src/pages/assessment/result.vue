@@ -104,7 +104,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { assessmentApi } from '../../api/index.js';
 import { useUserStore } from '../../store/user.js';
 import CrisisAlert from '../../components/CrisisAlert.vue';
@@ -217,9 +218,7 @@ const levelClass = computed(() => {
   return 'lvl-none';
 });
 
-onMounted(async () => {
-  const pages = getCurrentPages();
-  const opts = pages[pages.length - 1]?.options || {};
+onLoad(async (opts = {}) => {
   if (opts.crisis === '1') {
     setTimeout(() => crisisRef.value?.show(), 800);
   }

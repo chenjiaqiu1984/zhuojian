@@ -17,11 +17,13 @@
           :style="{ width: imgW + 'px', height: imgH + 'px' }"
           @error="onImgError"
         />
-        <!-- #ifndef MP-WEIXIN -->
+        <!-- App 原生 video 会盖住 WebView，且挂载/循环时常闪黑；小程序同理已关闭 -->
+        <!-- #ifdef H5 -->
         <video
           v-if="videoActive"
           id="islandMistVideo"
           class="island-video"
+          :class="{ 'island-video--ready': videoPlaying }"
           :src="videoSrc"
           :poster="imgSrc"
           :style="{ width: imgW + 'px', height: imgH + 'px' }"
@@ -149,7 +151,10 @@ const spots = ref(normalizeIslandSpots(DEFAULT_ISLAND_SPOTS));
 async function loadSpots() {
   try {
     const data = await islandApi.get();
-    spots.value = normalizeIslandSpots(data?.spots);
+    const next = normalizeIslandSpots(data?.spots);
+    // 配置未变时不替换引用，避免热点节点整表重绘闪一下
+    if (JSON.stringify(next) === JSON.stringify(spots.value)) return;
+    spots.value = next;
   } catch (e) {
     // silent fallback
   }
@@ -169,11 +174,10 @@ const videoFailed = ref(false);
 const videoPlaying = ref(false);
 const panelSpot = ref(null);
 
+// H5：入场雾散去后叠视频；弹窗打开时仍保留节点，避免反复挂载闪一下
 const videoActive = computed(() => (
   !videoFailed.value
   && !enterMist.value
-  && !panelSpot.value
-  && !cloudShow.value
   && !!videoSrc.value
 ));
 
@@ -277,10 +281,21 @@ function goPanel() {
   emit('navigate', url);
 }
 
+let enterMistTimer = null;
+let enterMistPlayed = false;
+
 function playEnterMist() {
-  enterMist.value = true;
-  setTimeout(() => {
+  // 同一次页面生命周期只播一次，避免 Tab 来回切换反复白雾闪屏
+  if (enterMistPlayed) {
     enterMist.value = false;
+    return;
+  }
+  enterMistPlayed = true;
+  enterMist.value = true;
+  if (enterMistTimer) clearTimeout(enterMistTimer);
+  enterMistTimer = setTimeout(() => {
+    enterMist.value = false;
+    enterMistTimer = null;
   }, 1400);
 }
 
@@ -289,7 +304,10 @@ onMounted(() => {
   playEnterMist();
   loadSpots();
 });
-watch(() => props.height, layout);
+watch(() => props.height, (h, prev) => {
+  if (Math.abs((h || 0) - (prev || 0)) < 2) return;
+  layout();
+});
 </script>
 
 <style scoped lang="scss">
@@ -324,6 +342,11 @@ watch(() => props.height, layout);
   top: 0;
   z-index: 1;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+.island-video--ready {
+  opacity: 1;
 }
 
 .hotspot {
@@ -413,8 +436,8 @@ watch(() => props.height, layout);
 }
 
 @keyframes marker-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.7); opacity: 0.12; }
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.35); opacity: 0.22; }
 }
 
 .enter-mist {

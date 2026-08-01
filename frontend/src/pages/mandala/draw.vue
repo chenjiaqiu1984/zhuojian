@@ -43,7 +43,7 @@
           @touchend="e => onTouchEnd(e)"
         />
         <!-- #endif -->
-        <!-- #ifdef H5 -->
+        <!-- #ifdef H5 || APP-PLUS -->
         <canvas
           type="2d"
           canvas-id="mandalaCanvas"
@@ -259,7 +259,7 @@ const canvas2d = useCanvas2d({
     drawBackground();
     if (paths.length) redrawCanvas(false);
     pointer.refreshRect();
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     requestAnimationFrame(() => bindH5Pointer());
     // #endif
   },
@@ -269,7 +269,7 @@ const canvas2d = useCanvas2d({
 });
 
 function bindH5Pointer() {
-  // #ifdef H5
+  // #ifdef H5 || APP-PLUS
   canvas2d.bindPointer({
     onMouseDown: onMouseDown,
     onMouseMove: onMouseMove,
@@ -319,7 +319,7 @@ function relayoutPage() {
           drawBackground();
           if (paths.length) redrawCanvas(false);
           pointer.refreshRect();
-          // #ifdef H5
+          // #ifdef H5 || APP-PLUS
           bindH5Pointer();
           // #endif
         }
@@ -1013,8 +1013,8 @@ function onSave() {
     }
     // #endif
     uni.canvasToTempFilePath({
-      // Canvas 2D 导出需传 canvas node（mp）；H5 仍可用 canvasId。
-      // #ifdef MP-WEIXIN
+      // Canvas 2d 导出需传 canvas node（小程序 / App）；H5 仍可用 canvasId。
+      // #ifdef MP-WEIXIN || APP-PLUS
       canvas: canvasNode,
       // #endif
       canvasId: 'mandalaCanvas',
@@ -1022,7 +1022,7 @@ function onSave() {
       quality:  0.92,
       success: (res) => {
         uni.hideLoading();
-        // #ifdef MP-WEIXIN
+        // #ifdef MP-WEIXIN || APP-PLUS
         uni.saveImageToPhotosAlbum({
           filePath: res.tempFilePath,
           success: () => uni.showToast({ title: saved ? '已保存到画廊和相册' : '已保存到相册', icon: 'success' }),

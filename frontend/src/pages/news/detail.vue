@@ -71,7 +71,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import DOMPurify from 'dompurify';
 import { newsApi } from '../../api/index';
 import { requireActive } from '../../utils/requireActive';
@@ -181,15 +182,19 @@ const isExpired = computed(() => {
   return d ? new Date(d) < new Date() : false;
 });
 
-onMounted(async () => {
-  const pages = getCurrentPages();
-  newsId = pages[pages.length - 1]?.options?.id;
+onLoad(async (opts = {}) => {
+  newsId = opts.id;
   if (!newsId) {
     // #ifdef H5
     const hash = window.location.hash;
     const q = hash.indexOf('?');
     if (q !== -1) newsId = new URLSearchParams(hash.slice(q + 1)).get('id');
     // #endif
+  }
+  if (!newsId) {
+    notFound.value = true;
+    loading.value = false;
+    return;
   }
   try {
     news.value = await newsApi.get(newsId);

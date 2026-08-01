@@ -1,8 +1,8 @@
 /**
- * 跨端 Canvas 2D 初始化（H5 / 微信小程序同款 API）
+ * 跨端 Canvas 2D 初始化（H5 / 微信小程序 / App）
  *
- * 统一通过 uni.createSelectorQuery().fields({ node: true, size: true })
- * 获取 canvas 节点，按 DPR 设置 buffer 并 scale 绘图坐标系。
+ * - 微信：uni.createSelectorQuery().fields({ node: true }) 拿 canvas 节点
+ * - H5/App：优先真实 DOM canvas（App 的 node 代理常无 getContext，直接调用会抛错导致空白）
  *
  * Vue3 + script setup 下微信小程序必须 .in(组件实例)，否则 fields({ node }) 常为空。
  */
@@ -11,7 +11,7 @@ import { getCurrentInstance } from 'vue';
 import { findCanvasBySelector, resolveCanvasWrap } from '@/utils/h5PageDom';
 
 function readDpr() {
-  // #ifdef H5
+  // #ifdef H5 || APP-PLUS
   if (typeof window !== 'undefined') return window.devicePixelRatio || 1;
   // #endif
   try {
@@ -24,7 +24,7 @@ function readDpr() {
 }
 
 function readViewportLimit() {
-  // #ifdef H5
+  // #ifdef H5 || APP-PLUS
   if (typeof window !== 'undefined') {
     return {
       w: window.innerWidth || 9999,
@@ -41,6 +41,24 @@ function readViewportLimit() {
   return { w: 9999, h: 9999 };
 }
 
+function isRealCanvas(node) {
+  return !!(node && typeof node.getContext === 'function');
+}
+
+function create2dContext(canvas) {
+  if (!isRealCanvas(canvas)) return null;
+  try {
+    return canvas.getContext('2d', { willReadFrequently: true })
+      || canvas.getContext('2d');
+  } catch {
+    try {
+      return canvas.getContext('2d');
+    } catch {
+      return null;
+    }
+  }
+}
+
 /**
  * @param {object} options
  * @param {string} options.selector - canvas 选择器，如 '#mandalaCanvas'
@@ -53,7 +71,7 @@ function readViewportLimit() {
  *   displaySize: { w: number, h: number },
  * }) => void} [options.onReady]
  * @param {() => void} [options.onFail]
- * @param {number} [options.maxRetry=6]
+ * @param {number} [options.maxRetry=8]
  */
 export function useCanvas2d(options) {
   const {
@@ -61,7 +79,7 @@ export function useCanvas2d(options) {
     getLogicalSize,
     onReady,
     onFail,
-    maxRetry = 6,
+    maxRetry = 8,
   } = options;
 
   // 在 composable 调用时捕获页面/组件实例，供 SelectorQuery.in 使用
@@ -87,17 +105,34 @@ export function useCanvas2d(options) {
   /** @type {(() => void) | null} */
   let unbindPointer = null;
 
+  function resolveRealCanvas(queryNode) {
+    if (isRealCanvas(queryNode)) return queryNode;
+    // #ifdef H5 || APP-PLUS
+    if (queryNode && typeof queryNode.querySelector === 'function') {
+      const inner = queryNode.querySelector('canvas');
+      if (isRealCanvas(inner)) return inner;
+    }
+    const { canvas } = findCanvasBySelector(selector);
+    if (isRealCanvas(canvas)) return canvas;
+    // #endif
+    return null;
+  }
+
   function resolveEventTarget(queryNode) {
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     const { wrap, canvas } = findCanvasBySelector(selector);
     if (wrap) return wrap;
-    if (queryNode) return resolveCanvasWrap(queryNode).wrap || queryNode;
+    if (canvas) return canvas.parentElement || canvas;
+    if (queryNode) {
+      const resolved = resolveCanvasWrap(queryNode);
+      return resolved.wrap || resolved.canvas || queryNode;
+    }
     // #endif
     return queryNode;
   }
 
   function measureDisplaySize() {
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     const { wrap, canvas } = findCanvasBySelector(selector);
     const el = wrap || canvas;
     if (!el?.getBoundingClientRect) return { w: 0, h: 0 };
@@ -135,61 +170,65 @@ export function useCanvas2d(options) {
     return { w, h };
   }
 
-  /** 同步 CSS 显示尺寸，避免高 DPR 下 buffer 像素被当作布局尺寸（手机 H5 只显示左上角） */
+  /** 同步 CSS 显示尺寸，避免高 DPR 下 buffer 像素被当作布局尺寸（手机 H5/App 只显示左上角） */
   function syncDisplaySize(w, h, fillParent = false) {
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     if (!canvasNode) return;
-    if (fillParent) {
-      canvasNode.style.width = '100%';
-      canvasNode.style.height = '100%';
-      canvasNode.style.maxWidth = '100%';
-      canvasNode.style.maxHeight = '100%';
-    } else {
-      canvasNode.style.width = `${w}px`;
-      canvasNode.style.height = `${h}px`;
-      canvasNode.style.maxWidth = '100%';
-      canvasNode.style.maxHeight = '100%';
-    }
-    canvasNode.style.display = 'block';
-    canvasNode.style.boxSizing = 'border-box';
-    const wrap = canvasNode.parentElement;
-    if (wrap && wrap !== canvasNode && wrap.tagName?.toLowerCase?.() === 'uni-canvas') {
-      wrap.style.display = 'block';
-      wrap.style.boxSizing = 'border-box';
-      wrap.style.overflow = 'hidden';
+    try {
       if (fillParent) {
-        wrap.style.width = '100%';
-        wrap.style.height = '100%';
-        wrap.style.maxWidth = '100%';
-        wrap.style.maxHeight = '100%';
+        canvasNode.style.width = '100%';
+        canvasNode.style.height = '100%';
+        canvasNode.style.maxWidth = '100%';
+        canvasNode.style.maxHeight = '100%';
       } else {
-        wrap.style.width = `${w}px`;
-        wrap.style.height = `${h}px`;
-        wrap.style.maxWidth = '100%';
-        wrap.style.maxHeight = '100%';
+        canvasNode.style.width = `${w}px`;
+        canvasNode.style.height = `${h}px`;
+        canvasNode.style.maxWidth = '100%';
+        canvasNode.style.maxHeight = '100%';
       }
-    }
+      canvasNode.style.display = 'block';
+      canvasNode.style.boxSizing = 'border-box';
+      const wrap = canvasNode.parentElement;
+      if (wrap && wrap !== canvasNode && wrap.tagName?.toLowerCase?.() === 'uni-canvas') {
+        wrap.style.display = 'block';
+        wrap.style.boxSizing = 'border-box';
+        wrap.style.overflow = 'hidden';
+        if (fillParent) {
+          wrap.style.width = '100%';
+          wrap.style.height = '100%';
+          wrap.style.maxWidth = '100%';
+          wrap.style.maxHeight = '100%';
+        } else {
+          wrap.style.width = `${w}px`;
+          wrap.style.height = `${h}px`;
+          wrap.style.maxWidth = '100%';
+          wrap.style.maxHeight = '100%';
+        }
+      }
+    } catch { /* App 部分节点只读 style */ }
     // #endif
   }
 
   function resetDomSize() {
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     if (!canvasNode) return;
     try {
       canvasNode.width = 1;
       canvasNode.height = 1;
     } catch {}
-    canvasNode.style.width = '';
-    canvasNode.style.height = '';
-    canvasNode.style.maxWidth = '';
-    canvasNode.style.maxHeight = '';
-    const wrap = canvasNode.parentElement;
-    if (wrap?.tagName?.toLowerCase?.() === 'uni-canvas') {
-      wrap.style.width = '';
-      wrap.style.height = '';
-      wrap.style.maxWidth = '';
-      wrap.style.maxHeight = '';
-    }
+    try {
+      canvasNode.style.width = '';
+      canvasNode.style.height = '';
+      canvasNode.style.maxWidth = '';
+      canvasNode.style.maxHeight = '';
+      const wrap = canvasNode.parentElement;
+      if (wrap?.tagName?.toLowerCase?.() === 'uni-canvas') {
+        wrap.style.width = '';
+        wrap.style.height = '';
+        wrap.style.maxWidth = '';
+        wrap.style.maxHeight = '';
+      }
+    } catch {}
     // #endif
   }
 
@@ -199,19 +238,34 @@ export function useCanvas2d(options) {
     if (w < 1 || h < 1) return false;
     canvasSize = { w, h };
     dpr = readDpr();
-    canvasNode.width = Math.round(w * dpr);
-    canvasNode.height = Math.round(h * dpr);
+    try {
+      canvasNode.width = Math.round(w * dpr);
+      canvasNode.height = Math.round(h * dpr);
+    } catch {
+      return false;
+    }
     syncDisplaySize(w, h, fillParent);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
+    try {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+    } catch {
+      return false;
+    }
+    return true;
+  }
+
+  function finishReady(fillParent) {
+    displaySize = { w: canvasSize.w, h: canvasSize.h };
+    eventTarget = resolveEventTarget(canvasNode);
+    onReady?.({ canvas: canvasNode, ctx, canvasSize, dpr, displaySize });
     return true;
   }
 
   function initFromDom() {
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     if (typeof document === 'undefined') return false;
     const { wrap, canvas } = findCanvasBySelector(selector);
-    if (!canvas) return false;
+    if (!isRealCanvas(canvas)) return false;
     canvasNode = canvas;
     eventTarget = wrap || canvas;
     displaySize = measureDisplaySize();
@@ -219,11 +273,9 @@ export function useCanvas2d(options) {
     let w = logical?.w || displaySize.w;
     let h = logical?.h || displaySize.h;
     ({ w, h } = normalizeLogicalSize(w, h));
-    ctx = canvas.getContext('2d');
+    ctx = create2dContext(canvas);
     if (!ctx || !applyBuffer(w, h, !logical?.w)) return false;
-    displaySize = { w, h };
-    onReady?.({ canvas: canvasNode, ctx, canvasSize, dpr, displaySize });
-    return true;
+    return finishReady(!logical?.w);
     // #endif
     return false;
   }
@@ -237,43 +289,57 @@ export function useCanvas2d(options) {
   }
 
   function init(retry = 0) {
+    // #ifdef APP-PLUS
+    // App WebView：selectorQuery 的 node 常是无 getContext 的代理，直接调用会抛错中断回调
+    if (initFromDom()) return;
+    // #endif
+
     createQuery()
       .select(selector)
       .fields({ node: true, size: true })
       .exec((res) => {
-        const info = res?.[0];
-        if (!info?.node) {
-          // #ifdef H5
-          if (initFromDom()) return;
-          // #endif
-          if (scheduleRetry(retry)) return;
-          // #ifdef H5
-          if (initFromDom()) return;
-          // #endif
-          onFail?.();
-          return;
-        }
+        try {
+          const info = res?.[0];
+          const real = resolveRealCanvas(info?.node);
 
-        canvasNode = info.node;
-        eventTarget = resolveEventTarget(canvasNode);
-        displaySize = { w: info.width || 0, h: info.height || 0 };
-        const logical = getLogicalSize?.();
-        let w = logical?.w || displaySize.w;
-        let h = logical?.h || displaySize.h;
-        ({ w, h } = normalizeLogicalSize(w, h));
-        ctx = canvasNode.getContext('2d');
-        const fillParent = !logical?.w;
-        if (!ctx || !applyBuffer(w, h, fillParent)) {
-          // #ifdef H5
+          if (!real) {
+            // #ifdef H5 || APP-PLUS
+            if (initFromDom()) return;
+            // #endif
+            if (scheduleRetry(retry)) return;
+            // #ifdef H5 || APP-PLUS
+            if (initFromDom()) return;
+            // #endif
+            onFail?.();
+            return;
+          }
+
+          canvasNode = real;
+          eventTarget = resolveEventTarget(info?.node || real);
+          displaySize = { w: info?.width || 0, h: info?.height || 0 };
+          const logical = getLogicalSize?.();
+          let w = logical?.w || displaySize.w;
+          let h = logical?.h || displaySize.h;
+          ({ w, h } = normalizeLogicalSize(w, h));
+          ctx = create2dContext(canvasNode);
+          const fillParent = !logical?.w;
+          if (!ctx || !applyBuffer(w, h, fillParent)) {
+            // #ifdef H5 || APP-PLUS
+            if (initFromDom()) return;
+            // #endif
+            if (scheduleRetry(retry)) return;
+            onFail?.();
+            return;
+          }
+          finishReady(fillParent);
+        } catch (err) {
+          console.warn('[useCanvas2d] init failed', err);
+          // #ifdef H5 || APP-PLUS
           if (initFromDom()) return;
           // #endif
-          // 布局尚未完成（宽高为 0）时重试，避免微信端首帧失败
           if (scheduleRetry(retry)) return;
           onFail?.();
-          return;
         }
-        displaySize = { w, h };
-        onReady?.({ canvas: canvasNode, ctx, canvasSize, dpr, displaySize });
       });
   }
 
@@ -297,18 +363,18 @@ export function useCanvas2d(options) {
   }
 
   /**
-   * H5：在真实 canvas 节点上绑定原生 pointer 事件。
+   * H5/App：在真实 canvas 节点上绑定原生 pointer 事件。
    * uni-app H5 的模板 @touchstart/@click 在 canvas 上不可靠，必须原生绑定。
    * @param {object} handlers
    */
   function bindPointer(handlers) {
     unbindPointer?.();
     unbindPointer = null;
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     const el = eventTarget || resolveEventTarget(canvasNode);
     if (!el || typeof el.addEventListener !== 'function' || !handlers) return;
 
-    el.style.touchAction = 'none';
+    try { el.style.touchAction = 'none'; } catch {}
 
     const opts = { passive: false };
     const onMd = (e) => { e.preventDefault(); handlers.onMouseDown?.(e); };
@@ -341,7 +407,7 @@ export function useCanvas2d(options) {
     // #endif
   }
 
-  /** H5：viewport 坐标 → canvas 逻辑坐标（与小程序 detail.x/y 一致） */
+  /** H5/App：viewport 坐标 → canvas 逻辑坐标（与小程序 detail.x/y 一致） */
   function clientToLocal(clientX, clientY) {
     const el = eventTarget || resolveEventTarget(canvasNode);
     if (!el || typeof el.getBoundingClientRect !== 'function') {
@@ -357,7 +423,7 @@ export function useCanvas2d(options) {
     };
   }
 
-  /** H5：原生 MouseEvent → canvas 逻辑坐标 */
+  /** H5/App：原生 MouseEvent → canvas 逻辑坐标 */
   function localFromMouseEvent(e) {
     if (typeof e.offsetX === 'number' && !Number.isNaN(e.offsetX)) {
       const el = eventTarget || resolveEventTarget(canvasNode);
@@ -386,7 +452,7 @@ export function useCanvas2d(options) {
     if (canvasNode?.requestAnimationFrame) return canvasNode.requestAnimationFrame(fn);
     return setTimeout(() => fn(Date.now()), 16);
     // #endif
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     return requestAnimationFrame(fn);
     // #endif
   }
@@ -400,7 +466,7 @@ export function useCanvas2d(options) {
     }
     clearTimeout(id);
     // #endif
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     cancelAnimationFrame(id);
     // #endif
   }

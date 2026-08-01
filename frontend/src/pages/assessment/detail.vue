@@ -106,7 +106,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 // #ifndef H5
 import { buildTimelineShare } from '../../utils/mpShare';
@@ -130,7 +130,7 @@ defineOptions({
   },
 });
 // #endif
-import { onShow } from '@dcloudio/uni-app';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { assessmentApi } from '../../api/index.js';
 import ZjIcon from '../../components/ZjIcon.vue';
 import { useUserStore } from '../../store/user.js';
@@ -162,10 +162,13 @@ const isFlow = computed(() => {
 });
 const flowHistory = ref([]);
 
-onMounted(async () => {
-  const pages = getCurrentPages();
-  const page = pages[pages.length - 1];
-  const id = page?.options?.id;
+onLoad(async (opts = {}) => {
+  const id = opts.id || props.id;
+  if (!id) {
+    loading.value = false;
+    uni.showToast({ title: '测评信息异常', icon: 'none' });
+    return;
+  }
   try {
     const data = await assessmentApi.getScale(id);
     scale.value = data;

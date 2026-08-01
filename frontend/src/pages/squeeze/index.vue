@@ -14,28 +14,31 @@
       </view>
     </view>
 
-    <!-- 页头卡片 -->
-    <IslandHero src="/static/island/hero-squeeze.jpg" custom-class="hero-card">
-      <text class="hero-emoji">🫧</text>
-      <text class="hero-title">解压泡泡</text>
-      <text class="hero-desc">五彩泡泡随机铺开，手指戳破每一个</text>
-      <view class="hero-stats">
-        <view class="stat-item">
-          <text class="stat-num">{{ poppedCount }}</text>
-          <text class="stat-label">已解压</text>
-        </view>
-        <view class="stat-divider" />
-        <view class="stat-item">
-          <text class="stat-num">{{ totalCount - poppedCount }}</text>
-          <text class="stat-label">剩余</text>
-        </view>
-        <view class="stat-divider" />
-        <view class="stat-item">
-          <text class="stat-num">{{ comboCount }}</text>
-          <text class="stat-label">连击</text>
-        </view>
+    <!-- Hero -->
+    <IslandHero src="/static/island/hero-squeeze.jpg">
+      <view class="hero-content">
+        <text class="hero-eyebrow">放松一刻</text>
+        <text class="hero-title">解压泡泡</text>
+        <text class="hero-sub">五彩泡泡随机铺开，手指戳破每一个</text>
       </view>
     </IslandHero>
+
+    <view class="hero-stats">
+      <view class="stat-item">
+        <text class="stat-num">{{ poppedCount }}</text>
+        <text class="stat-label">已解压</text>
+      </view>
+      <view class="stat-divider" />
+      <view class="stat-item">
+        <text class="stat-num">{{ totalCount - poppedCount }}</text>
+        <text class="stat-label">剩余</text>
+      </view>
+      <view class="stat-divider" />
+      <view class="stat-item">
+        <text class="stat-num">{{ comboCount }}</text>
+        <text class="stat-label">连击</text>
+      </view>
+    </view>
 
     <!-- Canvas 区域 -->
     <view class="canvas-wrap">
@@ -50,7 +53,7 @@
         @click="onCanvasClick($event)"
       />
       <!-- #endif -->
-      <!-- #ifdef H5 -->
+      <!-- #ifdef H5 || APP-PLUS -->
       <canvas
         type="2d"
         id="squeezeCanvas"
@@ -236,7 +239,7 @@ const canvas2d = useCanvas2d({
       if (!bubblesReady) {
         initBubbles();
       }
-      // #ifdef H5
+      // #ifdef H5 || APP-PLUS
       requestAnimationFrame(() => bindH5Pointer());
       // #endif
     });
@@ -261,7 +264,7 @@ function syncCanvasRect(done) {
     .exec();
 }
 
-// #ifdef H5
+// #ifdef H5 || APP-PLUS
 let h5MouseDown = false;
 
 function h5PopFromEvent(e) {
@@ -299,7 +302,7 @@ function bindH5Pointer() {
 // 破裂音效：微信 Windows 模拟器对缺失/WAV 会狂抛 Unable to decode audio data，
 // 因此仅在确认有资源时初始化；MP 端优先 mp3，没有则静音。
 const POP_SOUNDS = [
-  // #ifdef H5
+  // #ifdef H5 || APP-PLUS
   '/static/squeeze/pop1.wav',
   '/static/squeeze/pop2.wav',
   '/static/squeeze/pop3.wav',
@@ -444,7 +447,7 @@ function relayoutPage(opts = {}) {
         if (forceBubbles || !bubblesReady || needResize) {
           initBubbles();
         }
-        // #ifdef H5
+        // #ifdef H5 || APP-PLUS
         bindH5Pointer();
         // #endif
       });
@@ -1069,7 +1072,7 @@ function handleTouch(e) {
   const touches = e.touches;
   if (!touches || touches.length === 0) return;
   const now = Date.now();
-  // #ifdef MP-WEIXIN
+  // #ifdef MP-WEIXIN || APP-PLUS
   if (now - lastTouchPopTs < 50) return;
   lastTouchPopTs = now;
   // #endif
@@ -1207,7 +1210,7 @@ function playPopSound() {
 
 function triggerVibration() {
   // #ifndef H5
-  wx.vibrateShort({ type: 'light', fail: () => {} });
+  uni.vibrateShort({ type: 'light', fail: () => {} });
   // #endif
 }
 
@@ -1227,7 +1230,7 @@ function popAll() {
   playPopSound();
   startPhysics();   // 让水渍飞溅并逐渐变干
   // #ifndef H5
-  wx.vibrateLong({ fail: () => {} });
+  uni.vibrateLong({ fail: () => {} });
   // #endif
 }
 
@@ -1323,43 +1326,16 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.06);
 .mode-btn-text { font-size: 22rpx; color: $text-2; font-weight: 600; }
 .mode-btn-arrow { font-size: 26rpx; color: $muted; }
 
-/* ── 页头卡片 ── */
-:deep(.hero-card) {
-  margin: 20rpx 24rpx 0;
-  border-radius: $card-r;
-  padding: 32rpx 32rpx 28rpx;
-  box-shadow: 0 8rpx 32rpx rgba(74, 138, 122, 0.22);
-}
-.hero-glow {
-  display: none;
-}
-.hero-emoji {
-  display: block;
-  font-size: 56rpx;
-  margin-bottom: 12rpx;
-}
-.hero-title {
-  display: block;
-  font-size: 40rpx;
-  font-weight: 800;
-  color: #fff;
-  font-family: $zj-font-display;
-  margin-bottom: 8rpx;
-}
-.hero-desc {
-  display: block;
-  font-size: 24rpx;
-  color: rgba(255,255,255,0.78);
-  line-height: 1.6;
-  margin-bottom: 24rpx;
-}
+/* ── 解压统计 ── */
 .hero-stats {
   display: flex;
   align-items: center;
   gap: 0;
-  background: rgba(255,255,255,0.12);
-  border-radius: 16rpx;
-  padding: 16rpx 0;
+  margin: 20rpx 24rpx 0;
+  background: $zj-surface;
+  border-radius: $card-r;
+  padding: 20rpx 0;
+  box-shadow: $card-shadow;
 }
 .stat-item {
   flex: 1;
@@ -1371,17 +1347,17 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.06);
 .stat-num {
   font-size: 40rpx;
   font-weight: 800;
-  color: #fff;
+  color: $text-1;
   letter-spacing: -1rpx;
 }
 .stat-label {
   font-size: 20rpx;
-  color: rgba(255,255,255,0.68);
+  color: $muted;
 }
 .stat-divider {
   width: 1rpx;
   height: 48rpx;
-  background: rgba(255,255,255,0.22);
+  background: $border;
 }
 
 /* ── Canvas 区域 ── */

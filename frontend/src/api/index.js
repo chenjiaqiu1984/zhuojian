@@ -26,6 +26,7 @@ async function request(method, path, data) {
   return new Promise((resolve, reject) => {
     uni.request({
       url: `${BASE_URL}${path}`, method, data,
+      timeout: 20000,
       header: { Authorization: `Bearer ${getToken()}` },
       success: res => {
         if (res.statusCode === 401) {
@@ -34,7 +35,16 @@ async function request(method, path, data) {
         }
         res.statusCode >= 400 ? reject(res.data) : resolve(res.data);
       },
-      fail: err => reject(err)
+      fail: err => {
+        const msg = err?.errMsg || '';
+        if (/ssl|ERR_SSL|CERT|handshake/i.test(msg)) {
+          return reject({ error: '安全连接失败，请检查网络或稍后重试' });
+        }
+        if (/timeout|timed out/i.test(msg)) {
+          return reject({ error: '请求超时，请稍后重试' });
+        }
+        reject(err?.error ? err : { error: '网络异常，请稍后重试', detail: msg });
+      }
     });
   });
 }

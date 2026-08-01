@@ -119,8 +119,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { ref, computed } from 'vue';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { consultantApi, bookingApi } from '../../api/index';
 import ZjIcon from '../../components/ZjIcon.vue';
 import { useUserStore } from '../../store/user';
@@ -274,13 +274,15 @@ function fullUrl(url) {
 
 let consultantId = null;
 
-onMounted(async () => {
-  const pages = getCurrentPages();
-  const opts = pages[pages.length - 1]?.options || {};
+onLoad(async (opts = {}) => {
   rescheduleId.value = opts.reschedule ? Number(opts.reschedule) : null;
   consultantId = opts.id;
-  if (!consultantId) return;
-  try { consultant.value = await consultantApi.get(opts.id); } finally { loading.value = false; }
+  if (!consultantId) {
+    loading.value = false;
+    uni.showToast({ title: '咨询师信息异常', icon: 'none' });
+    return;
+  }
+  try { consultant.value = await consultantApi.get(consultantId); } finally { loading.value = false; }
 });
 
 // 从支付页返回时刷新时间槽状态
