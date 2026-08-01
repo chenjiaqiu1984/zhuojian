@@ -147,6 +147,24 @@
         </view>
       </view>
     </view>
+
+    <!-- 微信登录：引导扫码进小程序 -->
+    <view v-if="wxGuideVisible" class="wx-guide-mask" @click="wxGuideVisible = false">
+      <view class="wx-guide-sheet" @click.stop>
+        <text class="wx-guide-title">微信登录</text>
+        <text class="wx-guide-desc">请使用微信扫码，进入小程序完成登录</text>
+        <image
+          class="wx-guide-qr"
+          :src="wxacodeSrc"
+          mode="aspectFit"
+          show-menu-by-longpress
+        />
+        <text class="wx-guide-hint">{{ MINIPROGRAM_SCAN_HINT }}</text>
+        <view class="wx-guide-close" @click="wxGuideVisible = false">
+          <text class="wx-guide-close-txt">关闭</text>
+        </view>
+      </view>
+    </view>
   </view>
   <!-- #endif -->
 </template>
@@ -162,6 +180,10 @@ import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { track } from '../../utils/track';
 import { useCaptcha } from '../../composables/useCaptcha';
+import {
+  MINIPROGRAM_SCAN_HINT,
+  wxacodeLocalUrl,
+} from '../../utils/miniprogramPromo';
 
 const store = useUserStore();
 const activeTab = ref(0);
@@ -172,6 +194,8 @@ const phone = ref({ num: '', code: '', countdown: 0 });
 const pwd = ref({ username: '', password: '' });
 const rememberMe = ref(true);
 const termsAgreed = ref(false);
+const wxGuideVisible = ref(false);
+const wxacodeSrc = wxacodeLocalUrl();
 
 const { captchaUrl, captchaToken, captchaAnswer, refreshCaptcha } = useCaptcha();
 onMounted(() => refreshCaptcha());
@@ -185,8 +209,16 @@ async function sendSms() {
   if (!/^1[3-9]\d{9}$/.test(phone.value.num)) return uni.showToast({ title: '手机号格式错误', icon: 'none' });
   if (!captchaAnswer.value) return uni.showToast({ title: '请输入图形验证码', icon: 'none' });
   try {
-    await authApi.sendSms(phone.value.num, captchaToken.value, captchaAnswer.value);
-    startCountdown(phone.value); uni.showToast({ title: '验证码已发送' });
+    const res = await authApi.sendSms(phone.value.num, captchaToken.value, captchaAnswer.value);
+    startCountdown(phone.value);
+    if (res?.dev && res?.code) {
+      phone.value.code = res.code;
+      uni.showToast({ title: `开发环境验证码：${res.code}`, icon: 'none', duration: 5000 });
+    } else if (res?.dev) {
+      uni.showToast({ title: '当前为开发模式，未真实发短信，请查看服务器日志', icon: 'none', duration: 4000 });
+    } else {
+      uni.showToast({ title: '验证码已发送' });
+    }
   } catch (e) {
     refreshCaptcha();
     if (e.resetAt) {
@@ -217,8 +249,9 @@ async function loginPwd() {
   finally { loading.value = false; }
 }
 
-async function loginWechat() {
-  uni.showToast({ title: '请在微信内使用', icon: 'none' });
+function loginWechat() {
+  // H5 / App 无公众号网页授权；引导用户扫码进入小程序登录
+  wxGuideVisible.value = true;
 }
 
 // #ifdef MP-WEIXIN
@@ -803,6 +836,65 @@ function success() {
   box-shadow: 0 4rpx 20rpx rgba(0,0,0,.14);
 }
 .wechat { background: #07C160; }
+
+/* 微信登录引导弹层 */
+.wx-guide-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(16, 28, 24, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.wx-guide-sheet {
+  width: 100%;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 48rpx 48rpx calc(48rpx + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.wx-guide-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1A2E28;
+  margin-bottom: 12rpx;
+}
+.wx-guide-desc {
+  font-size: 26rpx;
+  color: #617870;
+  margin-bottom: 36rpx;
+  text-align: center;
+}
+.wx-guide-qr {
+  width: 360rpx;
+  height: 360rpx;
+  border-radius: 16rpx;
+  background: #F7F9F8;
+  margin-bottom: 20rpx;
+}
+.wx-guide-hint {
+  font-size: 24rpx;
+  color: #8A9B94;
+  margin-bottom: 40rpx;
+  text-align: center;
+}
+.wx-guide-close {
+  width: 100%;
+  height: 88rpx;
+  border-radius: 44rpx;
+  background: #F0F4F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wx-guide-close-txt {
+  font-size: 28rpx;
+  color: #3D5A50;
+  font-weight: 500;
+}
 
 /* 图形验证码 */
 .captcha-row {
