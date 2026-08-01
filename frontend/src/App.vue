@@ -5,6 +5,10 @@ import { patchH5TabBarIcons, scheduleH5TabBarIcons } from './utils/tabBarIcons';
 import ShareMomentsModal from './components/ShareMomentsModal.vue';
 
 onLaunch(() => {
+  // App 端 view 层读 locale 为 null 会白屏/跳转失败
+  try {
+    if (typeof uni.setLocale === 'function') uni.setLocale('zh-Hans');
+  } catch {}
   const store = useUserStore();
   store.init();
   patchH5TabBarIcons();

@@ -123,6 +123,7 @@ export const paymentApi = {
   createH5Order:         (bookingId, d) => post(`/payment/h5/${bookingId}`, d),
   createAlipayOrder:     (bookingId, d) => post(`/payment/alipay/${bookingId}`, d),
   createNativeOrder:     (bookingId, d) => post(`/payment/native/${bookingId}`, d),
+  createAppOrder:        (bookingId, d) => post(`/payment/app/${bookingId}`, d),
   createAlipayPcOrder:   (bookingId, d) => post(`/payment/alipay-pc/${bookingId}`, d),
   createActivityOrder:   (newsId, d)    => post(`/payment/activity/${newsId}`, d),
   queryOrder:            orderNo        => get(`/payment/order/${orderNo}`),

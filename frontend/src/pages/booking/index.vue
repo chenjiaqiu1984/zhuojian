@@ -83,12 +83,20 @@ async function confirmBooking(b) {
 }
 
 function goToPay(b) {
-  const name         = encodeURIComponent(b.consultant_name || '');
-  const time         = encodeURIComponent(b.start_time || '');
+  const rawName      = b.consultant_name || '';
+  const rawTime      = b.start_time || '';
   const amount       = b.consultant_price || b.consultant?.price || 0;
   const discountRate = b.consultant_discount_rate ?? b.consultant?.discountRate ?? 1.0;
+  uni.setStorageSync('_paymentParams', JSON.stringify({
+    bookingId: b.id,
+    consultantName: rawName,
+    slotTime: rawTime,
+    amount,
+    discountRate,
+  }));
   uni.navigateTo({
-    url: `/pages/payment/index?bookingId=${b.id}&consultantName=${name}&slotTime=${time}&amount=${amount}&discountRate=${discountRate}`
+    url: `/pages/payment/index?bookingId=${b.id}&amount=${amount}&discountRate=${discountRate}`,
+    fail: () => uni.showToast({ title: '打开支付页失败', icon: 'none' }),
   });
 }
 

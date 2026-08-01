@@ -192,12 +192,27 @@ function previewCertImg(index) {
 
 const DAYS = ['日','一','二','三','四','五','六'];
 
+/** 稳定日期键，避免 App 端 toLocaleDateString / locale 异常 */
+function dateKey(d) {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${m}/${day}`;
+}
+
+function dayAtOffset(offsetDays) {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + offsetDays);
+  return d;
+}
+
 const scheduleMap = computed(() => {
   const m = {};
   for (const s of consultant.value?.slots || []) {
     const d = new Date(s.startTime);
     const halfIdx = (d.getHours() - 8) * 2 + (d.getMinutes() >= 30 ? 1 : 0);
-    const key = d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+    if (halfIdx < 0 || halfIdx >= 32) continue;
+    const key = dateKey(d);
     if (!m[key]) m[key] = {};
     m[key][halfIdx] = s;
   }
@@ -206,8 +221,8 @@ const scheduleMap = computed(() => {
 
 const scheduleDates = computed(() =>
   Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(Date.now() + (i + 2) * 86400000);
-    return { key: d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }), dayName: '周' + DAYS[d.getDay()], dayNum: d.getDate() };
+    const d = dayAtOffset(i + 2);
+    return { key: dateKey(d), dayName: '周' + DAYS[d.getDay()], dayNum: d.getDate() };
   })
 );
 
@@ -236,7 +251,9 @@ const gridCells = computed(() => {
         });
         const hasPendingPayment = slotStatuses.some(s => s === 'pending_payment');
         const hasPending = !hasPendingPayment && slotStatuses.some(s => s === 'pending');
-        const label = hasPendingPayment ? '待付款' : hasPending ? '待确认' : '已预约';
+        const hasBooked = slotStatuses.some(s => !!s);
+        // 无槽位/无预约状态：不显示「已预约/待付款」，避免误导
+        const label = hasPendingPayment ? '待付款' : hasPending ? '待确认' : hasBooked ? '已预约' : '';
         const cls   = hasPendingPayment ? 'wg-cell-pay' : hasPending ? 'wg-cell-pending' : 'wg-cell-booked';
         cells.push({ id: id++, type: 'cell', col: ci+2, row: idx+1, span: n, label, cls });
         idx += n; continue;
@@ -326,9 +343,25 @@ async function book() {
       const res = await bookingApi.create({ consultant_id: consultant.value.id, slot_id: firstSlot.id, second_slot_id: secondSlot?.id || null });
       // 如果咨询师设置了价格，跳转支付页
       if (consultant.value.price > 0 && res.id) {
-        const slotLabel = encodeURIComponent(`${firstSlot.startTime?.slice(0,10)} ${firstSlot.startTime?.slice(11,16)}`);
-        const name = encodeURIComponent(consultant.value.name || '');
-        uni.navigateTo({ url: `/pages/payment/index?bookingId=${res.id}&consultantName=${name}&slotTime=${slotLabel}&amount=${consultant.value.price}` });
+        const rawSlot = `${String(firstSlot.startTime || '').slice(0, 10)} ${String(firstSlot.startTime || '').slice(11, 16)}`;
+        const rawName = consultant.value.name || '';
+        const discount = consultant.value.discountRate ?? 1.0;
+        // App 端 URL query 常丢失，先写入 storage 兜底
+        uni.setStorageSync('_paymentParams', JSON.stringify({
+          bookingId: res.id,
+          consultantName: rawName,
+          slotTime: rawSlot,
+          amount: consultant.value.price,
+          discountRate: discount,
+        }));
+        // App 端长 query（中文名）易导致跳转失败，只带必要数字参数，详情走 storage
+        uni.navigateTo({
+          url: `/pages/payment/index?bookingId=${res.id}&amount=${consultant.value.price}&discountRate=${discount}`,
+          fail: (err) => {
+            console.error('[book] navigateTo payment fail', err);
+            uni.showToast({ title: '打开支付页失败，请到我的预约支付', icon: 'none', duration: 2500 });
+          },
+        });
         return;
       }
       uni.showToast({ title: '预约成功' });

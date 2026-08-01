@@ -32,26 +32,26 @@
         <view class="refund-rules" v-else>
           <view class="refund-rule">
             <view class="rule-dot rule-dot--green" />
-            <text class="rule-text"><text class="rule-time">{{ activityRefund.deadline48h }}</text> 前取消，全额退款</text>
+            <text class="rule-text">{{ activityRefund.deadline48h }} 前取消，全额退款</text>
           </view>
           <view class="refund-rule">
             <view class="rule-dot rule-dot--amber" />
-            <text class="rule-text"><text class="rule-time">{{ activityRefund.deadline24h }}</text> 前取消，退款 50%</text>
+            <text class="rule-text">{{ activityRefund.deadline24h }} 前取消，退款 50%</text>
           </view>
           <view class="refund-rule">
             <view class="rule-dot rule-dot--red" />
-            <text class="rule-text"><text class="rule-time">{{ activityRefund.deadline24h }}</text> 后取消，不予退款</text>
+            <text class="rule-text">{{ activityRefund.deadline24h }} 后取消，不予退款</text>
           </view>
         </view>
         <text class="refund-consent">如有特殊情况请联系客服：345958875@qq.com</text>
         <text class="refund-consent">点击「立即支付」即表示同意以上退款规则</text>
       </view>
 
-      <template v-else>
+      <view v-else class="consult-meta">
         <text class="summary-name">{{ consultantName }}</text>
         <text class="summary-meta">线下面对面咨询服务</text>
         <text class="summary-time">{{ slotTime }}</text>
-      </template>
+      </view>
 
       <!-- 退费须知 -->
       <view class="refund-block" v-if="!isActivity">
@@ -59,15 +59,15 @@
         <view class="refund-rules">
           <view class="refund-rule">
             <view class="rule-dot rule-dot--green" />
-            <text class="rule-text"><text class="rule-time">{{ refundDeadline48h }}</text> 前取消，全额退款</text>
+            <text class="rule-text">{{ refundDeadline48h }} 前取消，全额退款</text>
           </view>
           <view class="refund-rule">
             <view class="rule-dot rule-dot--amber" />
-            <text class="rule-text"><text class="rule-time">{{ refundDeadline24h }}</text> 前取消，退款 50%</text>
+            <text class="rule-text">{{ refundDeadline24h }} 前取消，退款 50%</text>
           </view>
           <view class="refund-rule">
             <view class="rule-dot rule-dot--red" />
-            <text class="rule-text"><text class="rule-time">{{ refundDeadline24h }}</text> 后取消，不予退款</text>
+            <text class="rule-text">{{ refundDeadline24h }} 后取消，不予退款</text>
           </view>
         </view>
         <text class="refund-consent">如有特殊情况请联系客服：345958875@qq.com</text>
@@ -80,10 +80,10 @@
       <view class="amount-section">
         <text class="amount-label">应付金额</text>
         <view class="amount-display">
-          <text class="amount-strike" v-if="discountRate < 1.0">¥{{ (amount / 100).toFixed(2) }}</text>
+          <text class="amount-strike" v-if="discountRate < 1.0">¥{{ (Number(amount) / 100 || 0).toFixed(2) }}</text>
           <view class="amount-main">
             <text class="amount-currency">¥</text>
-            <text class="amount-value">{{ (finalAmount / 100).toFixed(2) }}</text>
+            <text class="amount-value">{{ payAmountText }}</text>
           </view>
           <view class="discount-chip" v-if="discountRate < 1.0">
             <text class="discount-chip-text">{{ Math.round(discountRate * 10) }}折</text>
@@ -101,7 +101,7 @@
     <!-- 倒计时 -->
     <view class="timer-bar" v-if="countdown > 0">
       <view class="timer-dot" />
-      <text class="timer-text">请在 <text class="timer-count">{{ timerText }}</text> 内完成支付</text>
+      <text class="timer-text">请在 {{ timerText }} 内完成支付</text>
     </view>
     <view class="timer-bar timer-bar--expired" v-else-if="orderNo">
       <view class="timer-dot" />
@@ -127,7 +127,7 @@
           </view>
         </view>
         <view
-          v-if="isH5"
+          v-if="isH5 || isApp"
           class="method-item"
           :class="{ 'method-item--active': payMethod === 'alipay' }"
           @click="payMethod = 'alipay'"
@@ -219,23 +219,23 @@
 
     <!-- 底部操作区 -->
     <view class="footer">
-      <button
+      <view
         class="pay-btn"
-        :class="{ 'pay-btn--disabled': loading || countdown <= 0 }"
-        :disabled="loading || countdown <= 0"
-        @click="doPay()"
+        :class="{ 'pay-btn--disabled': loading || countdown <= 0 || pageError }"
+        @click="onPayTap"
       >
-        <text v-if="loading">处理中</text>
+        <text v-if="pageError">支付信息异常</text>
+        <text v-else-if="loading">处理中</text>
         <text v-else-if="usePackage">使用套餐预约线下咨询</text>
-        <text v-else>支付线下服务费 ¥{{ (finalAmount / 100).toFixed(2) }}</text>
-      </button>
+        <text v-else>支付线下服务费 ¥{{ payAmountText }}</text>
+      </view>
       <text class="footer-disclaimer">本支付用于线下{{ isActivity ? '活动' : '咨询' }}服务，非虚拟商品交易</text>
       <text class="cancel-link" v-if="!isActivity" @click="cancel()">取消预约</text>
     </view>
 
     <!-- 二维码弹窗 -->
-    <view v-if="showQrModal" class="qr-overlay" @click.self="closeQrModal">
-      <view class="qr-panel">
+    <view v-if="showQrModal" class="qr-overlay" @click="closeQrModal">
+      <view class="qr-panel" @click.stop="keepQrPanel">
         <view class="qr-header">
           <text class="qr-title">{{ qrTitle }}</text>
           <view class="qr-close-btn" @click="closeQrModal">
@@ -245,7 +245,7 @@
         <view class="qr-frame">
           <image class="qr-img" :src="qrDataUrl" mode="aspectFit" />
         </view>
-        <text class="qr-hint">请使用微信扫码完成支付，支付成功后自动跳转</text>
+        <text class="qr-hint">请使用微信扫一扫完成支付，支付成功后自动跳转</text>
       </view>
     </view>
 
@@ -253,18 +253,18 @@
 </template>
 
 <script setup>
-// #ifndef H5
+// #ifdef MP-WEIXIN
 import { createMpShare } from '@/utils/mpShare';
 defineOptions(createMpShare('payment/index'));
 // #endif
 
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import QRCode from 'qrcode';
+import { onLoad } from '@dcloudio/uni-app';
 import { paymentApi, bookingApi, packageApi, couponApi } from '../../api/index';
 import { requireActive } from '../../utils/requireActive';
 
 // uni-app 路由页面通过 URL query 传参，不能用 defineProps 接收
-// 改为本地 ref，在 onMounted 里从 query 读取
+// App 端必须用 onLoad 取参；onMounted + getCurrentPages 在 App 上经常读不到
 const bookingId      = ref(0);
 const newsId         = ref(0);          // 活动支付时使用
 const activityName   = ref('');
@@ -274,6 +274,7 @@ const slotTime       = ref('');
 const amount         = ref(0);
 const discountRate   = ref(1.0);
 const isActivity     = computed(() => newsId.value > 0);
+const pageError      = ref(false);
 
 const loading           = ref(false);
 const orderNo           = ref('');
@@ -289,9 +290,14 @@ let pollTimer = null;
 
 // 是否手机浏览器（Windows/Mac/Linux 桌面端明确排除）
 function isMobile() {
-  const ua = navigator.userAgent;
-  if (/Windows NT|Macintosh|X11; Linux x86_64/i.test(ua)) return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  try {
+    const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    if (!ua) return true;
+    if (/Windows NT|Macintosh|X11; Linux x86_64/i.test(ua)) return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  } catch {
+    return true;
+  }
 }
 
 // QR 码弹窗状态
@@ -306,6 +312,12 @@ const isH5 = true;
 // #endif
 // #ifndef H5
 const isH5 = false;
+// #endif
+// #ifdef APP-PLUS
+const isApp = true;
+// #endif
+// #ifndef APP-PLUS
+const isApp = false;
 // #endif
 
 const timerText = computed(() => {
@@ -331,6 +343,12 @@ const finalAmount = computed(() =>
   Math.max(1, discountedAmount.value - selectedCouponDiscount.value)
 );
 
+const payAmountText = computed(() => {
+  const n = Number(finalAmount.value);
+  if (!Number.isFinite(n)) return '0.00';
+  return (n / 100).toFixed(2);
+});
+
 // 有剩余次数且未过期的套餐
 const activePackages = computed(() =>
   myPackages.value.filter(up =>
@@ -339,6 +357,11 @@ const activePackages = computed(() =>
     (!up.expireAt || new Date(up.expireAt) > new Date())
   )
 );
+
+/** App 构建为 IIFE，不能用动态 import（会 code-split 导致打包失败） */
+function makeQrDataUrl(text) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(text)}`;
+}
 
 // 将 "YYYY-MM-DD HH:mm" 解析为时间戳（兼容 iOS Safari）
 function parseSlotTime(str) {
@@ -380,75 +403,96 @@ const refundDeadline24h = computed(() => {
   return fmtDatetime(new Date(d.getTime() - 24 * 60 * 60 * 1000));
 });
 
-onMounted(async () => {
-  if (!requireActive()) return;
-  // 从页面 query 读取参数（uni-app H5 / 小程序均兼容）
-  const pages = getCurrentPages();
-  const cur   = pages[pages.length - 1];
-  // 小程序优先用 cur.options（原生参数对象，最可靠）；H5 用 fullPath 或 hash
-  let p = null;
-  // #ifndef H5
-  p = cur?.options || {};
-  // #endif
-  // #ifdef H5
-  const fullPathQuery = cur?.$page?.fullPath?.split('?')[1];
-  if (fullPathQuery) {
-    p = Object.fromEntries(new URLSearchParams(fullPathQuery));
-  } else {
-    p = cur?.options || {};
-  }
-  // #endif
-  if (p) {
-    if (p.bookingId)      bookingId.value      = Number(p.bookingId);
-    if (p.newsId)         newsId.value         = Number(p.newsId);
-    if (p.activityName)   activityName.value   = decodeURIComponent(p.activityName);
-    if (p.endDate)        activityEndDate.value = decodeURIComponent(p.endDate);
-    if (p.consultantName) consultantName.value = decodeURIComponent(p.consultantName);
-    if (p.slotTime)       slotTime.value       = decodeURIComponent(p.slotTime);
-    if (p.amount)         amount.value         = Number(p.amount);
-    if (p.discountRate)   discountRate.value   = Number(p.discountRate);
-  }
+function decodeParam(v) {
+  if (v == null || v === '') return '';
+  try { return decodeURIComponent(String(v)); } catch { return String(v); }
+}
 
-  // 从 storage 补充完整参数（活动报名场景下 URL 可能因长度限制被截断）
+function applyPaymentParams(p) {
+  if (!p || typeof p !== 'object') return;
+  if (p.bookingId)      bookingId.value       = Number(p.bookingId);
+  if (p.newsId)         newsId.value          = Number(p.newsId);
+  if (p.activityName)   activityName.value    = decodeParam(p.activityName);
+  if (p.endDate)        activityEndDate.value = decodeParam(p.endDate);
+  if (p.consultantName) consultantName.value  = decodeParam(p.consultantName);
+  if (p.slotTime)       slotTime.value        = decodeParam(p.slotTime);
+  if (p.amount)         amount.value          = Number(p.amount);
+  if (p.discountRate != null && p.discountRate !== '') {
+    discountRate.value = Number(p.discountRate);
+  }
+}
+
+function loadStoredPaymentParams() {
   try {
     const stored = uni.getStorageSync('_paymentParams');
-    if (stored) {
-      const sp = JSON.parse(stored);
-      // URL 参数完整时以 URL 为准，URL 被截断时（newsId=0）直接用 storage
-      if (sp.newsId && (!newsId.value || newsId.value === sp.newsId)) {
-        if (!newsId.value)          newsId.value         = sp.newsId;
-        if (!activityName.value && sp.activityName) activityName.value = sp.activityName;
-        if (!activityEndDate.value && sp.endDate)   activityEndDate.value = sp.endDate;
-        if (!amount.value && sp.amount)             amount.value = Number(sp.amount);
-      }
-      uni.removeStorageSync('_paymentParams');
+    if (!stored) return;
+    const sp = typeof stored === 'string' ? JSON.parse(stored) : stored;
+    // 活动：URL 被截断时用 storage 补齐
+    if (sp.newsId && (!newsId.value || newsId.value === sp.newsId)) {
+      if (!newsId.value) newsId.value = Number(sp.newsId);
+      if (!activityName.value && sp.activityName) activityName.value = sp.activityName;
+      if (!activityEndDate.value && sp.endDate) activityEndDate.value = sp.endDate;
+      if (!amount.value && sp.amount) amount.value = Number(sp.amount);
     }
+    // 预约：App 端 URL query 常丢失，用 storage 兜底
+    if (sp.bookingId && (!bookingId.value || bookingId.value === sp.bookingId)) {
+      if (!bookingId.value) bookingId.value = Number(sp.bookingId);
+      if (!consultantName.value && sp.consultantName) consultantName.value = sp.consultantName;
+      if (!slotTime.value && sp.slotTime) slotTime.value = sp.slotTime;
+      if (!amount.value && sp.amount) amount.value = Number(sp.amount);
+      if (sp.discountRate != null && discountRate.value === 1.0) {
+        discountRate.value = Number(sp.discountRate);
+      }
+    }
+    uni.removeStorageSync('_paymentParams');
   } catch {}
-  // H5 兜底：从 hash URL 直接读参数（应对 $page/options 读取失败的场景）
+}
+
+// App / 小程序：onLoad 是唯一可靠取参时机
+onLoad((opts = {}) => {
+  applyPaymentParams(opts);
+  loadStoredPaymentParams();
+});
+
+onMounted(async () => {
+  if (!requireActive()) return;
+
+  // 兜底：参数缺失或不完整时再从页面栈 / storage 补齐
+  if ((!bookingId.value && !newsId.value) || amount.value <= 0) {
+    const pages = getCurrentPages();
+    const cur = pages[pages.length - 1];
+    // #ifdef H5
+    const fullPathQuery = cur?.$page?.fullPath?.split('?')[1];
+    if (fullPathQuery) {
+      applyPaymentParams(Object.fromEntries(new URLSearchParams(fullPathQuery)));
+    } else {
+      applyPaymentParams(cur?.options || {});
+    }
+    // #endif
+    // #ifndef H5
+    applyPaymentParams(cur?.$page?.options ?? cur?.options ?? {});
+    // #endif
+    loadStoredPaymentParams();
+  }
+
   // #ifdef H5
-  if (!newsId.value && !bookingId.value) {
+  if ((!newsId.value && !bookingId.value) || amount.value <= 0) {
     const hash = window.location.hash;
     const q = hash.indexOf('?');
     if (q !== -1) {
-      const hp = new URLSearchParams(hash.slice(q + 1));
-      if (hp.get('newsId'))         newsId.value         = Number(hp.get('newsId'));
-      if (hp.get('bookingId'))      bookingId.value      = Number(hp.get('bookingId'));
-      if (hp.get('activityName'))   activityName.value   = decodeURIComponent(hp.get('activityName'));
-      if (hp.get('endDate'))        activityEndDate.value = decodeURIComponent(hp.get('endDate'));
-      if (hp.get('consultantName')) consultantName.value = decodeURIComponent(hp.get('consultantName'));
-      if (hp.get('slotTime'))       slotTime.value       = decodeURIComponent(hp.get('slotTime'));
-      if (hp.get('amount'))         amount.value         = Number(hp.get('amount'));
-      if (hp.get('discountRate'))   discountRate.value   = Number(hp.get('discountRate'));
+      applyPaymentParams(Object.fromEntries(new URLSearchParams(hash.slice(q + 1))));
     }
   }
   // #endif
 
-  // 参数读取失败（如从支付页返回时页面栈丢失参数），直接退出避免显示错误金额
+  // 参数仍无效：留在本页提示，禁止静默 navigateBack（App 上会触发 view 层 locale/__id 崩溃）
   if (amount.value <= 0 && !usePackage.value) {
-    uni.navigateBack({ delta: 1 });
+    pageError.value = true;
+    uni.showToast({ title: '支付参数异常，请从「我的预约」重新支付', icon: 'none', duration: 2500 });
     return;
   }
 
+  pageError.value = false;
   startCountdown();
   try {
     const [pkgs, coupons] = await Promise.all([
@@ -490,8 +534,13 @@ function selectPackage(id) {
 }
 
 // ── 主支付入口 ────────────────────────────────────────────────────
+function onPayTap() {
+  if (pageError.value || loading.value || countdown.value <= 0) return;
+  doPay();
+}
+
 async function doPay() {
-  if (loading.value) return;
+  if (loading.value || pageError.value) return;
   if (!requireActive()) return;
   if (!isActivity.value && !bookingId.value) {
     uni.showToast({ title: '预约信息异常，请重新预约', icon: 'none' });
@@ -500,7 +549,9 @@ async function doPay() {
   loading.value = true;
   try {
     if (isActivity.value) {
-      if (!isH5) {
+      if (isApp) {
+        payMethod.value === 'alipay' ? await doActivityAlipayApp() : await doActivityWechatApp();
+      } else if (!isH5) {
         await doActivityWechatMiniApp();
       } else if (!isMobile()) {
         payMethod.value === 'alipay' ? await doActivityAlipayDesktop() : await doActivityWechatDesktop();
@@ -509,6 +560,9 @@ async function doPay() {
       }
     } else if (usePackage.value && selectedPackageId.value) {
       await doUsePackage();
+    } else if (isApp) {
+      // App：微信调起支付 / 支付宝 WAP
+      payMethod.value === 'alipay' ? await doAlipayApp() : await doWechatApp();
     } else if (isH5) {
       if (!isMobile()) {
         // 电脑浏览器：微信扫码 / 支付宝 PC
@@ -539,11 +593,52 @@ async function doUsePackage() {
 async function doWechatDesktop() {
   const data = await paymentApi.createNativeOrder(bookingId.value, { userCouponId: selectedCouponId.value });
   orderNo.value = data.orderNo;
-  qrDataUrl.value = await QRCode.toDataURL(data.codeUrl, { width: 220, margin: 1 });
+  qrDataUrl.value = await makeQrDataUrl(data.codeUrl);
   qrTitle.value = '微信扫码支付';
   qrOrderNo.value = data.orderNo;
   showQrModal.value = true;
   startQrPoll(data.orderNo);
+}
+
+/** App：调起微信客户端支付（需开放平台移动应用 + manifest Payment 模块） */
+async function doWechatApp() {
+  const data = await paymentApi.createAppOrder(bookingId.value, { userCouponId: selectedCouponId.value });
+  orderNo.value = data.orderNo;
+  const orderInfo = data.orderInfo;
+  if (!orderInfo?.prepayid) throw new Error('微信下单失败，请稍后重试');
+  await new Promise((resolve, reject) => {
+    uni.requestPayment({
+      provider: 'wxpay',
+      orderInfo,
+      success: resolve,
+      fail: (err) => {
+        const msg = err?.errMsg || err?.message || JSON.stringify(err);
+        if (/cancel|取消/i.test(msg)) reject(new Error('已取消支付'));
+        else reject(new Error(msg || '调起微信支付失败'));
+      },
+    });
+  });
+  onPaySuccess();
+}
+
+async function doActivityWechatApp() {
+  const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'app' });
+  orderNo.value = data.orderNo;
+  const orderInfo = data.orderInfo;
+  if (!orderInfo?.prepayid) throw new Error('微信下单失败，请稍后重试');
+  await new Promise((resolve, reject) => {
+    uni.requestPayment({
+      provider: 'wxpay',
+      orderInfo,
+      success: resolve,
+      fail: (err) => {
+        const msg = err?.errMsg || err?.message || JSON.stringify(err);
+        if (/cancel|取消/i.test(msg)) reject(new Error('已取消支付'));
+        else reject(new Error(msg || '调起微信支付失败'));
+      },
+    });
+  });
+  onPaySuccess();
 }
 
 // ── 桌面端支付宝 PC 支付 ──────────────────────────────────────────
@@ -562,15 +657,29 @@ function startQrPoll(no) {
       if (r.status === 'paid') {
         clearInterval(pollTimer);
         showQrModal.value = false;
+        closeAlipayAppWebview();
         onPaySuccess();
       }
     } catch {}
   }, 2000);
 }
 
+function closeAlipayAppWebview() {
+  try {
+    if (typeof plus === 'undefined' || !plus.webview) return;
+    plus.webview.all().forEach((w) => {
+      if (w && String(w.id || '').startsWith('zj-alipay-')) w.close();
+    });
+  } catch {}
+}
+
 function closeQrModal() {
   showQrModal.value = false;
   clearInterval(pollTimer);
+}
+
+function keepQrPanel() {
+  /* 阻止点击二维码面板时关闭遮罩 */
 }
 async function doActivityWechatMiniApp() {
   const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'wxpay' });
@@ -584,7 +693,7 @@ async function doActivityWechatMiniApp() {
 async function doActivityWechatH5() {
   const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'native' });
   orderNo.value = data.orderNo;
-  qrDataUrl.value = await QRCode.toDataURL(data.codeUrl, { width: 220, margin: 1 });
+  qrDataUrl.value = await makeQrDataUrl(data.codeUrl);
   qrTitle.value = '微信扫码支付';
   qrOrderNo.value = data.orderNo;
   showQrModal.value = true;
@@ -603,7 +712,7 @@ async function doActivityAlipayDesktop() {
 async function doActivityWechatDesktop() {
   const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'native' });
   orderNo.value = data.orderNo;
-  qrDataUrl.value = await QRCode.toDataURL(data.codeUrl, { width: 220, margin: 1 });
+  qrDataUrl.value = await makeQrDataUrl(data.codeUrl);
   qrTitle.value = '微信扫码支付';
   qrOrderNo.value = data.orderNo;
   showQrModal.value = true;
@@ -635,18 +744,52 @@ async function doWechatH5() {
   const data = await paymentApi.createNativeOrder(bookingId.value, { userCouponId: selectedCouponId.value });
   orderNo.value = data.orderNo;
   qrOrderNo.value = data.orderNo;
-  qrDataUrl.value = await QRCode.toDataURL(data.codeUrl, { width: 220, margin: 1 });
+  qrDataUrl.value = await makeQrDataUrl(data.codeUrl);
   qrTitle.value = '微信扫码支付';
   showQrModal.value = true;
   startQrPoll(data.orderNo);
 }
 
-// ── 支付宝 WAP 支付（跳转支付宝 App / 网页）──────────────────────
+// ── 支付宝 WAP（手机浏览器）──────────────────────────────────────
 async function doAlipayH5() {
   const data = await paymentApi.createAlipayOrder(bookingId.value, { userCouponId: selectedCouponId.value });
   orderNo.value = data.orderNo;
   // payUrl 是含自动提交 <script> 的 HTML 表单，document.write 才能执行内嵌脚本跳转支付宝
   document.write(data.payUrl);
+}
+
+/** App：用 plus.webview 加载支付宝 WAP 表单 HTML，并轮询支付结果 */
+function openAlipayHtmlInApp(html, no) {
+  orderNo.value = no;
+  startQrPoll(no);
+  if (typeof plus === 'undefined' || !plus.webview) {
+    throw new Error('当前环境不支持支付宝支付');
+  }
+  const wid = 'zj-alipay-' + Date.now();
+  const exist = plus.webview.getWebviewById(wid);
+  if (exist) exist.close();
+  const w = plus.webview.create('', wid, {
+    titleNView: {
+      autoBackButton: true,
+      titleText: '支付宝支付',
+      backgroundColor: '#1677FF',
+      titleColor: '#ffffff',
+    },
+    popGesture: 'close',
+  });
+  // HTML5+：loadData(data, mimeType, encoding, baseURL)
+  w.loadData(html, 'text/html', 'utf-8', 'https://openapi.alipay.com');
+  w.show('slide-in-right');
+}
+
+async function doAlipayApp() {
+  const data = await paymentApi.createAlipayOrder(bookingId.value, { userCouponId: selectedCouponId.value });
+  openAlipayHtmlInApp(data.payUrl, data.orderNo);
+}
+
+async function doActivityAlipayApp() {
+  const data = await paymentApi.createActivityOrder(newsId.value, { payMethod: 'alipay' });
+  openAlipayHtmlInApp(data.payUrl, data.orderNo);
 }
 
 function onPaySuccess() {
@@ -1184,6 +1327,9 @@ $r-inner:     14rpx;
   border-radius: 48rpx;
   letter-spacing: 0.04em;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &--disabled,
   &[disabled] {

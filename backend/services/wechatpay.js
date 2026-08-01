@@ -118,4 +118,41 @@ async function createNativeOrder({ orderNo, amount, desc, notifyUrl }) {
   return { codeUrl };
 }
 
-module.exports = { createJsapiOrder, createH5Order, createNativeOrder, parseNotify, refund, queryWechatOrder };
+/**
+ * App 调起微信支付（trade_type=APP）
+ * appid 须为微信开放平台「移动应用」AppID（可与小程序不同），用 WX_APP_APPID，未配则回退 WX_APPID
+ */
+async function createAppOrder({ orderNo, amount, desc, notifyUrl }) {
+  const pay = getPay();
+  const appAppId = process.env.WX_APP_APPID || process.env.WX_APPID;
+  if (!appAppId) throw new Error('缺少 WX_APP_APPID / WX_APPID，无法发起微信 App 支付');
+  let result;
+  try {
+    result = await pay.transactions_app({
+      appid: appAppId,
+      description: desc,
+      out_trade_no: orderNo,
+      notify_url: notifyUrl,
+      amount: { total: amount, currency: 'CNY' },
+    });
+  } catch (err) {
+    const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+    console.error('[wechatpay] app error:', detail);
+    throw new Error(`App下单失败: ${detail}`);
+  }
+  const data = result?.data ?? result;
+  if (!data?.prepayid) throw new Error(`App下单失败: ${JSON.stringify(data)}`);
+  // uni.requestPayment(App) 要求 orderInfo 字段全小写；timestamp 用数字秒
+  const orderInfo = {
+    appid:     data.appid || appAppId,
+    partnerid: String(data.partnerid || process.env.WECHAT_PAY_MCH_ID || ''),
+    prepayid:  data.prepayid,
+    package:   data.package || 'Sign=WXPay',
+    noncestr:  data.noncestr,
+    timestamp: Number(data.timestamp),
+    sign:      data.sign,
+  };
+  return { prepayId: data.prepayid, orderInfo };
+}
+
+module.exports = { createJsapiOrder, createH5Order, createNativeOrder, createAppOrder, parseNotify, refund, queryWechatOrder };
