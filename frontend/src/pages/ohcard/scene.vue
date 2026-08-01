@@ -42,6 +42,7 @@
         <textarea class="note-input" v-model="note" placeholder="写下你的感受…" placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
           <view class="btn btn-primary" @click="save()">保存记录</view>
+          <view class="btn btn-share" @click="shareDraw()">分享到朋友圈</view>
           <view class="btn btn-ghost" @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</view>
           <view class="btn btn-ghost" @click="uni.navigateBack()">返回抽卡菜单</view>
         </view>
@@ -74,13 +75,14 @@ defineOptions({
 });
 // #endif
 import { ohcardApi } from '../../api/index';
+import { openOhcardShare } from '../../utils/shareMoments';
 import { useUserStore } from '../../store/user';
-import { SERVER } from '../../config';
+import { remoteUrl } from '../../config';
 
 const store = useUserStore();
 const step = ref(0), sel = ref(null), cards = ref([]), note = ref(''), fsUrl = ref('');
 const allFlipped = computed(() => cards.value.length > 0 && cards.value.every(c => c.flipped));
-function fullUrl(u) { return u?.startsWith('http') ? u : SERVER + u; }
+function fullUrl(u) { return remoteUrl(u); }
 
 const CAT_BACK = 'linear-gradient(135deg,#4A8A7A,#3A6E80)';
 function catStyle(cat) { return CAT_BACK; }
@@ -177,6 +179,22 @@ async function save() {
 }
 
 function reset() { step.value = 0; sel.value = null; cards.value = []; note.value = ''; }
+
+function shareDraw() {
+  if (!allFlipped.value) {
+    uni.showToast({ title: '请先翻开全部卡牌', icon: 'none' });
+    return;
+  }
+  openOhcardShare({
+    title: `我抽到了「${sel.value?.title || '场景图卡'}」— 卓见心理`,
+    subtitle: note.value?.trim() || '场景选卡，找到属于你的答案',
+    cards: cards.value.map((c) => ({
+      imageUrl: c.imageUrl,
+      word: c.word,
+      label: c.label,
+    })),
+  });
+}
 </script>
 
 <style scoped lang="scss">
@@ -221,6 +239,7 @@ function reset() { step.value = 0; sel.value = null; cards.value = []; note.valu
 .btn-group { display:flex; flex-direction:column; gap:16rpx; margin-top:28rpx; }
 .btn { text-align:center; font-size:28rpx; padding:26rpx 0; border-radius:16rpx; letter-spacing:2rpx; }
 .btn-primary { background: linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-weight:600; box-shadow: 0 8rpx 22rpx rgba(74,138,122,0.24); }
+.btn-share { background: #FFFFFF; color: #4A8A7A; border:1rpx solid rgba(74,138,122,0.45); font-weight:600; }
 .btn-ghost { background: #FFFFFF; color: #617870; border:1rpx solid #E8EFED; }
 
 .fs-overlay { position:fixed; inset:0; z-index:$zj-z-modal; background:rgba(20,32,29,.94); display:flex; align-items:center; justify-content:center; }

@@ -88,12 +88,18 @@
 
       <!-- Actions -->
       <view class="action-row">
+        <button class="btn-share" @click="shareResult()">分享到朋友圈</button>
+      </view>
+      <view class="action-row">
         <button class="btn-secondary" @click="goHistory()">历史记录</button>
         <button class="btn-primary" @click="goBack()">返回列表</button>
       </view>
 
     </view>
     <CrisisAlert ref="crisisRef" />
+    <!-- #ifndef H5 -->
+    <ShareMomentsModal />
+    <!-- #endif -->
   </view>
 </template>
 
@@ -102,6 +108,10 @@ import { ref, computed, onMounted } from 'vue';
 import { assessmentApi } from '../../api/index.js';
 import { useUserStore } from '../../store/user.js';
 import CrisisAlert from '../../components/CrisisAlert.vue';
+import { openAssessmentShare } from '../../utils/shareMoments';
+// #ifndef H5
+import ShareMomentsModal from '../../components/ShareMomentsModal.vue';
+// #endif
 
 // #ifndef H5
 import { buildTimelineShare } from '../../utils/mpShare';
@@ -250,6 +260,29 @@ function goRegister() { uni.navigateTo({ url: '/pages/register/index' }); }
 function goHistory() {
   if (!isLoggedIn.value) return goLogin();
   uni.navigateTo({ url: '/pages/assessment/results' });
+}
+
+function shareResult() {
+  if (!isLoggedIn.value) {
+    uni.showToast({ title: '登录后可分享完整结果', icon: 'none' });
+  }
+  const name = scaleName.value || '心理测评';
+  // 临床量表不把等级结论放到公开海报，趣味/MBTI 可展示结果
+  const canShowDetail = isFunQuiz.value && isLoggedIn.value;
+  openAssessmentShare({
+    title: isFunQuiz.value
+      ? `我测了「${name}」— 卓见心理`
+      : `我完成了「${name}」— 卓见心理`,
+    subtitle: '了解真实的自己 · 专业心理服务',
+    assessment: {
+      scaleName: name,
+      score: canShowDetail && !mbtiTypeName.value ? displayScore.value : '',
+      level: canShowDetail ? level.value : (isLoggedIn.value && !isFunQuiz.value ? '测评已完成' : ''),
+      typeName: canShowDetail ? mbtiTypeName.value : '',
+      typeDesc: canShowDetail ? typeDesc.value : '',
+      date: date.value,
+    },
+  });
 }
 </script>
 
@@ -474,6 +507,17 @@ $card-shadow: 0 4rpx 18rpx rgba(28,42,39,0.04);
   background: #fff;
   color: $text-2;
   flex: 1;
+}
+.btn-share {
+  width: 100%;
+  height: 80rpx;
+  border-radius: 20rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  border: 1rpx solid rgba(74, 138, 122, 0.45);
+  background: #fff;
+  color: $teal;
+  line-height: 80rpx;
 }
 
 /* Consult card */

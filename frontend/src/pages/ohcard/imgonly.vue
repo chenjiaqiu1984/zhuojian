@@ -33,6 +33,7 @@
         <textarea class="note-input" v-model="note" placeholder="写下你的感想…" placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
           <view class="btn btn-primary" @click="save()">保存记录</view>
+          <view class="btn btn-share" @click="shareDraw()">分享到朋友圈</view>
           <view class="btn btn-ghost" @click="reset()">重新抽卡</view>
         </view>
       </view>
@@ -55,7 +56,8 @@ import { ref, onMounted , watch } from 'vue';
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
-import { SERVER } from '../../config';
+import { remoteUrl } from '../../config';
+import { openOhcardShare } from '../../utils/shareMoments';
 
 
 const store = useUserStore();
@@ -78,8 +80,7 @@ onMounted(async () => {
 });
 
 function fullUrl(url) {
-  if (!url) return '';
-  return url.startsWith('http') ? url : SERVER + url;
+  return remoteUrl(url);
 }
 
 async function draw(deck) {
@@ -125,6 +126,18 @@ function reset() {
   step.value = 0; selDeck.value = null;
   card.value = null; flipped.value = false; note.value = '';
 }
+
+function shareDraw() {
+  if (!flipped.value || !card.value) {
+    uni.showToast({ title: '请先翻开图卡再分享', icon: 'none' });
+    return;
+  }
+  openOhcardShare({
+    title: `我抽到了「${selDeck.value?.name || '图卡'}」— 卓见心理`,
+    subtitle: note.value?.trim() || '一张图，听见内心的声音',
+    cards: [{ imageUrl: card.value.imageUrl, label: '图卡' }],
+  });
+}
 </script>
 
 <style scoped lang="scss">
@@ -169,6 +182,7 @@ function reset() {
 .btn-group { display:flex; flex-direction:column; gap:16rpx; margin-top:24rpx; }
 .btn { text-align:center; font-size:28rpx; padding:26rpx 0; border-radius:16rpx; letter-spacing:2rpx; }
 .btn-primary { background: linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-weight:600; box-shadow: 0 8rpx 22rpx rgba(74,138,122,0.24); }
+.btn-share { background: #FFFFFF; color: #4A8A7A; border:1rpx solid rgba(74,138,122,0.45); font-weight:600; }
 .btn-ghost { background: #FFFFFF; color: #617870; border:1rpx solid #E8EFED; }
 
 .fs-overlay { position: fixed; inset: 0; z-index: $zj-z-modal; background: rgba(20,32,29,.94); display: flex; flex-direction: column; align-items: center; justify-content: center; }

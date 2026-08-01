@@ -1,7 +1,18 @@
 // 怪兽部件（位图版 monster-v2）共享配置
 // 完全替换旧的 SVG 换色方案：固定配色位图，身体自带四肢，新增鼻子，配饰拆为 角/翅膀/尾巴/眼镜 四槽。
 
-const BASE = '/pages/monster/static/monster-v2';
+// H5 不能直接请求 /pages/...（会落到 SPA HTML）。用 Vite 打包真实资源 URL。
+const PART_ASSETS = import.meta.glob(
+  '../pages/monster/static/monster-v2/**/*.png',
+  { eager: true, as: 'url' },
+);
+
+const PART_URL_MAP = Object.create(null);
+for (const [key, url] of Object.entries(PART_ASSETS)) {
+  // key: ../pages/monster/static/monster-v2/body/body_01.png
+  const m = key.match(/monster-v2\/([^/]+)\/([^/]+)\.png$/);
+  if (m) PART_URL_MAP[`${m[1]}/${m[2]}`] = url;
+}
 
 // 各槽位可选数量（对应 pages/monster/static/monster-v2/<slot>/<slot>_NN.png）
 const COUNTS = {
@@ -63,10 +74,10 @@ export function defaultParts() {
   };
 }
 
-// 部件图片 URL
+// 部件图片 URL（Vite 解析后的可加载地址）
 export function partUrl(slot, id) {
   if (!id) return '';
-  return `${BASE}/${slot}/${id}.png`;
+  return PART_URL_MAP[`${slot}/${id}`] || '';
 }
 
 // 图层渲染顺序（从后到前）。

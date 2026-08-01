@@ -31,6 +31,9 @@
         <text class="footer-item">© 小程序开发：553997877@qq.com</text>
       </view>
     </view>
+    <!-- #ifndef H5 -->
+    <ShareMomentsModal />
+    <!-- #endif -->
   </view>
 </template>
 
@@ -38,6 +41,7 @@
 // #ifndef H5
 import { createMpShare } from '@/utils/mpShare';
 defineOptions(createMpShare('profile/index'));
+import ShareMomentsModal from '../../components/ShareMomentsModal.vue';
 // #endif
 
 import { computed, onMounted } from 'vue';

@@ -1,4 +1,5 @@
 <template>
+  <view class="detail-root">
   <view v-if="notFound" style="padding:80rpx;text-align:center;color:#999;font-size:28rpx">内容已下线或不存在</view>
   <view class="page" v-else-if="news">
     <view v-if="news.videoUrl" class="video-wrap">
@@ -66,6 +67,7 @@
     </view>
   </view>
   <u-loading-page :loading="loading" />
+  </view>
 </template>
 
 <script setup>

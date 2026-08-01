@@ -23,7 +23,10 @@ onShow(() => {
 </script>
 
 <template>
+  <!-- 小程序等非 H5：App 可挂全局弹窗；H5 由 shareMoments.ensureShareMomentsHost 挂到 body -->
+  <!-- #ifndef H5 -->
   <ShareMomentsModal />
+  <!-- #endif -->
 </template>
 
 <style lang="scss">

@@ -1,5 +1,18 @@
-// 切换环境时只改这里
-export const SERVER = import.meta.env.VITE_SERVER;
+// 切换环境时只改这里（.env.* 的 VITE_SERVER）
+// H5 开发兜底本地后端，避免 import.meta.env 未注入时图片打到 5173
+const ENV_SERVER = String(import.meta.env.VITE_SERVER || '').trim();
+// #ifdef H5
+export const SERVER = ENV_SERVER || 'http://localhost:3000';
+// #endif
+// #ifndef H5
+export const SERVER = ENV_SERVER;
+// #endif
+
+function withServer(path) {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  const base = String(SERVER || '').replace(/\/$/, '');
+  return base ? `${base}${p}` : p;
+}
 
 /**
  * 解析前端静态资源 URL。
@@ -11,20 +24,16 @@ export function staticUrl(path) {
   if (/^https?:\/\//i.test(path) || path.startsWith('data:')) return path;
   const p = path.startsWith('/') ? path : `/${path}`;
   // #ifdef H5
-  if (SERVER && p.startsWith('/static/')) {
-    return `${String(SERVER).replace(/\/$/, '')}${p}`;
-  }
+  if (p.startsWith('/static/')) return withServer(p);
   // #endif
   return p;
 }
 
 /**
- * 大文件（视频等）始终走后端域名，避免打进小程序主包。
+ * 上传图 / 大文件始终走后端域名，避免打到 Vite 5173 或进小程序主包。
  */
 export function remoteUrl(path) {
   if (!path) return '';
   if (/^https?:\/\//i.test(path) || path.startsWith('data:')) return path;
-  const p = path.startsWith('/') ? path : `/${path}`;
-  if (SERVER) return `${String(SERVER).replace(/\/$/, '')}${p}`;
-  return p;
+  return withServer(path);
 }

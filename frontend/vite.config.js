@@ -20,9 +20,13 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       host: '127.0.0.1',
       strictPort: true,
-      // H5 开发时 /static 走后端（与 staticUrl 一致），tabBar 图标等同源可加载
+      // H5 开发时静态资源与上传图走后端
       proxy: {
         '/static': {
+          target: apiServer,
+          changeOrigin: true,
+        },
+        '/uploads': {
           target: apiServer,
           changeOrigin: true,
         },
@@ -31,7 +35,7 @@ export default defineConfig(({ mode }) => {
     css: {
       preprocessorOptions: {
         scss: {
-          silenceDeprecations: ['import'],
+          silenceDeprecations: ['import', 'legacy-js-api'],
           additionalData: `@import "uview-plus/theme.scss";\n@import "uview-plus/libs/css/theme-vars.scss";\n@import "uview-plus/libs/css/mixin.scss";\n@import "@/styles/tokens.scss";\n@import "@/styles/island-hero.scss";`
         }
       }

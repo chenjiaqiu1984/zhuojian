@@ -7,8 +7,16 @@
       <text class="fs-hint">点击任意处关闭</text>
     </view>
 
+    <view v-if="bootError" class="status-box">
+      <text class="status-txt">{{ bootError }}</text>
+      <view class="btn btn-ghost" @click="retryBoot()">重试</view>
+    </view>
+    <view v-else-if="!selDeck" class="status-box">
+      <text class="status-txt">正在抽卡…</text>
+    </view>
+
     <!-- Cards -->
-    <view v-if="selDeck" class="step">
+    <view v-else-if="selDeck" class="step">
       <view class="deck-tag"><ZjIcon class="deck-tag-icon" name="package" :size="28" color="#617870" /><text class="deck-tag-text">{{selDeck?.name}}</text></view>
       <text class="reflect-hint">保持你的问题在心中，翻开卡牌，看看它想对你说什么</text>
       <view class="cards-row">
@@ -68,6 +76,7 @@
         <textarea class="note-input" v-model="note" placeholder="写下你的感想…" placeholder-class="note-ph" maxlength="500" />
         <view class="btn-group">
           <view class="btn btn-primary" :class="{disabled:saving}" @click="saveRecord()">{{saving?'保存中…':'保存记录'}}</view>
+          <view class="btn btn-share" @click="shareDraw()">分享到朋友圈</view>
           <view class="btn btn-ghost" @click="uni.navigateTo({url:'/pages/ohcard/record'})">查看抽卡记录</view>
           <view class="btn btn-ghost" @click="uni.navigateBack()">返回抽卡菜单</view>
         </view>
@@ -99,21 +108,14 @@ import { ohcardApi } from '../../api/index';
 import ZjIcon from '../../components/ZjIcon.vue';
 import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
-import { SERVER } from '../../config';
+import { remoteUrl } from '../../config';
+import { openOhcardShare } from '../../utils/shareMoments';
 
-
-const BASE_IMG = SERVER;
 const store = useUserStore();
 const selDeck = ref(null);
 const deckParam = ref('');
 const imgCatIdParam = ref(null);
 const wordCatIdParam = ref(null);
-
-onLoad((opts) => {
-  deckParam.value = decodeURIComponent(opts?.deck || '');
-  if (opts?.imgCatId) imgCatIdParam.value = Number(opts.imgCatId);
-  if (opts?.wordCatId) wordCatIdParam.value = Number(opts.wordCatId);
-});
 const imgCard = ref(null);
 const wordCard = ref(null);
 const imgFlipped = ref(false);
@@ -124,12 +126,59 @@ const showFullscreen = ref(false);
 const saving = ref(false);
 const imgLoading = ref(false);
 const wordLoading = ref(false);
+const bootError = ref('');
+let bootStarted = false;
 
 // flip animation state
 const imgRotate = ref('rotateY(0deg)');
 const wordRotate = ref('rotateY(0deg)');
 const imgAnimating = ref(false);
 const wordAnimating = ref(false);
+
+/** 兼容 H5 路由双重 encode（地址栏常见 %25E5…） */
+function resolveQueryText(raw) {
+  let s = String(raw ?? '');
+  if (!s) return '';
+  for (let i = 0; i < 3; i++) {
+    try {
+      const next = decodeURIComponent(s);
+      if (next === s) break;
+      s = next;
+    } catch {
+      break;
+    }
+  }
+  return s;
+}
+
+function readHashQuery() {
+  // #ifdef H5
+  if (typeof location === 'undefined') return {};
+  const q = location.hash.includes('?') ? location.hash.slice(location.hash.indexOf('?') + 1) : '';
+  const sp = new URLSearchParams(q);
+  return {
+    deck: sp.get('deck') || '',
+    imgCatId: sp.get('imgCatId') || '',
+    wordCatId: sp.get('wordCatId') || '',
+  };
+  // #endif
+  // #ifndef H5
+  return {};
+  // #endif
+}
+
+function applyQuery(opts = {}) {
+  const deck = resolveQueryText(opts.deck);
+  if (deck) deckParam.value = deck;
+  if (opts.imgCatId != null && opts.imgCatId !== '') {
+    const n = Number(opts.imgCatId);
+    if (!Number.isNaN(n)) imgCatIdParam.value = n;
+  }
+  if (opts.wordCatId != null && opts.wordCatId !== '') {
+    const n = Number(opts.wordCatId);
+    if (!Number.isNaN(n)) wordCatIdParam.value = n;
+  }
+}
 
 function preloadImage(url) {
   if (!url || typeof Image === 'undefined') return Promise.resolve();
@@ -138,52 +187,107 @@ function preloadImage(url) {
 
 onBackPress(() => { if (saving.value) return true; return false; });
 
-onMounted(async () => {
+async function bootDraw() {
+  if (bootStarted) return;
+  if (!deckParam.value && !imgCatIdParam.value) return;
+  bootStarted = true;
+  bootError.value = '';
+  try {
+    if (imgCatIdParam.value) {
+      await startDraw({
+        name: deckParam.value || '心理图卡',
+        imgCatId: imgCatIdParam.value,
+        wordCatId: wordCatIdParam.value,
+      });
+      return;
+    }
+    const cats = await ohcardApi.categories();
+    const all = (Array.isArray(cats) ? cats : [])
+      .filter((c) => c.type === 'image')
+      .map((c) => ({ ...c, wordCatId: c.wordCatId || null, imgCatId: c.imgSrcCatId || c.id }));
+    const deck = all.find((d) => d.name === deckParam.value);
+    if (deck) await startDraw(deck);
+    else {
+      bootStarted = false;
+      bootError.value = `未找到牌组：${deckParam.value || '空'}`;
+      uni.showToast({ title: bootError.value, icon: 'none' });
+    }
+  } catch (e) {
+    bootStarted = false;
+    bootError.value = e?.error || e?.message || '加载失败';
+    uni.showToast({ title: bootError.value, icon: 'none', duration: 3000 });
+  }
+}
+
+function retryBoot() {
+  bootStarted = false;
+  bootError.value = '';
+  applyQuery(readHashQuery());
+  bootDraw();
+}
+
+onLoad((opts) => {
+  applyQuery(opts || {});
+  // H5：始终再用 hash 补齐（防双重编码 / onLoad 缺参）
+  applyQuery(readHashQuery());
+  bootDraw();
+});
+
+onMounted(() => {
   track('page_view', '/pages/ohcard/classic');
   if (typeof window !== 'undefined' && getCurrentPages().length <= 1) {
     const current = location.href;
     history.replaceState(null, '', location.origin + location.pathname + '#/pages/ohcard/index');
     history.pushState(null, '', current);
   }
-  // 如果 URL 已携带分类 ID（从 ohcard/index 导航而来），直接使用，不需要请求分类列表
-  if (imgCatIdParam.value) {
-    startDraw({ name: deckParam.value, imgCatId: imgCatIdParam.value, wordCatId: wordCatIdParam.value });
-    return;
-  }
-  try {
-    const cats = await ohcardApi.categories();
-    const all = cats.filter(c => c.type === 'image').map(c => ({ ...c, wordCatId: c.wordCatId || null, imgCatId: c.imgSrcCatId || c.id }));
-    const deck = all.find(d => d.name === deckParam.value);
-    if (deck) startDraw(deck);
-    else uni.showToast({ title: '未找到牌组', icon: 'none' });
-  } catch(e) {
-    uni.showToast({ title: '加载失败', icon: 'none', duration: 3000 });
+  if (!bootStarted || !selDeck.value) {
+    applyQuery(readHashQuery());
+    if (!bootStarted) bootDraw();
   }
 });
 
 function fullUrl(url) {
-  if (!url) return '';
-  return url.startsWith('http') ? url : BASE_IMG + url;
+  return remoteUrl(url);
+}
+
+function normalizeCards(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === 'object') {
+    if (Array.isArray(payload.data)) return payload.data;
+    if (payload.id || payload.imageUrl || payload.word) return [payload];
+  }
+  return [];
 }
 
 async function startDraw(deck) {
-  if (!deck) return;
+  if (!deck?.imgCatId) {
+    bootError.value = '牌组缺少分类 ID';
+    return;
+  }
   track('ohcard_draw', '/pages/ohcard/classic', { deck: deck.name });
   selDeck.value = deck;
   try {
     const reqs = [ohcardApi.cards({ category_id: deck.imgCatId, count: 1 })];
     if (deck.wordCatId) reqs.push(ohcardApi.cards({ category_id: deck.wordCatId, count: 1 }));
     const results = await Promise.all(reqs);
-    if (!results[0].length) return uni.showToast({ title: '牌组无卡片', icon: 'none' });
-    imgCard.value = results[0][0];
-    wordCard.value = deck.wordCatId ? results[1]?.[0] : null;
+    const imgs = normalizeCards(results[0]);
+    if (!imgs.length) {
+      selDeck.value = null;
+      bootStarted = false;
+      bootError.value = '牌组无卡片';
+      uni.showToast({ title: bootError.value, icon: 'none' });
+      return;
+    }
+    imgCard.value = imgs[0];
+    wordCard.value = deck.wordCatId ? (normalizeCards(results[1])[0] || null) : null;
     imgFlipped.value = false;
     wordFlipped.value = false;
     // 提前预加载，减少翻转白屏
     preloadImage(fullUrl(imgCard.value?.imageUrl));
     if (wordCard.value?.imageUrl) preloadImage(fullUrl(wordCard.value.imageUrl));
-  } catch(e) {
-    uni.showToast({ title: e?.error || e?.message || '抽卡失败', icon: 'none' });
+  } catch (e) {
+    bootError.value = e?.error || e?.message || '抽卡失败';
+    uni.showToast({ title: bootError.value, icon: 'none' });
   }
 }
 
@@ -292,6 +396,37 @@ function reset() {
   startDraw(selDeck.value);
 }
 
+function shareDraw() {
+  if (!imgFlipped.value) {
+    uni.showToast({ title: '请先翻开图卡再分享', icon: 'none' });
+    return;
+  }
+  if (selDeck.value?.wordCatId && !wordFlipped.value) {
+    uni.showToast({ title: '请先翻开字卡再分享', icon: 'none' });
+    return;
+  }
+  const cards = [];
+  if (imgCard.value) {
+    cards.push({
+      imageUrl: imgCard.value.imageUrl,
+      label: '图卡',
+    });
+  }
+  if (wordCard.value) {
+    cards.push({
+      imageUrl: wordCard.value.imageUrl,
+      word: wordCard.value.word,
+      label: wordCard.value.imageUrl ? '情况卡' : '字卡',
+    });
+  }
+  const deckName = selDeck.value?.name || '心理图卡';
+  openOhcardShare({
+    title: `我抽到了「${deckName}」— 卓见心理`,
+    subtitle: note.value?.trim() || '图像会说话，看见内心深处的声音',
+    cards,
+  });
+}
+
 const DECK_GUIDES = {
   '心理图卡': [
     '这张图，你第一眼注意到的是什么？',
@@ -319,6 +454,14 @@ const deckGuides = computed(() => DECK_GUIDES[selDeck.value?.name] || []);
 
 <style scoped lang="scss">
 .page { padding: 44rpx 32rpx 64rpx; min-height: 100vh; background: #F5F7F6; }
+.status-box {
+  padding: 120rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28rpx;
+}
+.status-txt { font-size: 28rpx; color: #9BBCB4; text-align: center; }
 .title { font-size: 36rpx; font-weight: 600; color: #1C2A27; display: block; margin-bottom: 32rpx; font-family: "Noto Serif SC", serif; }
 .section-label { font-size: 26rpx; font-weight: 600; color: #617870; display: block; margin-bottom: 16rpx; letter-spacing: 0.04em; }
 
@@ -335,7 +478,12 @@ const deckGuides = computed(() => DECK_GUIDES[selDeck.value?.name] || []);
 
 /* Card flip */
 .card { position: relative; border-radius: 16rpx; overflow: hidden; will-change: transform; }
-.card-back, .card-front { width: 100%; height: 100%; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; }
+.card-back, .card-front {
+  width: 100%; height: 100%;
+  border-radius: 16rpx;
+  display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box;
+}
 .card-back { background: linear-gradient(135deg, #4A8A7A, #3A6E80); box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
 .back-text { color: rgba(255,255,255,0.9); font-size: 24rpx; letter-spacing: 2rpx; }
 .card-front { background: #fff; box-shadow: 0 12rpx 36rpx rgba(28,42,39,.14); overflow: hidden; }
@@ -391,6 +539,7 @@ const deckGuides = computed(() => DECK_GUIDES[selDeck.value?.name] || []);
 .btn { text-align:center; font-size:28rpx; padding:26rpx 0; border-radius:16rpx; letter-spacing:2rpx; }
 .btn-primary { background: linear-gradient(135deg,#4A8A7A,#3A6E80); color:#fff; font-weight:600; box-shadow: 0 8rpx 22rpx rgba(74,138,122,0.24); }
 .btn-primary.disabled { opacity:0.55; box-shadow:none; }
+.btn-share { background: #FFFFFF; color: #4A8A7A; border:1rpx solid rgba(74,138,122,0.45); font-weight:600; }
 .btn-ghost { background: #FFFFFF; color: #617870; border:1rpx solid #E8EFED; }
 
 /* Fullscreen */

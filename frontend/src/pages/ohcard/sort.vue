@@ -45,9 +45,8 @@ import { ref, onMounted, nextTick } from 'vue';
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
-import { SERVER } from '../../config';
+import { remoteUrl } from '../../config';
 
-const BASE_IMG = SERVER;
 const store = useUserStore();
 
 const imageCatId = ref(null);
@@ -78,8 +77,7 @@ onMounted(async () => {
 });
 
 function fullUrl(url) {
-  if (!url) return '';
-  return url.startsWith('http') ? url : BASE_IMG + url;
+  return remoteUrl(url);
 }
 
 function reveal(i) {

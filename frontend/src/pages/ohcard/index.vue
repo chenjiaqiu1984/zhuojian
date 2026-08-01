@@ -139,10 +139,23 @@ const singleDecks = ref([
   { name: '孩童卡·人像',   icon: '🧒', color: '#7B68EE', imgCatId: null, wordCatId: null, sub: '内在小孩·情感觉察' }
 ]);
 
-function navDeck(d) {
+async function navDeck(d) {
+  let imgCatId = d.imgCatId;
+  let wordCatId = d.wordCatId;
+  // 预设尚未回填 id 时，按名称补齐，避免 classic 页仅靠 deck 名匹配失败
+  if (!imgCatId) {
+    try {
+      const cats = await ohcardApi.categories();
+      const cat = cats.find((c) => c.type === 'image' && c.name === d.name);
+      if (cat) {
+        imgCatId = cat.imgSrcCatId || cat.id;
+        wordCatId = wordCatId || cat.wordCatId || null;
+      }
+    } catch { /* ignore */ }
+  }
   const params = `deck=${encodeURIComponent(d.name)}`
-    + (d.imgCatId  ? `&imgCatId=${d.imgCatId}`  : '')
-    + (d.wordCatId ? `&wordCatId=${d.wordCatId}` : '');
+    + (imgCatId  ? `&imgCatId=${imgCatId}`  : '')
+    + (wordCatId ? `&wordCatId=${wordCatId}` : '');
   nav(`/pages/ohcard/classic?${params}`, { cat: 'single', name: d.name });
 }
 

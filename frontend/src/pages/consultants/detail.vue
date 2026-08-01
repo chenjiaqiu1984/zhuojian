@@ -1,4 +1,5 @@
 <template>
+  <view class="detail-root">
   <view class="page" v-if="consultant">
     <!-- 顶部头像 -->
     <view class="hero">
@@ -114,6 +115,7 @@
     </view>
   </view>
   <view v-else-if="loading" class="loading">加载中…</view>
+  </view>
 </template>
 
 <script setup>

@@ -62,7 +62,7 @@ defineOptions(createMpShare('ohcard/record'));
 import { ref, onMounted } from 'vue';
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
-import { SERVER } from '../../config';
+import { remoteUrl } from '../../config';
 
 const store = useUserStore();
 const records = ref([]);
@@ -78,7 +78,7 @@ onMounted(async () => {
 
 function parsed(r) { try { return JSON.parse(r.data); } catch { return {}; } }
 function fmt(d) { return d ? new Date(d).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : ''; }
-function fullUrl(u) { return u?.startsWith('http') ? u : SERVER + u; }
+function fullUrl(u) { return remoteUrl(u); }
 
 function toggle(id) {
   expandedId.value = expandedId.value === id ? null : id;
