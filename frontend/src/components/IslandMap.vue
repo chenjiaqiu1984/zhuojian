@@ -129,7 +129,6 @@ import { islandApi } from '../api/index';
 import { DEFAULT_ISLAND_SPOTS, normalizeIslandSpots } from '../utils/islandSpots';
 import { normalizeIslandUrl, pageNav } from '../utils/islandNav';
 import { openIcp, openBeian } from '../utils/openBeian';
-import { closeIslandMode } from '../utils/islandMode';
 import { staticUrl, remoteUrl } from '../config';
 
 const props = defineProps({
@@ -140,7 +139,7 @@ const props = defineProps({
 const emit = defineEmits(['navigate', 'icp', 'beian']);
 
 const IMG_RATIO = 768 / 1376;
-const IMG_JPG = staticUrl('/static/island/island-mist.jpg');
+const IMG_JPG = remoteUrl('/static/island/island-mist.jpg');
 const VIDEO_MP4 = remoteUrl('/static/island/island-mist.mp4');
 const LOGO_SRC = staticUrl('/static/logo.jpg');
 const BEIAN_SRC = staticUrl('/static/beian.png');
@@ -239,14 +238,13 @@ function onSpot(spot) {
 function onAboutTap() {
   // 与热区一致：点击回调里同步跳转
   pageNav('/pages/about/index');
-  closeIslandMode();
   emit('navigate', '/pages/about/index');
 }
 
 function onBackTap() {
-  // 与热区一致：点击回调里同步关闭岛图，回到首页宫格
-  closeIslandMode();
-  emit('navigate', '__home__');
+  // 进入功能导航主页（非 Tab）
+  pageNav('/pages/home/index');
+  emit('navigate', '/pages/home/index');
 }
 
 function onIcpTap() {
@@ -276,7 +274,6 @@ function goPanel() {
   activeId.value = '';
   // 小程序须在点击回调里同步跳转
   pageNav(url);
-  closeIslandMode();
   emit('navigate', url);
 }
 

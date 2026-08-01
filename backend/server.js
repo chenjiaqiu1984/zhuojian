@@ -63,7 +63,23 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
 }));
 app.use('/static', express.static(path.join(__dirname, 'static'), {
   maxAge: '30d',
-  immutable: true
+  immutable: true,
+  setHeaders(res, filePath) {
+    // Nginx/面板常把静态图标成 octet-stream，微信小程序 <image> 会解码失败或「格式不对」
+    if (/\.svg$/i.test(filePath)) {
+      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    } else if (/\.jpe?g$/i.test(filePath)) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (/\.png$/i.test(filePath)) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (/\.webp$/i.test(filePath)) {
+      res.setHeader('Content-Type', 'image/webp');
+    } else if (/\.gif$/i.test(filePath)) {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (/\.mp4$/i.test(filePath)) {
+      res.setHeader('Content-Type', 'video/mp4');
+    }
+  },
 }));
 
 app.use('/api/upload', require('./routes/upload'));

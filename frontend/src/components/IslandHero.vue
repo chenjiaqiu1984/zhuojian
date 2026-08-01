@@ -1,6 +1,11 @@
 <template>
   <view class="island-hero" :class="customClass">
-    <image class="island-hero__bg" :src="resolvedSrc" mode="aspectFill" />
+    <image
+      class="island-hero__bg"
+      :src="resolvedSrc"
+      mode="aspectFill"
+      :lazy-load="false"
+    />
     <view class="island-hero__dim" />
     <view class="island-hero__body">
       <slot />
@@ -10,21 +15,30 @@
 
 <script setup>
 import { computed } from 'vue';
-import { staticUrl } from '../config';
+import { remoteUrl } from '../config';
+
+// 小程序默认样式隔离会导致插槽里的 .hero-* 吃不到组件内样式；文案样式已放 App.vue 全局
+defineOptions({
+  options: {
+    styleIsolation: 'shared',
+  },
+});
 
 const props = defineProps({
   src: { type: String, required: true },
   customClass: { type: String, default: '' },
 });
 
-const resolvedSrc = computed(() => staticUrl(props.src));
+// 大图走后端域名，避免打进小程序主包（2MB 限制）
+const resolvedSrc = computed(() => remoteUrl(props.src));
 </script>
 
 <style scoped lang="scss">
 .island-hero {
   position: relative;
   overflow: hidden;
-  background: #3a6e80;
+  background: $zj-teal-dark;
+  padding: 96rpx 48rpx 80rpx;
 }
 .island-hero__bg {
   position: absolute;
@@ -42,7 +56,6 @@ const resolvedSrc = computed(() => staticUrl(props.src));
   width: 100%;
   height: 100%;
   z-index: 1;
-  /* 淡遮罩，露出岛图细节 */
   background: linear-gradient(
     165deg,
     rgba(26, 46, 53, 0.28) 0%,

@@ -46,6 +46,37 @@ page {
   overflow-x: clip;
 }
 
+/* IslandHero 插槽文案：放全局，避免小程序组件样式隔离导致排版失效 */
+.hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+.hero-eyebrow {
+  display: block;
+  font-size: 20rpx;
+  letter-spacing: 0.34em;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 28rpx;
+}
+.hero-title {
+  display: block;
+  font-size: 66rpx;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.06em;
+  line-height: 1.18;
+  margin-bottom: 24rpx;
+  font-family: $zj-font-display;
+}
+.hero-sub {
+  display: block;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.9;
+  letter-spacing: 0.03em;
+}
+
 // 防横向滚动（H5）
 // #ifdef H5
 html, body {

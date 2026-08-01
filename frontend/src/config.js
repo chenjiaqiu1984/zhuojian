@@ -1,11 +1,14 @@
 // 切换环境时只改这里（.env.* 的 VITE_SERVER）
 // H5 开发兜底本地后端，避免 import.meta.env 未注入时图片打到 5173
-const ENV_SERVER = String(import.meta.env.VITE_SERVER || '').trim();
+// Windows 上优先 127.0.0.1，避免 localhost → ::1 导致请求挂起
+const ENV_SERVER = String(import.meta.env.VITE_SERVER || '').trim()
+  .replace('://localhost', '://127.0.0.1');
 // #ifdef H5
-export const SERVER = ENV_SERVER || 'http://localhost:3000';
+export const SERVER = ENV_SERVER || 'http://127.0.0.1:3000';
 // #endif
 // #ifndef H5
-export const SERVER = ENV_SERVER;
+// 小程序/App：岛图等大资源走 remoteUrl，SERVER 为空会退化成包内路径导致加载失败
+export const SERVER = ENV_SERVER || 'https://www.joyineyes.xyz';
 // #endif
 
 function withServer(path) {
