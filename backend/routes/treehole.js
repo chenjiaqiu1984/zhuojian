@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../db/database');
 const { requireRole } = require('../middleware/auth');
+const { checkAchievements } = require('./achievements');
 
 const router = express.Router();
 const auth = requireRole('user', 'admin', 'consultant');
@@ -62,7 +63,19 @@ router.post('/', ...auth, async (req, res) => {
       crisis.record({ userId: req.user.id, source: 'treehole', content, ...cr });
     }
 
-    res.json({ ...publicMineItem(post), crisis: cr.triggered });
+    try {
+      await prisma.eventLog.create({
+        data: {
+          userId: req.user.id,
+          event: 'treehole_save',
+          page: '/pages/treehole/index',
+          data: JSON.stringify({ category, id: post.id }),
+        },
+      });
+    } catch (_) {}
+
+    const newAchievements = await checkAchievements(req.user.id, 'treehole');
+    res.json({ ...publicMineItem(post), crisis: cr.triggered, newAchievements });
   } catch (err) {
     console.error('[treehole] create failed', err);
     res.status(500).json({ error: '投递失败，请稍后再试' });
@@ -74,6 +87,16 @@ router.delete('/:id', ...auth, async (req, res) => {
   const post = await prisma.treeholePost.findUnique({ where: { id: Number(req.params.id) } });
   if (!post || post.userId !== req.user.id) return res.status(403).json({ error: '权限不足' });
   await prisma.treeholePost.delete({ where: { id: post.id } });
+  try {
+    await prisma.eventLog.create({
+      data: {
+        userId: req.user.id,
+        event: 'treehole_delete',
+        page: '/pages/treehole/index',
+        data: JSON.stringify({ id: post.id, category: post.category }),
+      },
+    });
+  } catch (_) {}
   res.json({ ok: true });
 });
 

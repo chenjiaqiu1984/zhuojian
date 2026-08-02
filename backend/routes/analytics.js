@@ -1,12 +1,24 @@
 const express = require('express');
 const prisma = require('../db/database');
-const { requireRole } = require('../middleware/auth');
+const { requireRole, optionalAuth } = require('../middleware/auth');
 const router = express.Router();
 
-router.post('/', async (req, res) => {
-  const { userId, event, page, data } = req.body;
+router.post('/', optionalAuth, async (req, res) => {
+  const { event, page, data } = req.body;
+  // 优先用 token 中的用户，避免前端 storage 解析失败导致 userId 为空
+  const fromToken = req.user?.id != null ? Number(req.user.id) : null;
+  const fromBody = req.body.userId != null && req.body.userId !== '' ? Number(req.body.userId) : null;
+  const userId = fromToken || fromBody || null;
   try {
-    await prisma.eventLog.create({ data: { userId: userId || null, event, page, data: data || null } });
+    if (!event || !page) return res.json({ ok: true });
+    await prisma.eventLog.create({
+      data: {
+        userId: Number.isFinite(userId) ? userId : null,
+        event: String(event).slice(0, 64),
+        page: String(page).slice(0, 128),
+        data: data == null ? null : (typeof data === 'string' ? data : JSON.stringify(data)),
+      },
+    });
   } catch {}
   res.json({ ok: true });
 });
@@ -32,7 +44,11 @@ router.get('/stats', ...requireRole('admin'), async (req, res) => {
     'squeeze_start', 'squeeze_complete',
     'monster_create', 'monster_feed', 'monster_delete',
   ];
-  const [total, byPage, byEvent, recent, homeworkCounts, relaxEventRows, mandalaTotal, breathTotal, monsterTotal] = await Promise.all([
+  const [
+    total, byPage, byEvent, recent, homeworkCounts, relaxEventRows,
+    mandalaTotal, breathTotal, monsterTotal,
+    dailyDrawCount, dailyViewCount, treeholeSaveCount, treeholeViewCount,
+  ] = await Promise.all([
     prisma.eventLog.count(),
     prisma.eventLog.groupBy({ by: ['page'], _count: { id: true }, orderBy: { _count: { id: 'desc' } } }),
     prisma.eventLog.groupBy({ by: ['event'], _count: { id: true }, orderBy: { _count: { id: 'desc' } } }),
@@ -53,6 +69,10 @@ router.get('/stats', ...requireRole('admin'), async (req, res) => {
     prisma.mandalaWork.count(),
     prisma.breathingSession.count(),
     prisma.monster.count(),
+    prisma.eventLog.count({ where: { event: 'ohcard_daily_draw' } }),
+    prisma.eventLog.count({ where: { event: 'page_view', page: { in: ['/pages/ohcard/daily', 'ohcard/daily', 'daily'] } } }),
+    prisma.eventLog.count({ where: { event: 'treehole_save' } }),
+    prisma.eventLog.count({ where: { event: 'page_view', page: { in: ['/pages/treehole/index', 'treehole'] } } }),
   ]);
 
   const countBy = (pred) => relaxEventRows.filter(pred).length;
@@ -71,7 +91,14 @@ router.get('/stats', ...requireRole('admin'), async (req, res) => {
     { key: 'monster_total', label: '怪兽总数', count: monsterTotal },
   ];
 
-  res.json({ total, byPage, byEvent, recent, homeworkCounts, relaxCounts });
+  const dailyTreeholeCounts = [
+    { key: 'daily_view', label: '每日抽卡访问', count: dailyViewCount },
+    { key: 'daily_draw', label: '每日抽卡次数', count: dailyDrawCount },
+    { key: 'treehole_view', label: '树洞访问', count: treeholeViewCount },
+    { key: 'treehole_save', label: '树洞投递', count: treeholeSaveCount },
+  ];
+
+  res.json({ total, byPage, byEvent, recent, homeworkCounts, relaxCounts, dailyTreeholeCounts });
 });
 
 router.get('/assessment-stats', ...requireRole('admin'), async (req, res) => {

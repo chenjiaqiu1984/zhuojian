@@ -118,6 +118,8 @@ const detail    = ref(null);
 const CATS = [
   { key: 'all',        label: '全部' },
   { key: 'ohcard',     label: '🃏 OH卡' },
+  { key: 'daily',      label: '🌅 每日抽卡' },
+  { key: 'treehole',   label: '🕳️ 树洞' },
   { key: 'assessment', label: '🧠 测评' },
   { key: 'breathing',  label: '🌬️ 呼吸' },
   { key: 'mandala',    label: '🎨 曼陀罗' },
@@ -136,6 +138,8 @@ const visibleCats = computed(() => {
 
 const TYPE_COLORS = {
   ohcard:     '#7B5EA7',
+  daily:      '#E8A54B',
+  treehole:   '#5B8C7A',
   assessment: '#4A90D9',
   breathing:  '#4AB8A0',
   mandala:    '#E57373',

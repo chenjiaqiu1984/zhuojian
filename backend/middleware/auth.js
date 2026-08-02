@@ -31,7 +31,12 @@ function requireRole(...roles) {
 
 function optionalAuth(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
-  if (token) try { req.user = jwt.verify(token, JWT_SECRET); } catch {}
+  if (token) {
+    try {
+      req.user = jwt.verify(token, JWT_SECRET);
+      if (ROLE_MAP[req.user.role]) req.user.role = ROLE_MAP[req.user.role];
+    } catch {}
+  }
   next();
 }
 

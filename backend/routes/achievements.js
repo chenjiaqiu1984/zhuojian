@@ -5,9 +5,35 @@ const { authMiddleware } = require('../middleware/auth');
 const prisma = new PrismaClient();
 
 // ── 成就定义 ──────────────────────────────────────────────────────
-// type: ohcard | assessment | breathing | mandala | squeeze | profile | order | login | combo
-// condition: 检查函数名（在 CHECKERS 中定义）
+// type: ohcard | daily | treehole | assessment | breathing | mandala | homework | activity | profile | order | login | combo
+// condition: 对应 getStats 返回的字段名（或特殊 case）
 // threshold: 数量门槛（用于次数类成就）
+
+function toDateStr(d) {
+  const dt = new Date(d);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())}`;
+}
+
+/** 按日期字符串列表（升序）计算当前连续天数（允许断今天尚未记） */
+function calcStreak(datesAsc) {
+  const dates = [...new Set(datesAsc)].sort();
+  let streak = 0;
+  for (let i = dates.length - 1; i >= 0; i--) {
+    const cur = new Date(dates[i]);
+    if (i === dates.length - 1) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const diff = Math.round((today - cur) / 86400000);
+      if (diff > 1) break;
+      streak = 1;
+    } else {
+      const diff = Math.round((new Date(dates[i + 1]) - cur) / 86400000);
+      if (diff === 1) streak++;
+      else break;
+    }
+  }
+  return streak;
+}
 
 const ACHIEVEMENTS = [
 
@@ -27,6 +53,32 @@ const ACHIEVEMENTS = [
   { key: 'ohcard_types_all', type: 'ohcard',      icon: '🌟', name: '全能探索者',     desc: '解锁全部8种OH卡玩法',   condition: 'ohcard_types',      threshold: 8    },
   { key: 'ohcard_dilemma_1', type: 'ohcard',      icon: '🔱', name: '困境勇者',       desc: '完成1次人生困境',       condition: 'ohcard_type_count', threshold: 1,   typeFilter: 'dilemma' },
   { key: 'ohcard_room_5',    type: 'ohcard',      icon: '🚪', name: '房间主人',       desc: '完成5次房间抽卡',       condition: 'ohcard_type_count', threshold: 5,   typeFilter: 'room'    },
+
+  // ── 每日抽卡 ──────────────────────────────────────────────────
+  { key: 'daily_1',          type: 'daily',       icon: '🌅', name: '今日心境',       desc: '完成第1次每日抽卡',     condition: 'daily_total',       threshold: 1    },
+  { key: 'daily_5',          type: 'daily',       icon: '🌅', name: '晨光初照',       desc: '累计每日抽卡5天',       condition: 'daily_total',       threshold: 5    },
+  { key: 'daily_10',         type: 'daily',       icon: '🌅', name: '日日相见',       desc: '累计每日抽卡10天',      condition: 'daily_total',       threshold: 10   },
+  { key: 'daily_20',         type: 'daily',       icon: '🌤️', name: '心境旅人',       desc: '累计每日抽卡20天',      condition: 'daily_total',       threshold: 20   },
+  { key: 'daily_50',         type: 'daily',       icon: '🏅', name: '日签达人',       desc: '累计每日抽卡50天',      condition: 'daily_total',       threshold: 50   },
+  { key: 'daily_100',        type: 'daily',       icon: '🥇', name: '百日心境',       desc: '累计每日抽卡100天',     condition: 'daily_total',       threshold: 100  },
+  { key: 'daily_200',        type: 'daily',       icon: '💎', name: '心境传奇',       desc: '累计每日抽卡200天',     condition: 'daily_total',       threshold: 200  },
+  { key: 'daily_365',        type: 'daily',       icon: '👑', name: '一年心境',       desc: '累计每日抽卡365天',     condition: 'daily_total',       threshold: 365  },
+  { key: 'daily_streak_3',   type: 'daily',       icon: '🔥', name: '三日连签',       desc: '连续每日抽卡3天',       condition: 'daily_streak',      threshold: 3    },
+  { key: 'daily_streak_7',   type: 'daily',       icon: '🔥', name: '一周连签',       desc: '连续每日抽卡7天',       condition: 'daily_streak',      threshold: 7    },
+  { key: 'daily_streak_14',  type: 'daily',       icon: '🔥', name: '两周连签',       desc: '连续每日抽卡14天',      condition: 'daily_streak',      threshold: 14   },
+  { key: 'daily_streak_30',  type: 'daily',       icon: '💫', name: '月度连签',       desc: '连续每日抽卡30天',      condition: 'daily_streak',      threshold: 30   },
+  { key: 'daily_streak_100', type: 'daily',       icon: '🌟', name: '百日连签',       desc: '连续每日抽卡100天',     condition: 'daily_streak',      threshold: 100  },
+
+  // ── 树洞 ──────────────────────────────────────────────────────
+  { key: 'treehole_1',       type: 'treehole',    icon: '🕳️', name: '初次倾诉',       desc: '写下第1条树洞',         condition: 'treehole_total',    threshold: 1    },
+  { key: 'treehole_5',       type: 'treehole',    icon: '🕳️', name: '轻轻诉说',       desc: '累计写下5条树洞',       condition: 'treehole_total',    threshold: 5    },
+  { key: 'treehole_10',      type: 'treehole',    icon: '🕳️', name: '树洞常客',       desc: '累计写下10条树洞',      condition: 'treehole_total',    threshold: 10   },
+  { key: 'treehole_20',      type: 'treehole',    icon: '🌲', name: '倾诉达人',       desc: '累计写下20条树洞',      condition: 'treehole_total',    threshold: 20   },
+  { key: 'treehole_50',      type: 'treehole',    icon: '🏅', name: '树洞知己',       desc: '累计写下50条树洞',      condition: 'treehole_total',    threshold: 50   },
+  { key: 'treehole_100',     type: 'treehole',    icon: '🥇', name: '百次倾诉',       desc: '累计写下100条树洞',     condition: 'treehole_total',    threshold: 100  },
+  { key: 'treehole_200',     type: 'treehole',    icon: '💎', name: '倾诉传奇',       desc: '累计写下200条树洞',     condition: 'treehole_total',    threshold: 200  },
+  { key: 'treehole_self',    type: 'treehole',    icon: '🪞', name: '写给自己',       desc: '写下第1条写给自己的树洞', condition: 'treehole_self',   threshold: 1    },
+  { key: 'treehole_platform',type: 'treehole',    icon: '💌', name: '写给平台',       desc: '写下第1条写给平台的树洞', condition: 'treehole_platform', threshold: 1  },
 
   // ── 心理测评 ──────────────────────────────────────────────────
   { key: 'assess_1',         type: 'assessment',  icon: '🧠', name: '自我初探',       desc: '完成第1次测评',         condition: 'assess_total',      threshold: 1    },
@@ -138,10 +190,11 @@ async function getStats(userId) {
     mandalaTotal, orderTotal, loginDays, loginLogs,
     profileUser,
     moodTotal, cbtTotal, dreamTotal, icebergTotal, ruleTotal,
-    activityTotal,
+    dailyTotal, dailyLogs,
+    treeholeTotal, treeholeSelf, treeholePlatform,
   ] = await Promise.all([
     prisma.ohCardRecord.count({ where: { userId } }),
-    prisma.ohCardRecord.groupBy({ by: ['type'], where: { userId } }),
+    prisma.ohCardRecord.groupBy({ by: ['type'], where: { userId }, _count: { type: true } }),
     prisma.assessmentResult.count({ where: { userId } }),
     prisma.assessmentResult.findMany({ where: { userId }, select: { scale: { select: { category: true } } } }),
     prisma.breathingSession.count({ where: { userId } }),
@@ -157,7 +210,11 @@ async function getStats(userId) {
     prisma.dreamRecord.count({ where: { userId } }),
     prisma.icebergRecord.count({ where: { userId } }),
     prisma.ruleRecord.count({ where: { userId } }),
-    prisma.activityRegistration.count({ where: { phone: { not: '' } } }), // 按 userId 需要改表，暂用 eventLog
+    prisma.ohCardRecord.count({ where: { userId, type: 'daily' } }),
+    prisma.ohCardRecord.findMany({ where: { userId, type: 'daily' }, select: { createdAt: true }, orderBy: { createdAt: 'asc' } }),
+    prisma.treeholePost.count({ where: { userId } }),
+    prisma.treeholePost.count({ where: { userId, category: { in: ['self', 'emotion'] } } }),
+    prisma.treeholePost.count({ where: { userId, category: { in: ['platform', 'feedback'] } } }),
   ]);
 
   // 活动报名用 eventLog 计数（activityRegistration 没有 userId 字段）
@@ -169,28 +226,18 @@ async function getStats(userId) {
   // 咨询工具种类数
   const homeworkTypes = [moodTotal, cbtTotal, dreamTotal, icebergTotal, ruleTotal].filter(n => n > 0).length;
 
-  // 计算连续登录天数
-  const dates = [...new Set(loginLogs.map(l => l.dateStr))].sort();
-  let streak = 0;
-  for (let i = dates.length - 1; i >= 0; i--) {
-    const cur = new Date(dates[i]);
-    if (i === dates.length - 1) {
-      const today = new Date(); today.setHours(0,0,0,0);
-      const diff  = Math.round((today - cur) / 86400000);
-      if (diff > 1) break;
-      streak = 1;
-    } else {
-      const diff = Math.round((new Date(dates[i+1]) - cur) / 86400000);
-      if (diff === 1) { streak++; } else { break; }
-    }
-  }
+  const streak = calcStreak(loginLogs.map((l) => l.dateStr));
+  const dailyStreak = calcStreak(dailyLogs.map((l) => toDateStr(l.createdAt)));
 
-  // 综合总次数（含咨询工具）
-  const comboTotal = ohcardTotal + assessTotal + breathTotal + mandalaTotal + homeworkTotal + activityEventTotal;
+  // 综合总次数：每日抽卡已计入 ohcard，此处另加树洞
+  const comboTotal = ohcardTotal + assessTotal + breathTotal + mandalaTotal
+    + homeworkTotal + activityEventTotal + treeholeTotal;
 
   // 使用过的功能类型
   const usedTypes = new Set();
   if (ohcardTotal > 0)          usedTypes.add('ohcard');
+  if (dailyTotal > 0)           usedTypes.add('daily');
+  if (treeholeTotal > 0)        usedTypes.add('treehole');
   if (assessTotal > 0)          usedTypes.add('assessment');
   if (breathTotal > 0)          usedTypes.add('breathing');
   if (mandalaTotal > 0)         usedTypes.add('mandala');
@@ -223,6 +270,11 @@ async function getStats(userId) {
     homework_iceberg: icebergTotal,
     homework_rule:   ruleTotal,
     activity_total:  activityEventTotal,
+    daily_total:     dailyTotal,
+    daily_streak:    dailyStreak,
+    treehole_total:  treeholeTotal,
+    treehole_self:   treeholeSelf,
+    treehole_platform: treeholePlatform,
     ohcard_type_counts: Object.fromEntries(ohcardTypes.map(r => [r.type, r._count?.type ?? 0])),
     breath_prog_types: await prisma.breathingSession.groupBy({ by: ['mode'], where: { userId, isProgramMode: 1 } }),
   };
@@ -270,6 +322,11 @@ async function checkAchievements(userId, event) {
         case 'homework_iceberg':value = stats.homework_iceberg; break;
         case 'homework_rule':   value = stats.homework_rule;   break;
         case 'activity_total':  value = stats.activity_total;  break;
+        case 'daily_total':     value = stats.daily_total;     break;
+        case 'daily_streak':    value = stats.daily_streak;    break;
+        case 'treehole_total':  value = stats.treehole_total;  break;
+        case 'treehole_self':   value = stats.treehole_self;   break;
+        case 'treehole_platform': value = stats.treehole_platform; break;
       }
 
       if (value >= def.threshold) {
@@ -290,7 +347,9 @@ async function checkAchievements(userId, event) {
 // GET /api/achievements/my — 返回全部成就列表（含解锁状态）
 router.get('/my', authMiddleware, async (req, res) => {
   try {
-    const userId  = req.user.id;
+    const userId = req.user.id;
+    // 打开成就页时补检一次，便于新成就定义对历史数据生效
+    await checkAchievements(userId, 'view');
     const unlocked = await prisma.userAchievement.findMany({ where: { userId } });
     const unlockedMap = Object.fromEntries(unlocked.map(u => [u.achievementKey, u.unlockedAt]));
 

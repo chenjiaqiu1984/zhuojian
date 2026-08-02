@@ -217,12 +217,12 @@ async function drawToday() {
   if (!ensureLogin()) return;
   drawing.value = true;
   try {
-    const data = await ohcardApi.dailyDraw();
+    const data = await ohcardApi.dailyDraw({ auto: !!autoMode.value });
     drawn.value = true;
     card.value = data.card;
     dateKey.value = data.date || todayKey();
     markDailyGateDone(dateKey.value);
-    track('ohcard_daily_draw', '/pages/ohcard/daily', { word: data.card?.word, auto: !!autoMode.value });
+    // 抽卡成功埋点由服务端写入（保证 userId）
     await flipToFront();
   } catch (e) {
     if (e?.__authRedirect) return;

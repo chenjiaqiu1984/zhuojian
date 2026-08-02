@@ -74,6 +74,14 @@
       </el-table>
     </el-card>
 
+    <!-- 每日抽卡 & 树洞 -->
+    <el-card header="每日抽卡 / 树洞" style="margin-bottom:24px">
+      <el-table :data="stats.dailyTreeholeCounts || []" size="small">
+        <el-table-column prop="label" label="指标" />
+        <el-table-column prop="count" label="次数" width="100" />
+      </el-table>
+    </el-card>
+
     <!-- 最近事件（事件类型筛选 + 用户ID搜索 + 分页 pageSize=20） -->
     <el-card header="最近事件">
       <div style="margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
@@ -91,11 +99,16 @@
           clearable
           style="width:180px"
         />
+        <el-checkbox v-model="hideNoUser">隐藏无用户ID</el-checkbox>
         <span style="color:#999;font-size:13px">共 {{ filteredRecentEvents.length }} 条</span>
       </div>
       <el-table :data="pagedRecentEvents" size="small">
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="userId" label="用户ID" width="80" />
+        <el-table-column prop="userId" label="用户ID" width="90">
+          <template #default="{ row }">
+            <span :style="{ color: row.userId ? '' : '#C0C4CC' }">{{ row.userId ?? '—' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="event" label="事件" width="140" />
         <el-table-column prop="page" label="页面" />
         <el-table-column prop="data" label="数据" show-overflow-tooltip />
@@ -120,7 +133,10 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import api from '../api/index';
 
-const stats = ref({ total: 0, byPage: [], byEvent: [], recent: [], homeworkCounts: [], relaxCounts: [] });
+const stats = ref({
+  total: 0, byPage: [], byEvent: [], recent: [],
+  homeworkCounts: [], relaxCounts: [], dailyTreeholeCounts: [],
+});
 const ohcardRanks = ref([]);
 
 const CAT_LABEL = { single: '单卡组合', combo: '跨卡牌组合', scene: '场景选卡', dilemma: '人生困境' };
@@ -136,6 +152,7 @@ const pagedOhcardRanks = computed(() => {
 // 最近事件筛选 & 分页
 const eventFilter = ref('');
 const userIdSearch = ref('');
+const hideNoUser = ref(false);
 const recentPage = ref(1);
 
 // 从已加载数据中提取可选事件类型
@@ -148,6 +165,9 @@ const filteredRecentEvents = computed(() => {
   let list = stats.value.recent || [];
   if (eventFilter.value) {
     list = list.filter(e => e.event === eventFilter.value);
+  }
+  if (hideNoUser.value) {
+    list = list.filter(e => e.userId != null);
   }
   const q = userIdSearch.value.trim();
   if (q) {
@@ -163,7 +183,7 @@ const pagedRecentEvents = computed(() => {
 });
 
 // 筛选条件变化时重置到第一页
-watch([eventFilter, userIdSearch], () => { recentPage.value = 1; });
+watch([eventFilter, userIdSearch, hideNoUser], () => { recentPage.value = 1; });
 
 const uniqueUsers = computed(() => {
   const ids = (stats.value.recent || []).map(e => e.userId).filter(Boolean);

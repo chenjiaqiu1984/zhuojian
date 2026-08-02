@@ -190,6 +190,18 @@
         </el-card>
 
         <el-table :data="z.list" border v-loading="z.loading">
+          <el-table-column label="外观" width="88">
+            <template #default="{ row }">
+              <div class="monster-thumb" @click="openMonster(row)">
+                <MonsterPreview
+                  :drawing-data="row.drawingData"
+                  :drawing-type="row.drawingType"
+                  :color="row.color"
+                  :size="64"
+                />
+              </div>
+            </template>
+          </el-table-column>
           <el-table-column label="名称" width="120" prop="name" />
           <el-table-column label="用户" width="160">
             <template #default="{ row }">{{ userLabel(row.user) }}</template>
@@ -205,8 +217,9 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="200" fixed="right">
+          <el-table-column label="操作" width="220" fixed="right">
             <template #default="{ row }">
+              <el-button text type="primary" @click="openMonster(row)">查看/编辑</el-button>
               <el-button text type="warning" @click="toggleMonster(row)">
                 {{ row.status === 'archived' ? '恢复' : '归档' }}
               </el-button>
@@ -226,6 +239,68 @@
           layout="total, prev, pager, next"
           @current-change="loadMonsters"
         />
+
+        <el-dialog
+          v-model="monsterDlg.visible"
+          :title="monsterDlg.form.name ? `怪兽：${monsterDlg.form.name}` : '怪兽详情'"
+          width="640px"
+          destroy-on-close
+        >
+          <div v-if="monsterDlg.form.id" class="monster-dlg">
+            <MonsterPreview
+              :drawing-data="monsterDlg.form.drawingData"
+              :drawing-type="monsterDlg.form.drawingType"
+              :color="monsterDlg.form.color"
+              :size="280"
+            />
+            <el-form label-width="96px" style="flex:1;min-width:260px">
+              <el-form-item label="所属用户">
+                <span style="color:#666">{{ monsterDlg.userLabel }}</span>
+              </el-form-item>
+              <el-form-item label="名称">
+                <el-input v-model="monsterDlg.form.name" maxlength="40" />
+              </el-form-item>
+              <el-form-item label="情绪">
+                <el-select v-model="monsterDlg.form.emotion" style="width:100%">
+                  <el-option v-for="e in ['焦虑','悲伤','愤怒','恐惧','孤独','其他']" :key="e" :label="e" :value="e" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="颜色">
+                <el-color-picker v-model="monsterDlg.form.color" />
+                <span style="margin-left:8px;color:#999;font-size:12px">{{ monsterDlg.form.color }}</span>
+              </el-form-item>
+              <el-form-item label="成长天数">
+                <el-input-number v-model="monsterDlg.form.totalDays" :min="0" :max="100000" />
+                <span style="margin-left:8px;color:#999;font-size:12px">阶段：{{ monsterStageLabel }}</span>
+              </el-form-item>
+              <el-form-item label="连胜">
+                <el-input-number v-model="monsterDlg.form.streak" :min="0" :max="100000" />
+              </el-form-item>
+              <el-form-item label="状态">
+                <el-radio-group v-model="monsterDlg.form.status">
+                  <el-radio value="active">活跃</el-radio>
+                  <el-radio value="archived">已归档</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="上次喂养">
+                <el-date-picker
+                  v-model="monsterDlg.form.lastFedAt"
+                  type="datetime"
+                  clearable
+                  placeholder="未喂养"
+                  style="width:100%"
+                />
+              </el-form-item>
+              <el-form-item label="创建时间">
+                <span style="color:#999">{{ fmt(monsterDlg.form.createdAt) }}</span>
+              </el-form-item>
+            </el-form>
+          </div>
+          <template #footer>
+            <el-button @click="monsterDlg.visible = false">取消</el-button>
+            <el-button type="primary" :loading="monsterDlg.saving" @click="saveMonster">保存数值</el-button>
+          </template>
+        </el-dialog>
 
         <el-card header="成长阶段规则" style="margin-top:24px">
           <div style="margin-bottom:12px;display:flex;gap:12px;align-items:center">
@@ -277,10 +352,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, nextTick, onMounted } from 'vue';
+import { ref, reactive, computed, nextTick, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '../api/index.js';
 import { renderMandala } from '../utils/mandalaRender.js';
+import MonsterPreview from '../components/MonsterPreview.vue';
 
 const tab = ref('mandala');
 const breathSub = ref('modes');
@@ -420,6 +496,35 @@ const z = reactive({
 });
 const stages = reactive({ targetDays: 30, stages: [] });
 const stageSaving = ref(false);
+const monsterDlg = reactive({
+  visible: false,
+  saving: false,
+  userLabel: '',
+  form: {
+    id: null,
+    name: '',
+    emotion: '',
+    color: '#7B4E9E',
+    totalDays: 0,
+    streak: 0,
+    status: 'active',
+    lastFedAt: null,
+    createdAt: null,
+    drawingData: null,
+    drawingType: 'parts',
+  },
+});
+
+function stageLabelOf(days) {
+  const d = Number(days) || 0;
+  const list = stages.stages || [];
+  for (const s of list) {
+    if (s.maxDays === null || s.maxDays === undefined || s.maxDays === '') continue;
+    if (d <= Number(s.maxDays)) return s.label;
+  }
+  return list[list.length - 1]?.label || '—';
+}
+const monsterStageLabel = computed(() => stageLabelOf(monsterDlg.form.totalDays));
 
 function zSearch() { z.page = 1; loadMonsters(); }
 async function loadMonsters() {
@@ -443,6 +548,52 @@ async function loadStages() {
     stages.targetDays = v.targetDays || 30;
     stages.stages = (v.stages || []).map(s => ({ ...s }));
   } catch { ElMessage.error('加载阶段规则失败'); }
+}
+function openMonster(row) {
+  monsterDlg.visible = true;
+  monsterDlg.userLabel = userLabel(row.user);
+  monsterDlg.form = {
+    id: row.id,
+    name: row.name || '',
+    emotion: row.emotion || '其他',
+    color: row.color || '#7B4E9E',
+    totalDays: row.totalDays ?? 0,
+    streak: row.streak ?? 0,
+    status: row.status === 'archived' ? 'archived' : 'active',
+    lastFedAt: row.lastFedAt ? new Date(row.lastFedAt) : null,
+    createdAt: row.createdAt,
+    drawingData: row.drawingData,
+    drawingType: row.drawingType || 'parts',
+  };
+}
+async function saveMonster() {
+  const f = monsterDlg.form;
+  if (!f.id) return;
+  if (!f.name?.trim()) return ElMessage.warning('请填写名称');
+  monsterDlg.saving = true;
+  try {
+    const updated = await api.patch(`/relax/admin/monsters/${f.id}`, {
+      name: f.name.trim(),
+      emotion: f.emotion,
+      color: f.color,
+      totalDays: f.totalDays,
+      streak: f.streak,
+      status: f.status,
+      lastFedAt: f.lastFedAt ? new Date(f.lastFedAt).toISOString() : null,
+    });
+    ElMessage.success('已保存');
+    monsterDlg.visible = false;
+    // 刷新列表；若当前页仍有该行则就地更新
+    const idx = z.list.findIndex((m) => m.id === f.id);
+    if (idx >= 0) {
+      z.list[idx] = { ...z.list[idx], ...updated, user: z.list[idx].user };
+    }
+    loadMonsters();
+  } catch (e) {
+    ElMessage.error(e?.error || '保存失败');
+  } finally {
+    monsterDlg.saving = false;
+  }
 }
 async function toggleMonster(row) {
   const status = row.status === 'archived' ? 'active' : 'archived';
@@ -518,3 +669,21 @@ function onTab(name) {
 
 onMounted(() => loadMandalas());
 </script>
+
+<style scoped>
+.monster-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #eef0f3;
+}
+.monster-thumb:hover { border-color: #c0c4cc; }
+.monster-dlg {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+</style>

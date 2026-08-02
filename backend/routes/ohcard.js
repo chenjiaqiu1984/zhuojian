@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const prisma = require('../db/database');
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const { checkAchievements } = require('./achievements');
 
 const router = express.Router();
 const storage = multer.diskStorage({
@@ -118,6 +119,139 @@ router.put('/presets/:id', ...requireRole('admin'), async (req, res) => {
 router.delete('/presets/:id', ...requireRole('admin'), async (req, res) => {
   await prisma.ohCardPreset.delete({ where: { id: Number(req.params.id) } });
   res.json({ ok: true });
+});
+
+function dayBounds(d = new Date()) {
+  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+
+function formatDateKey(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseRecordData(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+async function findMoodCategory() {
+  return prisma.ohCardCategory.findFirst({
+    where: { name: '心境卡', isActive: 1 },
+  });
+}
+
+async function findTodayDaily(userId) {
+  const { start, end } = dayBounds();
+  return prisma.ohCardRecord.findFirst({
+    where: {
+      userId,
+      type: 'daily',
+      createdAt: { gte: start, lt: end },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+/** 查询今日心境卡（未登录也可探测牌组是否可用） */
+router.get('/daily', authMiddleware, async (req, res) => {
+  try {
+    const cat = await findMoodCategory();
+    if (!cat) return res.status(404).json({ error: '心境卡牌组尚未配置' });
+    const row = await findTodayDaily(req.user.id);
+    if (!row) {
+      return res.json({ drawn: false, date: formatDateKey(), categoryId: cat.id });
+    }
+    const data = parseRecordData(row.data) || {};
+    return res.json({
+      drawn: true,
+      date: formatDateKey(),
+      categoryId: cat.id,
+      recordId: row.id,
+      card: data.card || null,
+      note: row.note || '',
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/** 抽取今日心境主卡（每天一次） */
+router.post('/daily', authMiddleware, async (req, res) => {
+  try {
+    const cat = await findMoodCategory();
+    if (!cat) return res.status(404).json({ error: '心境卡牌组尚未配置' });
+
+    const existing = await findTodayDaily(req.user.id);
+    if (existing) {
+      const data = parseRecordData(existing.data) || {};
+      return res.status(409).json({
+        error: '今天已经抽过啦，明天再来吧',
+        drawn: true,
+        date: formatDateKey(),
+        recordId: existing.id,
+        card: data.card || null,
+        note: existing.note || '',
+      });
+    }
+
+    const all = await prisma.$queryRawUnsafe(
+      'SELECT id, image_url as imageUrl, word, description, question FROM OhCard WHERE category_id = ?',
+      cat.id,
+    );
+    if (!all.length) return res.status(400).json({ error: '心境卡暂无可用卡片' });
+    const card = all[Math.floor(Math.random() * all.length)];
+    const payload = {
+      card: {
+        id: card.id,
+        imageUrl: card.imageUrl,
+        word: card.word,
+        description: card.description,
+        question: card.question,
+      },
+      date: formatDateKey(),
+      categoryId: cat.id,
+    };
+    const row = await prisma.ohCardRecord.create({
+      data: {
+        userId: req.user.id,
+        type: 'daily',
+        data: JSON.stringify(payload),
+        note: req.body?.note || null,
+      },
+    });
+    try {
+      await prisma.eventLog.create({
+        data: {
+          userId: req.user.id,
+          event: 'ohcard_daily_draw',
+          page: '/pages/ohcard/daily',
+          data: JSON.stringify({
+            word: payload.card?.word || null,
+            recordId: row.id,
+            auto: !!req.body?.auto,
+          }),
+        },
+      });
+    } catch (_) {}
+    const newAchievements = await checkAchievements(req.user.id, 'daily');
+    res.json({
+      drawn: true,
+      date: formatDateKey(),
+      recordId: row.id,
+      card: payload.card,
+      note: row.note || '',
+      newAchievements,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 module.exports = router;

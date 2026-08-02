@@ -270,9 +270,42 @@ router.patch('/admin/monsters/:id', ...adminAuth, async (req, res) => {
     if (req.body.status === 'active' || req.body.status === 'archived') {
       data.status = req.body.status;
     }
+    if (typeof req.body.name === 'string' && req.body.name.trim()) {
+      data.name = req.body.name.trim().slice(0, 40);
+    }
+    if (typeof req.body.emotion === 'string' && req.body.emotion.trim()) {
+      data.emotion = req.body.emotion.trim().slice(0, 20);
+    }
+    if (typeof req.body.color === 'string' && req.body.color.trim()) {
+      data.color = req.body.color.trim().slice(0, 32);
+    }
+    if (req.body.totalDays !== undefined) {
+      const n = Number(req.body.totalDays);
+      if (!Number.isFinite(n) || n < 0 || n > 100000) {
+        return res.status(400).json({ error: '天数无效' });
+      }
+      data.totalDays = Math.floor(n);
+    }
+    if (req.body.streak !== undefined) {
+      const n = Number(req.body.streak);
+      if (!Number.isFinite(n) || n < 0 || n > 100000) {
+        return res.status(400).json({ error: '连胜无效' });
+      }
+      data.streak = Math.floor(n);
+    }
+    if (req.body.lastFedAt !== undefined) {
+      if (req.body.lastFedAt === null || req.body.lastFedAt === '') {
+        data.lastFedAt = null;
+      } else {
+        const d = new Date(req.body.lastFedAt);
+        if (Number.isNaN(d.getTime())) return res.status(400).json({ error: '喂养时间无效' });
+        data.lastFedAt = d;
+      }
+    }
     if (!Object.keys(data).length) return res.status(400).json({ error: '无有效更新' });
     const updated = await prisma.monster.update({ where: { id }, data });
-    res.json(updated);
+    const stagesCfg = await getConfig('monster_stages');
+    res.json({ ...updated, stageLabel: stageLabelFromConfig(stagesCfg, updated.totalDays) });
   } catch (err) {
     console.error('[relax] patch monster', err);
     res.status(500).json({ error: '操作失败' });

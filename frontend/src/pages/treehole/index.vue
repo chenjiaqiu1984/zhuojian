@@ -140,7 +140,7 @@ async function save() {
       content,
       category: form.value.category,
     });
-    track('treehole_save', form.value.category);
+    // 投递埋点由服务端写入（保证 userId）
     form.value = { content: '', category: form.value.category };
     uni.showToast({ title: '已投递', icon: 'success' });
     if (res?.crisis) crisisRef.value?.show();
@@ -161,6 +161,7 @@ async function del(id) {
 }
 
 onMounted(() => {
+  track('page_view', '/pages/treehole/index');
   if (!requireActive()) return;
   loadMine();
 });
