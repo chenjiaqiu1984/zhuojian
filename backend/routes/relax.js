@@ -175,6 +175,22 @@ router.get('/admin/mandalas', ...adminAuth, async (req, res) => {
   }
 });
 
+// 管理端：查看单幅曼达拉（含 drawingData，用于重绘预览）
+router.get('/admin/mandalas/:id', ...adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const work = await prisma.mandalaWork.findUnique({
+      where: { id },
+      include: { user: { select: { id: true, name: true, username: true, phone: true } } },
+    });
+    if (!work) return res.status(404).json({ error: '不存在' });
+    res.json(work);
+  } catch (err) {
+    console.error('[relax] mandala detail', err);
+    res.status(500).json({ error: '加载失败' });
+  }
+});
+
 router.delete('/admin/mandalas/:id', ...adminAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);

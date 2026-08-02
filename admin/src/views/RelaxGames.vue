@@ -32,8 +32,9 @@
             <template #default="{ row }">{{ moodLabel(row.mood) }}</template>
           </el-table-column>
           <el-table-column label="对称" width="80" prop="symmetry" />
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column label="操作" width="160" fixed="right">
             <template #default="{ row }">
+              <el-button text type="primary" @click="viewMandala(row)">查看</el-button>
               <el-popconfirm title="确认删除该作品？" @confirm="delMandala(row)">
                 <template #reference>
                   <el-button text type="danger">删除</el-button>
@@ -50,6 +51,23 @@
           layout="total, prev, pager, next"
           @current-change="loadMandalas"
         />
+
+        <el-dialog
+          v-model="preview.visible"
+          :title="preview.title"
+          width="560px"
+          destroy-on-close
+          @opened="paintPreview"
+        >
+          <div v-loading="preview.loading" style="display:flex;flex-direction:column;align-items:center;gap:12px;min-height:320px">
+            <div v-if="preview.meta" style="width:100%;color:#666;font-size:13px;line-height:1.7">
+              <div>用户：{{ preview.meta.user }}</div>
+              <div>时间：{{ preview.meta.time }} · 情绪：{{ preview.meta.mood }} · 对称：{{ preview.meta.symmetry }}</div>
+            </div>
+            <canvas ref="previewCanvas" style="border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.08);background:#FDF8F2" />
+            <el-empty v-if="preview.error" :description="preview.error" :image-size="80" />
+          </div>
+        </el-dialog>
       </el-tab-pane>
 
       <!-- 呼吸 -->
@@ -259,9 +277,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, nextTick, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '../api/index.js';
+import { renderMandala } from '../utils/mandalaRender.js';
 
 const tab = ref('mandala');
 const breathSub = ref('modes');
@@ -282,6 +301,15 @@ function fmt(d) {
 
 // ── 曼达拉 ──
 const m = reactive({ list: [], total: 0, page: 1, pageSize: 20, loading: false, q: '', mood: '' });
+const previewCanvas = ref(null);
+const preview = reactive({
+  visible: false,
+  loading: false,
+  title: '查看曼达拉',
+  meta: null,
+  drawingData: null,
+  error: '',
+});
 function mSearch() { m.page = 1; loadMandalas(); }
 async function loadMandalas() {
   m.loading = true;
@@ -294,6 +322,40 @@ async function loadMandalas() {
     m.total = res.total || 0;
   } catch { ElMessage.error('加载曼达拉失败'); }
   finally { m.loading = false; }
+}
+async function viewMandala(row) {
+  preview.visible = true;
+  preview.loading = true;
+  preview.error = '';
+  preview.drawingData = null;
+  preview.meta = {
+    user: userLabel(row.user),
+    time: fmt(row.createdAt),
+    mood: moodLabel(row.mood),
+    symmetry: row.symmetry ?? '—',
+  };
+  preview.title = `曼达拉 #${row.id}`;
+  try {
+    const work = await api.get(`/relax/admin/mandalas/${row.id}`);
+    preview.drawingData = work.drawingData;
+    preview.meta = {
+      user: userLabel(work.user),
+      time: fmt(work.createdAt),
+      mood: moodLabel(work.mood),
+      symmetry: work.symmetry ?? '—',
+    };
+    await nextTick();
+    paintPreview();
+  } catch (e) {
+    preview.error = e?.error || '加载作品失败';
+  } finally {
+    preview.loading = false;
+  }
+}
+function paintPreview() {
+  if (!preview.drawingData || !previewCanvas.value) return;
+  const ok = renderMandala(previewCanvas.value, preview.drawingData, 480);
+  if (!ok) preview.error = '作品数据无法解析或为空';
 }
 async function delMandala(row) {
   try {

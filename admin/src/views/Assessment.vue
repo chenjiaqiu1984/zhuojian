@@ -388,9 +388,15 @@ const pagedVouchers = computed(() => {
 
 watch([voucherQ, voucherStatus], () => { voucherPage.value = 1; });
 
-// 数据加载
-const loadScales = async () => { scales.value = await api.get('/assessment/admin/scales'); };
-const loadVouchers = async () => { vouchers.value = await api.get('/assessment/admin/vouchers'); };
+// 数据加载（接口返回 { total, items }，前端做本地筛选/分页故一次拉全量）
+const loadScales = async () => {
+  const res = await api.get('/assessment/admin/scales', { params: { page: 1, pageSize: 9999 } });
+  scales.value = Array.isArray(res) ? res : (res?.items || []);
+};
+const loadVouchers = async () => {
+  const res = await api.get('/assessment/admin/vouchers', { params: { page: 1, pageSize: 9999 } });
+  vouchers.value = Array.isArray(res) ? res : (res?.items || []);
+};
 const loadStats = async () => { stats.value = await api.get('/analytics/assessment-stats'); };
 
 onMounted(() => { loadScales(); loadVouchers(); loadStats(); });
