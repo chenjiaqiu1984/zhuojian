@@ -17,6 +17,7 @@
         class="mv-card"
       >
         <view v-if="!card.revealed" class="card-back">
+          <image :src="cardBackUrl" mode="aspectFill" class="back-img" />
           <text class="card-idx">{{i + 1}}</text>
         </view>
         <image v-else :src="fullUrl(card.imageUrl)" mode="aspectFill" class="card-front" />
@@ -45,9 +46,10 @@ import { ref, onMounted, nextTick } from 'vue';
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
-import { remoteUrl } from '../../config';
+import { remoteUrl, ohcardBackUrl } from '../../config';
 
 const store = useUserStore();
+const cardBackUrl = ohcardBackUrl();
 
 const imageCatId = ref(null);
 const zoomIdx = ref(null);
@@ -133,11 +135,17 @@ async function save() {
 .mv-card { width: 168rpx; height: 226rpx; }
 .card-back {
   width: 168rpx; height: 226rpx; border-radius: 14rpx;
-  background: $zj-gradient-hero;
+  background: #2C5249;
   box-shadow: 0 6rpx 20rpx rgba(0,0,0,.4);
   display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
 }
-.card-idx { color: rgba(255,255,255,.5); font-size: 52rpx; font-weight: bold; }
+.back-img { width: 100%; height: 100%; display: block; position: absolute; inset: 0; }
+.card-idx {
+  position: relative; z-index: 1;
+  color: rgba(255,255,255,.85); font-size: 40rpx; font-weight: bold;
+  text-shadow: 0 2rpx 8rpx rgba(0,0,0,.45);
+}
 .card-front { width: 168rpx; height: 226rpx; border-radius: 14rpx; box-shadow: 0 6rpx 20rpx rgba(0,0,0,.4); }
 .fs-overlay {
   position: fixed; inset: 0; z-index: $zj-z-overlay;

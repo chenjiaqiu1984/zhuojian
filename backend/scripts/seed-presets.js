@@ -8,6 +8,7 @@ const PRESETS = [
   { type:'single', title:'心理图卡+字卡', icon:'🔤', color:'#3A6E80', cfg:{} },
   { type:'single', title:'伴侣卡',        icon:'💑', color:'#C06090', cfg:{} },
   { type:'single', title:'孩童卡·人像',   icon:'🧒', color:'#7B68EE', cfg:{} },
+  { type:'single', title:'心境卡',        icon:'🌊', color:'#5A8AAA', cfg:{ sub:'情绪觉察·当下心境' } },
   // 跨卡牌组合
   { type:'combo', title:'内在小孩深度疗愈', icon:'🧒', color:'#7B68EE',
     cfg:{ for:'悲伤·焦虑·自我价值感低',

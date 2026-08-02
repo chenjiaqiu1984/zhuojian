@@ -190,9 +190,30 @@
           </el-col>
         </el-row>
 
-        <el-form-item v-if="pform.type==='single'" label="引导词">
-          <el-input v-model="pform.cfg.guideText" type="textarea" :rows="3" />
-        </el-form-item>
+        <template v-if="pform.type==='single'">
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <el-form-item label="图卡牌组">
+                <el-select v-model="pform.cfg.imgCatId" clearable filterable placeholder="选择图卡牌组" style="width:100%">
+                  <el-option v-for="c in imageCats" :key="c.id" :label="c.name" :value="c.id" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="字卡牌组">
+                <el-select v-model="pform.cfg.wordCatId" clearable filterable placeholder="可选，配对字卡/情况卡" style="width:100%">
+                  <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="副标题">
+            <el-input v-model="pform.cfg.sub" placeholder="如：情绪觉察·当下心境" />
+          </el-form-item>
+          <el-form-item label="引导词">
+            <el-input v-model="pform.cfg.guideText" type="textarea" :rows="3" />
+          </el-form-item>
+        </template>
 
         <el-form-item v-if="pform.type==='combo'" label="适用场景">
           <el-input v-model="pform.cfg.for" />
@@ -204,14 +225,14 @@
             :key="i"
             style="display:flex;gap:8px;margin-bottom:8px;align-items:center"
           >
-            <el-select v-model="s.catId" style="width:160px">
+            <el-select v-model="s.catId" filterable style="width:180px" @change="(v)=>onSlotCatChange(s,v)">
               <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
             </el-select>
             <el-input v-model="s.label" placeholder="标签" style="flex:1" />
             <el-input v-model="s.cat" placeholder="卡牌类型名" style="flex:1" />
             <el-button text type="danger" @click="pform.cfg.slots.splice(i,1)">×</el-button>
           </div>
-          <el-button text @click="pform.cfg.slots.push({catId:1,label:'',cat:''})">+ 添加卡槽</el-button>
+          <el-button text @click="pform.cfg.slots.push({catId:categories[0]?.id||1,label:'',cat:categories[0]?.name||''})">+ 添加卡槽</el-button>
         </el-form-item>
 
         <el-form-item v-if="['combo','scene'].includes(pform.type)" label="反思问题">
@@ -311,6 +332,13 @@ const filteredCats = computed(() => {
   const q = catQ.value.toLowerCase();
   return categories.value.filter(c => (c.name || '').toLowerCase().includes(q));
 });
+
+const imageCats = computed(() => categories.value.filter(c => c.type === 'image'));
+
+function onSlotCatChange(slot, catId) {
+  const cat = categories.value.find(c => c.id === catId);
+  if (cat && !slot.cat) slot.cat = cat.name;
+}
 
 async function loadCats() {
   try { categories.value = await api.get('/ohcard/categories'); } catch {}
@@ -419,7 +447,7 @@ const presetsLoading = ref(false);
 const pdlg = ref(false);
 const pform = ref({
   id: null, type: 'combo', title: '', icon: '🔮', color: '#4A7BBA', sortOrder: 0, isActive: 1,
-  cfg: { slots: [], steps: [], qsText: '', guideText: '', for: '', core: '', cards: '', playName: '', intro: '', insight: '' }
+  cfg: { slots: [], steps: [], qsText: '', guideText: '', sub: '', imgCatId: null, wordCatId: null, for: '', core: '', cards: '', playName: '', intro: '', insight: '' }
 });
 
 // 每种预设类型独立的搜索词和页码
@@ -478,6 +506,9 @@ function mkCfg(type, src = {}) {
     slots: (src.slots || []).map(s => ({ ...s })),
     qsText: (src.qs || []).join('\n'),
     guideText: src.guideText || '',
+    sub: src.sub || '',
+    imgCatId: src.imgCatId ?? null,
+    wordCatId: src.wordCatId ?? null,
     for: src.for || '',
     core: src.core || '',
     cards: src.cards || '',
@@ -505,18 +536,28 @@ function copyPreset(row, type) {
 
 async function savePreset() {
   const { id, type, title, icon, color, sortOrder, isActive, cfg } = pform.value;
-  const config = {
-    slots: cfg.slots,
-    qs: cfg.qsText.split('\n').filter(Boolean),
-    guideText: cfg.guideText,
-    for: cfg.for,
-    core: cfg.core,
-    cards: cfg.cards,
-    playName: cfg.playName,
-    intro: cfg.intro,
-    insight: cfg.insight,
-    steps: cfg.steps.map(st => ({ action: st.action, guides: st.guidesText.split('\n').filter(Boolean) }))
-  };
+  let config;
+  if (type === 'single') {
+    config = {
+      imgCatId: cfg.imgCatId || null,
+      wordCatId: cfg.wordCatId || null,
+      sub: cfg.sub || '',
+      guideText: cfg.guideText || '',
+    };
+  } else {
+    config = {
+      slots: cfg.slots,
+      qs: cfg.qsText.split('\n').filter(Boolean),
+      guideText: cfg.guideText,
+      for: cfg.for,
+      core: cfg.core,
+      cards: cfg.cards,
+      playName: cfg.playName,
+      intro: cfg.intro,
+      insight: cfg.insight,
+      steps: cfg.steps.map(st => ({ action: st.action, guides: st.guidesText.split('\n').filter(Boolean) }))
+    };
+  }
   try {
     if (id) await api.put(`/ohcard/presets/${id}`, { type, title, icon, color, sortOrder, isActive, config });
     else await api.post('/ohcard/presets', { type, title, icon, color, sortOrder, isActive, config });

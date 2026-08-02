@@ -20,7 +20,9 @@
       <text class="reflect-hint">保持问题在心中，翻开卡牌</text>
       <view class="card-wrap">
         <view class="card" :class="{flipped}" @click="flip()">
-          <view class="card-back"><text class="back-text">点击翻转</text></view>
+          <view class="card-back">
+            <image :src="cardBackUrl" mode="aspectFill" class="back-img" />
+          </view>
           <view class="card-front" @click.stop="showFs=true">
             <image :src="fullUrl(card?.imageUrl)" mode="aspectFill" class="card-img" />
           </view>
@@ -56,11 +58,12 @@ import { ref, onMounted , watch } from 'vue';
 import { ohcardApi } from '../../api/index';
 import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
-import { remoteUrl } from '../../config';
+import { remoteUrl, ohcardBackUrl } from '../../config';
 import { openOhcardShare } from '../../utils/shareMoments';
 
 
 const store = useUserStore();
+const cardBackUrl = ohcardBackUrl();
 const step = ref(0);
 const decks = ref([]);
 const selDeck = ref(null);
@@ -167,9 +170,10 @@ function shareDraw() {
 .card-back, .card-front {
   position: absolute; inset: 0; backface-visibility: hidden;
   border-radius: 20rpx; display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
 }
-.card-back { background: linear-gradient(135deg, #4A8A7A, #3A6E80); box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
-.back-text { color: rgba(255,255,255,0.9); font-size: 26rpx; letter-spacing: 2rpx; }
+.card-back { background: #2C5249; box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
+.back-img { width: 100%; height: 100%; display: block; }
 .card-front { background: #fff; box-shadow: 0 12rpx 36rpx rgba(28,42,39,.14); transform: rotateY(180deg); overflow: hidden; }
 .card-img { width: 100%; height: 100%; }
 

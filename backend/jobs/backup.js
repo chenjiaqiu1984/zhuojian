@@ -4,7 +4,7 @@ const path = require('path');
 
 const DB_PATH      = path.join(__dirname, '../prisma/zhuojian.db');
 const BACKUP_DIR   = path.join(__dirname, '../backups');
-const MAX_BACKUPS  = 30; // 保留最近30份（约5天）
+const MAX_BACKUPS  = 30; // 保留最近30份（约10天）
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -35,9 +35,9 @@ function runBackup() {
 }
 
 function startBackupJob() {
-  // 每4小时整点备份：0点、4点、8点、12点、16点、20点
-  cron.schedule('0 */4 * * *', runBackup);
-  console.log('[Backup] 自动备份已启动（每4小时）');
+  // 每8小时整点备份：0点、8点、16点
+  cron.schedule('0 */8 * * *', runBackup);
+  console.log('[Backup] 自动备份已启动（每8小时）');
   // 启动时立即执行一次
   runBackup();
 }

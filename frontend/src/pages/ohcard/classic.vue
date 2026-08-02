@@ -25,7 +25,9 @@
           <text class="card-label">图卡</text>
           <!-- 去掉外层 overflow:hidden，避免微信小程序吞掉点击事件 -->
           <view class="card img-card" :style="{transform: imgRotate, transition: 'transform 0.21s cubic-bezier(0.16,1,0.3,1)'}" @click="handleImgClick()">
-            <view v-if="!imgFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
+            <view v-if="!imgFlipped" class="card-back">
+              <image :src="cardBackUrl" mode="aspectFill" class="back-img" />
+            </view>
             <view v-else class="card-front">
               <image :src="fullUrl(imgCard?.imageUrl)" mode="aspectFill" class="card-img" />
             </view>
@@ -40,7 +42,9 @@
         <view v-if="selDeck?.wordCatId" class="card-col">
           <text class="card-label">{{wordCard?.imageUrl ? '情况卡' : '字卡'}}</text>
           <view class="card word-card" :style="{transform: wordRotate, transition: 'transform 0.21s cubic-bezier(0.16,1,0.3,1)'}" @click="flipWord()">
-            <view v-if="!wordFlipped" class="card-back"><text class="back-text">点击翻转</text></view>
+            <view v-if="!wordFlipped" class="card-back">
+              <image :src="cardBackUrl" mode="aspectFill" class="back-img" />
+            </view>
             <view v-else class="card-front" :class="wordCard?.imageUrl ? '' : 'word-front'">
               <image v-if="wordCard?.imageUrl" :src="fullUrl(wordCard.imageUrl)" mode="aspectFill" class="card-img" />
               <view v-else class="word-frame">
@@ -108,10 +112,11 @@ import { ohcardApi } from '../../api/index';
 import ZjIcon from '../../components/ZjIcon.vue';
 import { useUserStore } from '../../store/user';
 import { track } from '../../utils/track';
-import { remoteUrl } from '../../config';
+import { remoteUrl, ohcardBackUrl } from '../../config';
 import { openOhcardShare } from '../../utils/shareMoments';
 
 const store = useUserStore();
+const cardBackUrl = ohcardBackUrl();
 const selDeck = ref(null);
 const deckParam = ref('');
 const imgCatIdParam = ref(null);
@@ -448,6 +453,11 @@ const DECK_GUIDES = {
     '如果这是小时候的你，那一刻他可能在想什么？',
     '看着这张卡，你身体有什么感觉？'
   ],
+  '心境卡': [
+    '这张卡呈现的心境，和你此刻的感受有多接近？',
+    '如果给这份情绪起一个更私人的名字，会是什么？',
+    '这份心境想告诉你什么，或者需要你怎样对待它？'
+  ],
 };
 const deckGuides = computed(() => DECK_GUIDES[selDeck.value?.name] || []);
 </script>
@@ -484,8 +494,8 @@ const deckGuides = computed(() => DECK_GUIDES[selDeck.value?.name] || []);
   display: flex; align-items: center; justify-content: center;
   box-sizing: border-box;
 }
-.card-back { background: linear-gradient(135deg, #4A8A7A, #3A6E80); box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
-.back-text { color: rgba(255,255,255,0.9); font-size: 24rpx; letter-spacing: 2rpx; }
+.card-back { background: #2C5249; overflow: hidden; box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
+.back-img { width: 100%; height: 100%; display: block; }
 .card-front { background: #fff; box-shadow: 0 12rpx 36rpx rgba(28,42,39,.14); overflow: hidden; }
 
 /* Image card */

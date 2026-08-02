@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <IslandHero src="/static/island/hero-assessment.jpg" custom-class="hero">
+    <IslandHero src="/static/island/hero-ohcard.jpg">
       <view class="hero-content">
         <text class="hero-eyebrow">心理投射工具</text>
         <text class="hero-title">图卡探索</text>
@@ -136,7 +136,8 @@ const singleDecks = ref([
   { name: '心理图卡',     icon: '🃏', color: '#4A8A7A', imgCatId: null, wordCatId: null, sub: '图像投射·自由联想' },
   { name: '心理图卡+字卡', icon: '🔤', color: '#3A6E80', imgCatId: null, wordCatId: null, sub: '图像+词语·双重联想' },
   { name: '伴侣卡',       icon: '💑', color: '#C06090', imgCatId: null, wordCatId: null, sub: '关系探索·亲密连接' },
-  { name: '孩童卡·人像',   icon: '🧒', color: '#7B68EE', imgCatId: null, wordCatId: null, sub: '内在小孩·情感觉察' }
+  { name: '孩童卡·人像',   icon: '🧒', color: '#7B68EE', imgCatId: null, wordCatId: null, sub: '内在小孩·情感觉察' },
+  { name: '心境卡',       icon: '🌊', color: '#5A8AAA', imgCatId: null, wordCatId: null, sub: '情绪觉察·当下心境' }
 ]);
 
 async function navDeck(d) {
@@ -269,42 +270,6 @@ onMounted(async () => {
   min-height: 100vh;
   background: $zj-bg;
   padding-bottom: 88rpx;
-}
-
-/* ---- Hero ---- */
-:deep(.hero) {
-  padding: 96rpx 48rpx 72rpx;
-}
-
-.hero-content {
-  text-align: left;
-}
-
-.hero-eyebrow {
-  display: block;
-  font-size: 20rpx;
-  letter-spacing: 0.34em;
-  color: rgba(255, 255, 255, 0.72);
-  margin-bottom: 28rpx;
-}
-
-.hero-title {
-  display: block;
-  font-size: 66rpx;
-  font-weight: 600;
-  color: $zj-surface;
-  letter-spacing: 0.06em;
-  line-height: 1.18;
-  margin-bottom: 24rpx;
-  font-family: $zj-font-display;
-}
-
-.hero-sub {
-  display: block;
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.82);
-  line-height: 1.9;
-  letter-spacing: 0.03em;
 }
 
 /* ---- Sections ---- */

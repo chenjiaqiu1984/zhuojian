@@ -40,3 +40,9 @@ export function remoteUrl(path) {
   if (/^https?:\/\//i.test(path) || path.startsWith('data:')) return path;
   return withServer(path);
 }
+
+/** OH卡统一卡背图 */
+export const OHCARD_BACK_PATH = '/uploads/心境卡/背图.jpg';
+export function ohcardBackUrl() {
+  return remoteUrl(OHCARD_BACK_PATH);
+}

@@ -27,7 +27,9 @@
         <view class="card-item" :class="{'card-landscape': c.cat==='彩虹卡'}" v-for="(c,i) in cards" :key="i">
           <text class="card-label">{{c.label}}</text>
           <view class="flip-card" :style="{transform: c.rotate, transition: 'transform 0.21s ease-in-out'}" @click="flip(i)">
-            <view v-if="!c.flipped" class="card-back" :style="{background:catStyle(c.cat)}"><text class="back-txt">{{c.cat}}</text></view>
+            <view v-if="!c.flipped" class="card-back">
+              <image :src="cardBackUrl" mode="aspectFill" class="back-img" />
+            </view>
             <view v-else class="card-front" :class="c.word ? 'word-front' : ''">
               <image v-if="c.imageUrl" :src="fullUrl(c.imageUrl)" :mode="c.cat==='彩虹卡'?'aspectFit':'aspectFill'" class="card-img" @click.stop="preview(c.imageUrl)" />
               <view v-else class="word-frame"><text class="word-char">{{c.word}}</text></view>
@@ -82,17 +84,15 @@ defineOptions({
 import { ohcardApi } from '../../api/index';
 import { openOhcardShare } from '../../utils/shareMoments';
 import { useUserStore } from '../../store/user';
-import { remoteUrl } from '../../config';
+import { remoteUrl, ohcardBackUrl } from '../../config';
 
 const store = useUserStore();
 const step = ref(0), sel = ref(null), cards = ref([]), note = ref(''), fsUrl = ref('');
 const allFlipped = computed(() => cards.value.length > 0 && cards.value.every(c => c.flipped));
+const cardBackUrl = ohcardBackUrl();
 
 function fullUrl(u) { return remoteUrl(u); }
 function preview(u) { fsUrl.value = u; }
-
-const CAT_BACK = 'linear-gradient(135deg,#4A8A7A,#3A6E80)';
-function catStyle(cat) { return CAT_BACK; }
 
 const COMBOS = ref([
   {
@@ -304,9 +304,9 @@ function shareDraw() {
 .cards-wrap { display:flex; flex-wrap:wrap; padding:0 8rpx 16rpx; margin-bottom:12rpx; width:100%; max-width:420px; margin-left:auto; margin-right:auto; }
 .card-label { font-size:20rpx; color:#617870; margin-bottom:10rpx; text-align:center; line-height:1.4; height:56rpx; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 .flip-card { width:100%; padding-top:140%; position:relative; border-radius:14rpx; will-change: transform; }
-.card-back, .card-front { position:absolute; top:0; left:0; width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; }
-.card-back { background:linear-gradient(135deg,#4A8A7A,#3A6E80); flex-direction:column; gap:8rpx; box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
-.back-txt { color:rgba(255,255,255,.9); font-size:20rpx; }
+.card-back, .card-front { position:absolute; top:0; left:0; width:100%; height:100%; border-radius:14rpx; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.card-back { background:#2C5249; box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.18); }
+.back-img { width:100%; height:100%; display:block; }
 .card-front { background:#fff; box-shadow:0 8rpx 26rpx rgba(28,42,39,.12); overflow:hidden; }
 .word-front { background:linear-gradient(160deg,#1E3A34,#2C5249) !important; }
 .card-img { width:100%; height:100%; }

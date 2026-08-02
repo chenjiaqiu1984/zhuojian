@@ -4,7 +4,7 @@ const path = require('path');
 
 const prisma = new PrismaClient();
 const uploadsDir = path.join(__dirname, '../uploads');
-const EXCLUDE = /背面|背景|说明书/;
+const EXCLUDE = /背面|背景|说明书|包装|背图/;
 const IMG_EXT = /\.(jpg|jpeg|png|gif|webp)$/i;
 
 const CATEGORIES = [
@@ -17,6 +17,7 @@ const CATEGORIES = [
   { name: '孩童卡·情况',   dir: '孩童卡/情况卡' },
   { name: '抽象卡',        dir: '抽象卡' },
   { name: '英雄之旅故事卡', dir: '英雄之旅故事卡' },
+  { name: '心境卡',        dir: '心境卡' },
 ];
 
 async function main() {
