@@ -1,11 +1,7 @@
 <template>
   <view class="home">
     <!-- Hero：心镜岛入口 -->
-    <IslandHero
-      src="/static/island/entry.jpg"
-      video="/static/island/entry.mp4"
-      @click="goIsland()"
-    >
+    <IslandHero src="/static/island/entry.jpg" @click="goIsland()">
       <view class="hero-content">
         <text class="hero-eyebrow">艺术疗愈地图</text>
         <text class="hero-title">心镜岛</text>
