@@ -18,6 +18,7 @@ import TermsConfirmModal from '../../components/TermsConfirmModal.vue';
 import IslandMap from '../../components/IslandMap.vue';
 import { getWindowSize } from '../../utils/windowSize';
 import { openIcp, openBeian } from '../../utils/openBeian';
+import { runDailyGate } from '../../utils/dailyGate';
 
 // #ifndef H5
 import { buildTimelineShare } from '../../utils/mpShare';
@@ -47,16 +48,24 @@ function onIslandNav() {
   // 跳转已在 IslandMap 内同步完成
 }
 
+async function maybeDailyGate() {
+  // 冷启动 / 当日首次进入：未抽卡则去自动抽卡；已抽过留在心镜岛
+  const result = await runDailyGate({ onDrawn: 'stay' });
+  if (result !== 'daily') {
+    setTimeout(() => { termsModalRef.value?.check(); }, 400);
+  }
+}
+
 onShow(() => {
   uni.setNavigationBarTitle({ title: '心镜岛' });
   calcIslandH();
+  maybeDailyGate();
 });
 
 onMounted(() => {
   calcIslandH();
   uni.setNavigationBarTitle({ title: '心镜岛' });
   setTimeout(() => calcIslandH(), 50);
-  setTimeout(() => { termsModalRef.value?.check(); }, 500);
 });
 </script>
 

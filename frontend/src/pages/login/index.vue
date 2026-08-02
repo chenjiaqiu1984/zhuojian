@@ -180,6 +180,7 @@ import { useUserStore } from '../../store/user';
 import { authApi } from '../../api/index';
 import { track } from '../../utils/track';
 import { useCaptcha } from '../../composables/useCaptcha';
+import { runDailyGate } from '../../utils/dailyGate';
 import {
   MINIPROGRAM_SCAN_HINT,
   wxacodeLocalUrl,
@@ -325,9 +326,8 @@ function success() {
   track('login_success', '/pages/login/index');
   uni.showToast({ title: '登录成功' });
   setTimeout(() => {
-    const pages = getCurrentPages();
-    if (pages.length > 1) uni.navigateBack();
-    else uni.reLaunch({ url: '/pages/index/index' });
+    // 每日首次：未抽卡 → 自动抽卡页；已抽过 → 心镜岛
+    runDailyGate({ force: true, onDrawn: 'island' });
   }, 1000);
 }
 </script>

@@ -15,6 +15,7 @@
     { "path": "pages/consultants/detail",  "style": { "navigationBarTitleText": "咨询师详情" } },
     { "path": "pages/consultants/schedule","style": { "navigationBarTitleText": "排班管理" } },
     { "path": "pages/ohcard/index",        "style": { "navigationBarTitleText": "心理图卡" } },
+    { "path": "pages/ohcard/daily",        "style": { "navigationBarTitleText": "每日抽卡" } },
     { "path": "pages/ohcard/classic",      "style": { "navigationBarTitleText": "随机抽卡" } },
     { "path": "pages/ohcard/imgonly",      "style": { "navigationBarTitleText": "心理图卡" } },
     { "path": "pages/ohcard/combo",        "style": { "navigationBarTitleText": "跨卡牌组合" } },

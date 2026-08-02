@@ -51,6 +51,7 @@ defineOptions(createMpShare('login/complete'));
 
 import { ref } from 'vue';
 import { useUserStore } from '../../store/user';
+import { runDailyGate } from '../../utils/dailyGate';
 
 const store = useUserStore();
 const loading = ref(false);
@@ -69,7 +70,9 @@ async function submit() {
   try {
     await store.completeSetup(form.value.name.trim(), form.value.password, true);
     uni.showToast({ title: '设置完成' });
-    setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 1000);
+    setTimeout(() => {
+      runDailyGate({ force: true, onDrawn: 'island' });
+    }, 1000);
   } catch (e) {
     uni.showToast({ title: e?.error || '保存失败，请重试', icon: 'none' });
   } finally {

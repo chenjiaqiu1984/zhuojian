@@ -190,7 +190,9 @@ export const ohcardApi = {
   records: () => get('/ohcard/records'),
   saveRecord: d => post('/ohcard/records', d),
   updateRecord: (id, d) => put(`/ohcard/records/${id}`, d),
-  presets: (type) => get('/ohcard/presets', { type })
+  presets: (type) => get('/ohcard/presets', { type }),
+  dailyToday: () => get('/ohcard/daily'),
+  dailyDraw: (d) => post('/ohcard/daily', d || {}),
 };
 
 export const homeworkApi = {
