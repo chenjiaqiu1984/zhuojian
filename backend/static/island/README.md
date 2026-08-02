@@ -6,7 +6,9 @@
 |------|------|
 | `island-mist.jpg` | 静图封面 / 视频 poster / 失败兜底 |
 | `island-mist.mp4` | **循环短视频底图**（心镜岛主视觉，H5） |
-| `entry.jpg` / `hero-*.jpg` | 入口与各页 Hero |
+| `entry.jpg` | 首页 Hero 静图 / 视频 poster / 失败兜底 |
+| `entry.mp4` | **仅首页 Hero** 循环短视频（H5，约 2.3MB） |
+| `hero-*.jpg` | 各功能页 Hero |
 
 ## 视频要求（建议）
 
