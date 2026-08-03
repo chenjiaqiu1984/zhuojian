@@ -1,67 +1,110 @@
 <template>
-  <view class="page">
-    <IslandHero src="/static/island/hero-daily.jpg">
-      <view class="hero-content">
-        <text class="hero-eyebrow">峰顶云台 · {{ dateLabel }}</text>
-        <text class="hero-title">每日心境</text>
-        <text class="hero-sub">一张卡，安顿今天的心情</text>
-      </view>
-    </IslandHero>
+  <view class="page" :class="{ 'page--result': showResult }">
+    <!-- 结果态：与分享到朋友圈海报布局一致 -->
+    <template v-if="showResult">
+      <view class="result-poster">
+        <image class="result-bg" :src="islandBgSrc" mode="aspectFill" />
 
-    <view class="content">
-      <view v-if="loading" class="status-box">
-        <text class="status-txt">正在抵达云台…</text>
-      </view>
-
-      <view v-else-if="bootError" class="status-box">
-        <text class="status-txt">{{ bootError }}</text>
-        <view class="btn btn-ghost" @click="boot()">重试</view>
-      </view>
-
-      <template v-else>
-        <view class="ritual">
-          <text class="ritual-tip">{{ ritualTip }}</text>
+        <view class="poster-hero">
+          <view class="hero-dim" />
+          <view class="hero-body">
+            <view class="hero-copy">
+              <text class="poster-brand">{{ brandName }}</text>
+              <text class="poster-title">今日心境</text>
+              <text class="poster-date">{{ dateLabel }}</text>
+            </view>
+          </view>
         </view>
 
-        <view class="stage">
-          <view
-            class="card"
-            :style="{ transform: cardRotate, transition: 'transform 0.28s cubic-bezier(0.16,1,0.3,1)' }"
-            @click="onCardTap()"
-          >
-            <view v-if="!flipped" class="card-back">
-              <image :src="cardBackUrl" mode="aspectFill" class="back-img" />
-              <view class="back-veil">
-                <text class="back-hint">{{ card ? '点击翻转' : '点击抽取' }}</text>
-              </view>
-            </view>
-            <view v-else class="card-front">
-              <image v-if="card?.imageUrl" :src="fullUrl(card.imageUrl)" mode="aspectFill" class="card-img" />
-              <view v-else class="card-empty">
-                <text class="card-empty-txt">暂无卡面</text>
-              </view>
+        <view class="cards-block">
+          <view class="daily-card-full">
+            <image
+              v-if="card?.imageUrl"
+              class="daily-card-full-img"
+              :src="fullUrl(card.imageUrl)"
+              mode="widthFix"
+            />
+            <view v-else class="card-fallback">
+              <text class="card-fallback-txt">{{ card?.word || '暂无卡面' }}</text>
             </view>
           </view>
 
-          <view v-if="flipped && card" class="card-meta">
-            <text v-if="card.word" class="card-word">{{ card.word }}</text>
-            <text class="card-date">{{ dateLabel }} · 今日主卡</text>
+          <view v-if="card?.word" class="daily-word-wrap">
+            <text class="daily-word">{{ card.word }}</text>
+          </view>
+
+          <view v-if="guideText || questionText" class="daily-prompts">
+            <text v-if="guideText" class="daily-guide">{{ guideText }}</text>
+            <text v-if="questionText" class="daily-prompt-item">{{ questionText }}</text>
           </view>
         </view>
 
-        <view v-if="flipped && card" class="actions">
-          <view class="btn btn-primary" @click="goIsland()">进入心镜岛</view>
-          <view class="btn btn-ghost" @click="sharePoster()">分享到朋友圈</view>
-          <text class="share-tip">也可点右上角 ··· 转发好友或发朋友圈</text>
+        <view class="daily-footer">
+          <text class="daily-footer-txt">卓见心理 · 每日心境</text>
+        </view>
+      </view>
+
+      <view class="actions">
+        <view class="btn btn-primary" @click="goIsland()">进入心镜岛</view>
+        <view class="btn btn-ghost" @click="sharePoster()">分享到朋友圈</view>
+        <text class="share-tip">也可点右上角 ··· 转发好友或发朋友圈</text>
+      </view>
+    </template>
+
+    <!-- 抽卡仪式态 -->
+    <template v-else>
+      <IslandHero src="/static/island/hero-daily.jpg">
+        <view class="hero-content">
+          <text class="hero-eyebrow">峰顶云台 · {{ dateLabel }}</text>
+          <text class="hero-title">每日心境</text>
+          <text class="hero-sub">一张卡，安顿今天的心情</text>
+        </view>
+      </IslandHero>
+
+      <view class="content">
+        <view v-if="loading" class="status-box">
+          <text class="status-txt">正在抵达云台…</text>
         </view>
 
-        <view v-else-if="!drawn" class="actions">
-          <view class="btn btn-primary" :class="{ disabled: drawing }" @click="drawToday()">
-            {{ drawing ? '抽卡中…' : '抽取今日心境' }}
-          </view>
+        <view v-else-if="bootError" class="status-box">
+          <text class="status-txt">{{ bootError }}</text>
+          <view class="btn btn-ghost" @click="boot()">重试</view>
         </view>
-      </template>
-    </view>
+
+        <template v-else>
+          <view class="ritual">
+            <text class="ritual-tip">{{ ritualTip }}</text>
+          </view>
+
+          <view class="stage">
+            <view
+              class="card"
+              :style="{ transform: cardRotate, transition: 'transform 0.28s cubic-bezier(0.16,1,0.3,1)' }"
+              @click="onCardTap()"
+            >
+              <view v-if="!flipped" class="card-back">
+                <image :src="cardBackUrl" mode="aspectFill" class="back-img" />
+                <view class="back-veil">
+                  <text class="back-hint">{{ card ? '点击翻转' : '点击抽取' }}</text>
+                </view>
+              </view>
+              <view v-else class="card-front">
+                <image v-if="card?.imageUrl" :src="fullUrl(card.imageUrl)" mode="aspectFill" class="card-img" />
+                <view v-else class="card-empty">
+                  <text class="card-empty-txt">暂无卡面</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view v-if="!drawn" class="actions">
+            <view class="btn btn-primary" :class="{ disabled: drawing }" @click="drawToday()">
+              {{ drawing ? '抽卡中…' : '抽取今日心境' }}
+            </view>
+          </view>
+        </template>
+      </view>
+    </template>
 
     <!-- #ifndef H5 -->
     <ShareMomentsModal />
@@ -102,6 +145,7 @@ import IslandHero from '../../components/IslandHero.vue';
 import { ohcardApi } from '../../api/index';
 import { remoteUrl, ohcardBackUrl } from '../../config';
 import { absMediaUrl, openDailyShare } from '../../utils/shareMoments';
+import { MINIPROGRAM_NAME } from '../../utils/miniprogramPromo';
 import { getMoodGuide, getMoodQuestion } from '../../utils/moodCardCopy';
 import { track } from '../../utils/track';
 import { useUserStore } from '../../store/user';
@@ -109,12 +153,16 @@ import { markDailyGateDone, todayKey as gateTodayKey } from '../../utils/dailyGa
 
 const store = useUserStore();
 const cardBackUrl = ohcardBackUrl();
+const islandBgSrc = remoteUrl('/static/island/island-mist.jpg');
+const brandName = MINIPROGRAM_NAME;
 const loading = ref(true);
 const drawing = ref(false);
 const bootError = ref('');
 const drawn = ref(false);
 const card = ref(null);
 const flipped = ref(false);
+/** 翻牌动画结束后再切到海报布局，避免仪式态被提前替换 */
+const revealResult = ref(false);
 const cardRotate = ref('rotateY(0deg)');
 const animating = ref(false);
 const dateKey = ref('');
@@ -132,6 +180,18 @@ const ritualTip = computed(() => {
   if (drawn.value) return '这是你今天的主卡';
   if (drawing.value || autoMode.value) return '正在为你抽取今日心境…';
   return '轻触卡背，抽取今日心境';
+});
+
+const showResult = computed(() => !!(revealResult.value && card.value));
+
+const guideText = computed(() => {
+  if (!card.value) return '';
+  return card.value.description || getMoodGuide(card.value.word || '');
+});
+
+const questionText = computed(() => {
+  if (!card.value) return '';
+  return card.value.question || getMoodQuestion(card.value.word || '');
 });
 
 function fullUrl(url) {
@@ -171,6 +231,7 @@ async function flipToFront() {
   cardRotate.value = 'rotateY(0deg)';
   await new Promise((r) => setTimeout(r, 240));
   animating.value = false;
+  revealResult.value = true;
 }
 
 async function onCardTap() {
@@ -198,6 +259,7 @@ async function boot() {
       drawn.value = true;
       card.value = data.card;
       flipped.value = true;
+      revealResult.value = true;
       markDailyGateDone(dateKey.value);
     } else if (autoMode.value) {
       loading.value = false;
@@ -222,7 +284,6 @@ async function drawToday() {
     card.value = data.card;
     dateKey.value = data.date || todayKey();
     markDailyGateDone(dateKey.value);
-    // 抽卡成功埋点由服务端写入（保证 userId）
     await flipToFront();
   } catch (e) {
     if (e?.__authRedirect) return;
@@ -253,8 +314,8 @@ function sharePoster() {
     return;
   }
   const word = card.value.word || '';
-  const guide = card.value.description || getMoodGuide(word);
-  const question = card.value.question || getMoodQuestion(word);
+  const guide = guideText.value;
+  const question = questionText.value;
   openDailyShare({
     title: '今日心境',
     subtitle: dateLabel.value,
@@ -290,6 +351,189 @@ onMounted(boot);
   padding-bottom: 80rpx;
 }
 
+.page--result {
+  background: #E8F0EC;
+  padding: 24rpx 24rpx 80rpx;
+}
+
+/* —— 结果海报（对齐 ShareMomentsModal daily） —— */
+.result-poster {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28rpx;
+  background: #E8F0EC;
+  box-shadow: 0 16rpx 48rpx rgba(28, 42, 39, 0.14);
+}
+
+.result-bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+  opacity: 0.3;
+}
+
+.poster-hero {
+  position: relative;
+  z-index: 1;
+  min-height: 148rpx;
+  padding: 0 28rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.hero-dim {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(28, 42, 39, 0.28) 0%,
+    rgba(58, 90, 78, 0.16) 55%,
+    rgba(28, 42, 39, 0.22) 100%
+  );
+}
+
+.hero-body {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 148rpx;
+  display: flex;
+  align-items: center;
+}
+
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.poster-brand {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.82);
+  letter-spacing: 0.16em;
+}
+
+.poster-title {
+  margin-top: 6rpx;
+  font-size: 34rpx;
+  line-height: 1.25;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.06em;
+  font-family: $zj-font-display;
+}
+
+.poster-date {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.82);
+  letter-spacing: 0.06em;
+  margin-top: 2rpx;
+}
+
+.cards-block {
+  position: relative;
+  z-index: 1;
+  padding: 20rpx 0 4rpx;
+}
+
+.daily-card-full {
+  width: 90%;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.daily-card-full-img {
+  display: block;
+  width: 100%;
+  border-radius: 16rpx;
+  box-shadow: 0 12rpx 32rpx rgba(74, 58, 42, 0.14);
+}
+
+.card-fallback {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: 16rpx;
+  background: #FFFAF4;
+  box-shadow: 0 12rpx 32rpx rgba(74, 58, 42, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-fallback-txt {
+  font-size: 40rpx;
+  color: #1C2A27;
+  letter-spacing: 0.2em;
+  font-family: $zj-font-serif;
+}
+
+.daily-word-wrap {
+  margin-top: 40rpx;
+  text-align: center;
+  padding: 0 28rpx 4rpx;
+}
+
+.daily-word {
+  display: block;
+  font-size: 44rpx;
+  font-weight: 600;
+  color: #1C2A27;
+  letter-spacing: 0.2em;
+  font-family: $zj-font-serif;
+}
+
+.daily-prompts {
+  margin: 28rpx 20rpx 8rpx;
+  padding: 28rpx 28rpx 24rpx;
+  border-radius: 16rpx;
+  background: rgba(255, 250, 244, 0.88);
+  border: 1rpx solid rgba(184, 156, 98, 0.35);
+  box-sizing: border-box;
+}
+
+.daily-guide {
+  display: block;
+  font-size: 26rpx;
+  color: #3A4A44;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+}
+
+.daily-prompt-item {
+  display: block;
+  margin-top: 20rpx;
+  padding-top: 18rpx;
+  border-top: 1rpx solid rgba(184, 156, 98, 0.35);
+  font-size: 26rpx;
+  color: #4A8A7A;
+  line-height: 1.65;
+  font-weight: 500;
+}
+
+.daily-footer {
+  position: relative;
+  z-index: 1;
+  padding: 18rpx 24rpx 32rpx;
+  text-align: center;
+}
+
+.daily-footer-txt {
+  font-size: 22rpx;
+  color: #4A655A;
+  letter-spacing: 0.12em;
+}
+
+/* —— 仪式态 —— */
 .hero-content { text-align: left; }
 .hero-eyebrow {
   display: block;
@@ -391,31 +635,13 @@ onMounted(boot);
 }
 .card-empty-txt { color: #9BBCB4; font-size: 26rpx; }
 
-.card-meta {
-  margin-top: 32rpx;
-  text-align: center;
-}
-.card-word {
-  display: block;
-  font-size: 48rpx;
-  font-weight: 600;
-  color: #1C2A27;
-  letter-spacing: 0.2em;
-  font-family: $zj-font-serif;
-}
-.card-date {
-  display: block;
-  margin-top: 12rpx;
-  font-size: 22rpx;
-  color: #8A9A90;
-  letter-spacing: 0.1em;
-}
-
 .actions {
   display: flex;
   flex-direction: column;
   gap: 16rpx;
-  margin-top: 8rpx;
+  margin-top: 28rpx;
+  position: relative;
+  z-index: 1;
 }
 .btn {
   text-align: center;
