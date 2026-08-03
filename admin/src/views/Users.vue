@@ -37,7 +37,7 @@
       <el-table-column label="注册时间" width="160">
         <template #default="{row}">{{new Date(row.createdAt).toLocaleString('zh-CN')}}</template>
       </el-table-column>
-      <el-table-column label="操作" width="280" fixed="right">
+      <el-table-column label="操作" width="380" fixed="right">
         <template #default="{row}">
           <!-- 角色 -->
           <el-select
@@ -59,6 +59,17 @@
             @click="toggleStatus(row)"
           >
             {{row.status === 'suspended' ? '恢复正常' : '设为异常'}}
+          </el-button>
+          <!-- 清除今日抽卡 -->
+          <el-button
+            v-if="canChange(row)"
+            size="small"
+            type="info"
+            plain
+            style="margin-right:6px"
+            @click="clearDailyDraw(row)"
+          >
+            清除今日抽卡
           </el-button>
           <!-- 删除 -->
           <el-popconfirm
@@ -170,6 +181,22 @@ async function toggleStatus(row) {
   await api.patch(`/users/admin/${row.id}/status`, { status: newStatus });
   row.status = newStatus;
   ElMessage.success('状态已更新');
+}
+
+async function clearDailyDraw(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确认清除「${row.name || row.username || row.phone}」今日的每日抽卡记录？清除后该用户可再次抽取今日心境。`,
+      '清除今日抽卡',
+      { type: 'warning', confirmButtonText: '确认清除' }
+    );
+    const res = await api.delete(`/users/admin/${row.id}/daily-draw`);
+    const n = res?.deleted ?? 0;
+    ElMessage.success(n > 0 ? `已清除今日抽卡（${n} 条）` : '今日尚无抽卡记录');
+  } catch (e) {
+    if (e === 'cancel' || e === 'close') return;
+    ElMessage.error(e?.error || e?.message || '清除失败');
+  }
 }
 
 async function deleteUser(row) {

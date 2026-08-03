@@ -1,5 +1,6 @@
 <template>
-  <view v-if="state.visible" class="overlay" @click="close()">
+  <!-- 仅活跃宿主渲染，避免 App + 页面双挂载时双 canvas 撑破背景页 -->
+  <view v-if="isActiveHost && state.visible" class="overlay" @click="close()">
     <view class="modal" @click.stop>
       <scroll-view scroll-y class="poster-scroll" :show-scrollbar="false">
         <!-- 预览海报 -->
@@ -122,23 +123,20 @@
           <text class="btn-close-text">关闭</text>
         </view>
       </view>
-
-      <!-- 勿完全移出视口：部分基础库离屏 canvas 导出回调永不触发。
-           外层 0 尺寸 + overflow:hidden，避免 750px 宽 canvas 撑开页面（背景页被放大） -->
-      <view class="offscreen-canvas-wrap">
-        <canvas
-          :canvas-id="canvasId"
-          :id="canvasId"
-          class="offscreen-canvas"
-          :style="{ width: canvasW + 'px', height: canvasH + 'px' }"
-        />
-      </view>
     </view>
+
+    <!-- 原生 canvas 会忽略父级 overflow，CSS 宽必须小于屏宽，再用 ctx.scale + destWidth 导出高清图 -->
+    <canvas
+      :canvas-id="canvasId"
+      :id="canvasId"
+      class="offscreen-canvas"
+      :style="{ width: canvasDisplayW + 'px', height: canvasDisplayH + 'px' }"
+    />
   </view>
 </template>
 
 <script setup>
-import { computed, getCurrentInstance, ref, watch } from 'vue';
+import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
   closeShareMoments,
   shareMomentsState,
@@ -147,10 +145,24 @@ import {
   MINIPROGRAM_NAME,
   MINIPROGRAM_SCAN_HINT,
   wxacodeLocalUrl,
+  acquireShareMomentsHost,
+  releaseShareMomentsHost,
+  activeShareHostId,
 } from '../utils/shareMoments';
 import { getMoodGuide, getMoodQuestion } from '../utils/moodCardCopy';
 
 const state = computed(() => shareMomentsState.value);
+const hostId = acquireShareMomentsHost();
+const isActiveHost = computed(() => activeShareHostId.value === hostId);
+
+onMounted(() => {
+  // 页面级实例后挂载时抢占，确保盖住当前页
+  activeShareHostId.value = hostId;
+});
+onUnmounted(() => {
+  releaseShareMomentsHost(hostId);
+});
+
 /** 预览用包内路径；canvas 导出优先走远程绝对地址（小程序 getImageInfo 更稳） */
 const qrSrc = wxacodeLocalUrl();
 const qrCanvasSrc = absMediaUrl('/static/wxacode.jpg');
@@ -180,6 +192,11 @@ const canvasOwner = getCurrentInstance()?.proxy;
 
 const canvasW = 750;
 const canvasH = ref(1334);
+/** 显示尺寸必须 < 屏宽，否则原生 canvas 会把页面撑成「只能看见一角」 */
+const CANVAS_DISPLAY_W = 300;
+const canvasDisplayScale = CANVAS_DISPLAY_W / canvasW;
+const canvasDisplayW = CANVAS_DISPLAY_W;
+const canvasDisplayH = computed(() => Math.max(1, Math.round(canvasH.value * canvasDisplayScale)));
 
 /** 每日海报：手机常见竖屏比例 9:16 */
 const DAILY_HERO_H = 148;
@@ -492,6 +509,8 @@ async function savePoster() {
     await new Promise((r) => setTimeout(r, 80));
 
     const ctx = uni.createCanvasContext(canvasId, canvasOwner);
+    // 逻辑坐标仍按 750 宽绘制，显示层缩小以免撑破页面
+    ctx.scale(canvasDisplayScale, canvasDisplayScale);
     const W = canvasW;
     const pad = 48;
     const innerW = W - pad * 2;
@@ -681,8 +700,10 @@ async function savePoster() {
     const res = await withTimeout(new Promise((resolve, reject) => {
       uni.canvasToTempFilePath({
         canvasId,
-        width: W,
-        height: H,
+        x: 0,
+        y: 0,
+        width: canvasDisplayW,
+        height: canvasDisplayH.value,
         destWidth: W,
         destHeight: H,
         fileType: 'jpg',
@@ -1171,6 +1192,9 @@ function drawWordFace(ctx, x, y, w, h, word) {
   justify-content: center;
   padding: 32rpx 28rpx;
   box-sizing: border-box;
+  width: 100vw;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .modal {
@@ -1705,20 +1729,13 @@ function drawWordFace(ctx, x, y, w, h, word) {
   font-size: 26rpx;
 }
 
-.offscreen-canvas-wrap {
+.offscreen-canvas {
   position: fixed;
   left: 0;
   top: 0;
-  width: 0;
-  height: 0;
-  overflow: hidden;
   opacity: 0;
   pointer-events: none;
   z-index: -1;
-}
-
-.offscreen-canvas {
-  display: block;
-  /* 尺寸由内联 style 控制，包裹层裁切占位，避免撑开页面 */
+  /* 宽高由内联 style（约 300px）控制，避免原生 canvas 撑开页面 */
 }
 </style>

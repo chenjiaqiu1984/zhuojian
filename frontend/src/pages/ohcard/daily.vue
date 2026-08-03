@@ -1,7 +1,12 @@
 <template>
-  <view class="page" :class="{ 'page--result': showResult }">
+  <view class="page" :class="{ 'page--result': showResult, 'page--share-open': shareOpen }">
     <!-- 结果态：与分享到朋友圈海报布局一致 -->
     <template v-if="showResult">
+      <view class="actions actions--top">
+        <view class="btn btn-ghost" @click="sharePoster()">分享到朋友圈</view>
+      </view>
+      <text class="share-tip">也可点右上角 ··· 转发好友或发朋友圈</text>
+
       <view class="result-poster">
         <image class="result-bg" :src="islandBgSrc" mode="aspectFill" />
 
@@ -44,10 +49,8 @@
         </view>
       </view>
 
-      <view class="actions">
+      <view class="actions actions--bottom">
         <view class="btn btn-primary" @click="goIsland()">进入心镜岛</view>
-        <view class="btn btn-ghost" @click="sharePoster()">分享到朋友圈</view>
-        <text class="share-tip">也可点右上角 ··· 转发好友或发朋友圈</text>
       </view>
     </template>
 
@@ -144,7 +147,7 @@ defineOptions({
 import IslandHero from '../../components/IslandHero.vue';
 import { ohcardApi } from '../../api/index';
 import { remoteUrl, ohcardBackUrl } from '../../config';
-import { absMediaUrl, openDailyShare } from '../../utils/shareMoments';
+import { absMediaUrl, openDailyShare, shareMomentsState } from '../../utils/shareMoments';
 import { MINIPROGRAM_NAME } from '../../utils/miniprogramPromo';
 import { getMoodGuide, getMoodQuestion } from '../../utils/moodCardCopy';
 import { track } from '../../utils/track';
@@ -167,6 +170,8 @@ const cardRotate = ref('rotateY(0deg)');
 const animating = ref(false);
 const dateKey = ref('');
 const autoMode = ref(false);
+
+const shareOpen = computed(() => !!shareMomentsState.value.visible);
 
 const dateLabel = computed(() => {
   const d = dateKey.value ? new Date(`${dateKey.value}T12:00:00`) : new Date();
@@ -354,6 +359,36 @@ onMounted(boot);
 .page--result {
   background: #E8F0EC;
   padding: 24rpx 24rpx 80rpx;
+}
+
+.page--share-open {
+  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+.actions--top {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 16rpx;
+  margin-top: 0;
+  margin-bottom: 8rpx;
+}
+
+.actions--top .btn {
+  flex: 1;
+  padding: 24rpx 12rpx;
+  font-size: 26rpx;
+}
+
+.actions--bottom {
+  margin-top: 28rpx;
+}
+
+.page--result .share-tip {
+  display: block;
+  margin-bottom: 20rpx;
 }
 
 /* —— 结果海报（对齐 ShareMomentsModal daily） —— */

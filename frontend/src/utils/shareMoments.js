@@ -10,12 +10,33 @@ import {
 
 export const shareMomentsState = ref({
   visible: false,
-  kind: 'default', // default | ohcard | assessment
+  kind: 'default', // default | ohcard | assessment | daily
   title: '',
   subtitle: '',
   cards: [],
   assessment: null,
+  daily: null,
 });
+
+/** 多处挂载时只让「最后注册」的实例渲染弹层/canvas，避免双开与 750px canvas 撑破页面 */
+let shareHostSeq = 0;
+const shareHostStack = [];
+export const activeShareHostId = ref(null);
+
+export function acquireShareMomentsHost() {
+  const id = ++shareHostSeq;
+  shareHostStack.push(id);
+  activeShareHostId.value = id;
+  return id;
+}
+
+export function releaseShareMomentsHost(id) {
+  const i = shareHostStack.lastIndexOf(id);
+  if (i >= 0) shareHostStack.splice(i, 1);
+  activeShareHostId.value = shareHostStack.length
+    ? shareHostStack[shareHostStack.length - 1]
+    : null;
+}
 
 let h5HostPromise = null;
 
@@ -51,10 +72,34 @@ export function ensureShareMomentsHost() {
 /** 拼成可加载的绝对图片地址（小程序 canvas / getImageInfo 需要） */
 export function absMediaUrl(url) {
   if (!url) return '';
-  if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('wxfile://')) return url;
-  const p = url.startsWith('/') ? url : `/${url}`;
-  if (SERVER) return `${String(SERVER).replace(/\/$/, '')}${p}`;
-  return p;
+  if (/^data:|^wxfile:\/\//i.test(url) || url.startsWith('blob:')) return url;
+  let full = url;
+  if (!/^https?:\/\//i.test(url)) {
+    const p = url.startsWith('/') ? url : `/${url}`;
+    full = SERVER ? `${String(SERVER).replace(/\/$/, '')}${p}` : p;
+  }
+  // 中文路径（如 /uploads/心境卡/…）需编码，否则小程序 getImageInfo 可能一直不回调
+  try {
+    const u = new URL(full);
+    u.pathname = u.pathname
+      .split('/')
+      .map((seg) => {
+        if (!seg) return seg;
+        try {
+          return encodeURIComponent(decodeURIComponent(seg));
+        } catch {
+          return encodeURIComponent(seg);
+        }
+      })
+      .join('/');
+    return u.toString();
+  } catch {
+    try {
+      return encodeURI(full);
+    } catch {
+      return full;
+    }
+  }
 }
 
 /**
@@ -62,9 +107,10 @@ export function absMediaUrl(url) {
  * @param {{
  *   title?: string,
  *   subtitle?: string,
- *   kind?: 'default'|'ohcard'|'assessment',
+ *   kind?: 'default'|'ohcard'|'assessment'|'daily',
  *   cards?: Array<{ imageUrl?: string, word?: string, label?: string }>,
  *   assessment?: { scaleName?: string, score?: string|number, level?: string, typeName?: string, typeDesc?: string, date?: string },
+ *   daily?: { date?: string, word?: string, quote?: string },
  * }} [opts]
  */
 export function openShareMoments(opts = {}) {
@@ -72,6 +118,8 @@ export function openShareMoments(opts = {}) {
     imageUrl: absMediaUrl(c.imageUrl),
     word: c.word || '',
     label: c.label || '',
+    description: c.description || c.guide || '',
+    question: c.question || '',
   }));
   const next = {
     visible: true,
@@ -80,11 +128,18 @@ export function openShareMoments(opts = {}) {
     subtitle: opts.subtitle || MINIPROGRAM_INTRO,
     cards,
     assessment: opts.assessment || null,
+    daily: opts.daily || null,
   };
+  // #ifdef H5
   // 先确保 H5 宿主已挂载，再打开，避免首次点击无弹层
   Promise.resolve(ensureShareMomentsHost()).finally(() => {
     shareMomentsState.value = next;
   });
+  // #endif
+  // #ifndef H5
+  // 小程序 / App：同步打开；页面需自行挂载 ShareMomentsModal（App.vue 弹层未必盖住当前页）
+  shareMomentsState.value = next;
+  // #endif
 }
 
 /** 抽卡结果分享 */
@@ -94,6 +149,17 @@ export function openOhcardShare({ title, subtitle, cards = [] } = {}) {
     title: title || '我抽到了这些图卡 — 卓见心理',
     subtitle: subtitle || '图像会说话，看见内心深处的声音',
     cards,
+  });
+}
+
+/** 每日心境海报 */
+export function openDailyShare({ title, subtitle, cards = [], daily } = {}) {
+  openShareMoments({
+    kind: 'daily',
+    title: title || '今日心境',
+    subtitle: subtitle || '',
+    cards,
+    daily: daily || null,
   });
 }
 

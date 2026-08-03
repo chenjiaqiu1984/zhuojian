@@ -78,6 +78,47 @@ router.patch('/admin/:id/status', ...requireRole('admin', 'super_admin'), async 
   res.json({ ok: true, status });
 });
 
+// DELETE /api/users/admin/:id/daily-draw — 清除用户当日每日抽卡状态（可再抽）
+router.delete('/admin/:id/daily-draw', ...requireRole('admin', 'super_admin'), async (req, res) => {
+  const targetId = Number(req.params.id);
+  const target = await prisma.user.findUnique({ where: { id: targetId }, select: { id: true, role: true } });
+  if (!target) return res.status(404).json({ error: '用户不存在' });
+
+  const isSuperAdmin = req.user.role === 'super_admin';
+  const targetRole = ROLE_MAP[target.role] || target.role;
+  if (!isSuperAdmin && SENSITIVE_ROLES.includes(targetRole)) {
+    return res.status(403).json({ error: '只有超级管理员才能操作管理员账号' });
+  }
+
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+
+  try {
+    const [records, logs] = await prisma.$transaction([
+      prisma.ohCardRecord.deleteMany({
+        where: {
+          userId: targetId,
+          type: 'daily',
+          createdAt: { gte: start, lt: end },
+        },
+      }),
+      prisma.eventLog.deleteMany({
+        where: {
+          userId: targetId,
+          event: 'ohcard_daily_draw',
+          createdAt: { gte: start, lt: end },
+        },
+      }),
+    ]);
+    res.json({ ok: true, deleted: records.count, logsDeleted: logs.count });
+  } catch (e) {
+    console.error('[clear daily-draw]', e);
+    res.status(500).json({ error: '清除失败：' + (e.message || '未知错误') });
+  }
+});
+
 // DELETE /api/users/admin/:id — 删除用户（级联删除所有关联数据）
 router.delete('/admin/:id', ...requireRole('admin', 'super_admin'), async (req, res) => {
   const targetId = Number(req.params.id);
